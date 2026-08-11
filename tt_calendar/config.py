@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Final
 
@@ -12,8 +13,12 @@ from typing import Final
 # 路径
 # ---------------------------------------------------------------------------
 
-# 项目根目录（main.py 所在目录的上一层就是项目根）
-PROJECT_ROOT: Final[Path] = Path(__file__).resolve().parent.parent
+# 项目根目录：源码运行时是仓库根；PyInstaller 打包后是 exe 所在目录
+# （onefile 模式下 __file__ 指向 _MEIPASS 临时解压目录，写入会丢失）
+if getattr(sys, "frozen", False):
+    PROJECT_ROOT: Final[Path] = Path(sys.executable).resolve().parent
+else:
+    PROJECT_ROOT: Final[Path] = Path(__file__).resolve().parent.parent
 
 # 数据目录：SQLite 数据库 + 旧 JSON 备份
 DATA_DIR: Final[Path] = PROJECT_ROOT / "data"

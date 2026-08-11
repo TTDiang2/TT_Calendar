@@ -1,14 +1,12 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "enables the default permissions + shell sidecar",
+  "description": "enables the default permissions",
   "windows": [
     "main"
   ],
   "permissions": [
     "core:default",
-    "shell:allow-spawn",
-    "shell:allow-execute",
-    "shell:allow-kill"
+    "log:default"
   ]
 }

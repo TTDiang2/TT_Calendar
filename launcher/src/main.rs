@@ -1,5 +1,5 @@
-// TT Calendar Launcher: 调系统 python 跑 backend（uvicorn），启动前清理端口残留，
-// HTTP /health 轮询确认 ready，Pake + python 同 Job Object 一起死。日志写 launcher.log
+// TT Calendar Launcher: 拉起内嵌 Python 的 backend exe，启动前清理端口残留，
+// HTTP /health 轮询确认 ready，backend + 界面同 Job Object 一起死。日志写 launcher.log
 #![windows_subsystem = "windows"]
 
 use std::env;
@@ -44,15 +44,17 @@ fn main() {
     let _ = LOG_PATH.set(exe_dir.join("launcher.log"));
     log(format!("=== launcher start, exe_dir={}", exe_dir.display()));
 
-    let pake = match find_file(&exe_dir, "TT Calendar.exe") {
+    let pake = match find_file(&exe_dir, &["TT Calendar.exe", "TT-Calendar-x64.exe"]) {
         Some(p) => p,
         None => {
             log(format!("ERROR pake not found near {}", exe_dir.display()));
             std::process::exit(1);
         }
     };
-    // 后端为 PyInstaller 打包的独立 exe（内嵌 Python），无需系统 Python
-    let backend_exe = match find_file(&exe_dir, "tt-calendar-backend.exe") {
+    let backend_exe = match find_file(
+        &exe_dir,
+        &["tt-calendar-backend.exe", "tt-calendar-backend-x64.exe"],
+    ) {
         Some(p) => p,
         None => {
             log(format!("ERROR tt-calendar-backend.exe not found near {}", exe_dir.display()));
@@ -224,16 +226,18 @@ fn spawn_into_job(cmd: &mut Command, job: HANDLE) -> std::io::Result<Child> {
     Ok(child)
 }
 
-fn find_file(dir: &PathBuf, name: &str) -> Option<PathBuf> {
+fn find_file(dir: &PathBuf, names: &[&str]) -> Option<PathBuf> {
     let candidates = [
         dir.to_path_buf(),
         dir.join("dist"),
         dir.join("..").join("dist"),
     ];
     for c in &candidates {
-        let p = c.join(name);
-        if p.exists() {
-            return Some(p);
+        for name in names {
+            let p = c.join(name);
+            if p.exists() {
+                return Some(p);
+            }
         }
     }
     None

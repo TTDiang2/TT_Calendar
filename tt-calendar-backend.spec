@@ -5,7 +5,7 @@ a = Analysis(
     ['backend\\main.py'],
     pathex=['.'],
     binaries=[],
-    datas=[('data', 'data'), ('frontend/dist', 'frontend/dist')],
+    datas=[('frontend/dist', 'frontend/dist')],
     hiddenimports=['uvicorn.logging', 'uvicorn.protocols.http.auto', 'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan.on'],
     hookspath=[],
     hooksconfig={},
