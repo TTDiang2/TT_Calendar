@@ -51,14 +51,15 @@ fn main() {
             std::process::exit(1);
         }
     };
-    let python = match find_python() {
+    // 后端为 PyInstaller 打包的独立 exe（内嵌 Python），无需系统 Python
+    let backend_exe = match find_file(&exe_dir, "tt-calendar-backend.exe") {
         Some(p) => p,
         None => {
-            log("ERROR python not found in PATH");
+            log(format!("ERROR tt-calendar-backend.exe not found near {}", exe_dir.display()));
             std::process::exit(1);
         }
     };
-    log(format!("pake={} python={}", pake.display(), python));
+    log(format!("pake={} backend={}", pake.display(), backend_exe.display()));
 
     // 启动前清理 8765 残留：上次 backend 若未被 Job Object 完全回收，TCP 轮询会误判 ready
     ensure_port_free(PORT);
@@ -66,17 +67,8 @@ fn main() {
     let job = create_job();
 
     log("spawning backend...");
-    let mut backend_cmd = Command::new(&python);
+    let mut backend_cmd = Command::new(&backend_exe);
     backend_cmd
-        .args([
-            "-m",
-            "uvicorn",
-            "backend.main:app",
-            "--host",
-            HOST,
-            "--port",
-            &PORT.to_string(),
-        ])
         .current_dir(&exe_dir)
         .creation_flags(CREATE_NO_WINDOW);
     let err_path = exe_dir.join("backend.stderr.log");
@@ -131,21 +123,6 @@ fn main() {
     drop(pake_proc);
     drop(backend_proc);
     std::process::exit(0);
-}
-
-fn find_python() -> Option<String> {
-    for name in &["python", "python3", "py"] {
-        let out = Command::new(name)
-            .arg("--version")
-            .creation_flags(CREATE_NO_WINDOW)
-            .output();
-        if let Ok(o) = out {
-            if o.status.success() {
-                return Some((*name).to_string());
-            }
-        }
-    }
-    None
 }
 
 // 检测 8765 是否被占；若被占（通常是上次 backend 残留），找 LISTENING PID taskkill 掉

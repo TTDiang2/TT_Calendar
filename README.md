@@ -2,32 +2,106 @@
 
 # 🗓️ TT Calendar
 
-**一款本地优先的桌面日历应用** —— 日程管理 · 待办 · 倒计时 · 投资日历数据层 · 统计洞察
+**你的日程，你的规则。本地优先的桌面日历 + 待办 + 倒计时。**
 
-所有数据存储在本机，无需注册、无需联网、无任何遥测。
+不需要注册账号，不需要订阅会员，不需要联网。下载解压，双击即用。
 
-![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB?logo=tauri&logoColor=white)
-![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-Python-009688?logo=fastapi&logoColor=white)
-![Rust](https://img.shields.io/badge/Rust-Launcher-dea584?logo=rust&logoColor=white)
-![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white)
+与其给「滴答清单」充会员费，不如给 AI 充 token 费——不满意就改源码，想要什么功能自己加。
 
 </div>
 
 ---
 
-## ✨ 功能特性
+## 🎯 为什么会有这个项目
 
-- **多视图日历**：月 / 周 / 日 / 年四种视图自由切换
-- **日程管理**：AM / PM / EV 三段式时间表，支持事件、时间表条目与拖拽移动
-- **待办事项**：独立待办视图，按截止日期染色提醒
-- **重要日期 & 纪念日**：手动标记 + 自动生成倒计时（99 / 100 / 365 / 520 / 1000 天……）
+市面上的日历 / 待办应用，总有一百个地方让你不爽：想按自己的方式记日程？没有。想要某个特殊的日子自动倒计时？会员。想看一周的日程密度再决定怎么安排？没有这个视图。数据不在自己手里？更别说了。
+
+于是就有了 TT Calendar——**自己 vibe coding 出来的、完全按自己的习惯长的日历**。
+
+它没有"应该怎么做"的说教，只有你定义的操作逻辑：
+
+- **三段式日程**：一天就分「上午 / 下午 / 晚上」三段记，不搞花里胡哨的复杂表单
+- **充实度染色**：每天按日程多少染成深浅不同的绿色，一眼看出哪天被塞满、哪天是空的
+- **纪念日倒计时**：标记一次，自动生成 99 / 100 / 365 / 520 / 1000 天…的倒计时，每天提醒你"还有多少天"
+- **待办不丢**：待办按截止日期和重要度排好序，过期变红，绝不让你"忘了"
+- **数据 100% 本地**：SQLite 存本机，你的日程是你自己的，谁也拿不走
+
+而且——**它 100% 可改**。所有源码都在这里，交给任何 AI 编程助手，一句话就能加功能。
+
+---
+
+## ⚡ 立即使用
+
+### 直接下载（推荐）
+
+前往 **[GitHub Releases](https://github.com/TTDiang2/TT_Calendar/releases)** 下载最新版本，共 3 个文件：
+
+| 文件 | 作用 |
+|---|---|
+| `TT-Calendar-Launcher-x64.exe` | 启动器，双击它就行 |
+| `TT-Calendar-x64.exe` | 日历界面（Tauri 桌面端） |
+| `tt-calendar-backend-x64.exe` | 后端服务（已内置 Python 运行时） |
+
+**使用方法**：三个文件放进同一个文件夹，双击 `TT-Calendar-Launcher.exe`，等 5~10 秒窗口打开即用。
+
+> ✅ **不需要安装 Python**——后端 exe 已内置完整 Python 运行时，开箱即用。
+> ✅ 不需要注册、不需要联网、不需要任何配置。
+
+### 从源码运行（开发模式）
+
+```bash
+pip install -r requirements.txt
+uvicorn backend.main:app --reload --port 8000
+```
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+浏览器打开 `http://localhost:5173`，或 `npm run tauri dev` 打开桌面窗口。
+
+---
+
+## 🖱️ 上手体验
+
+打开应用，你看到的是一个标准的月视图。但真正顺手的是这些操作：
+
+| 操作 | 效果 |
+|---|---|
+| **双击**任意日期 | 新建日程事件 |
+| **右键**任意日期 | 快捷菜单：新建事件 / 设置日程 / 设置染色 |
+| **拖拽**日期格子 | 把这一天的安排整体移到另一天 |
+| **← / →** | 切换上/下月（周/日视图为上周/下周） |
+| **T** | 跳回今天 |
+| **N** | 在选中日期快速新建事件 |
+| **/** | 全局搜索，回车跳转 |
+| **侧边栏图层开关** | 一键显示/隐藏「节假日、集思录投资日历」等数据层 |
+
+### 四种视图
+
+- **月视图**：默认视图，看整月日程密度与安排
+- **周视图**：看本周每天的三段式日程，拖拽调整最方便
+- **日视图**：单日聚焦，处理当天全部事项
+- **年视图**：全年总览，点任意日期直接跳回月视图
+
+### 顶栏三个页签
+
+- **日历**：上述四视图
+- **待办**：独立的待办清单，按「截止日期 × 重要度」排序，过期红、临近黄
+- **倒计时**：所有纪念日的天数倒计时卡片，一眼看到最近的大日子
+
+### 侧边栏数据层
+
+不想要的信息，关掉即可；想要更多，打开即可：
+
+- **中国节假日**：法定节假日与调休，自动标注
+- **集思录投资日历**：新股、可转债、分红、REITs、股指期权等 15 类投资日历数据，按需拉取
 - **充实度染色**：五档绿色直观呈现每天的日程密度
-- **数据层（Layers）**：内置中国节假日与调休、集思录投资日历（新股、可转债、分红、REITs、股指期权等 15 类），按需拉取
-- **统计视图**：日程分布与充实度洞察
-- **全文搜索**：快速跳转到任意日程或事件
-- **本地优先**：SQLite 存储，数据 100% 留在本机
+- **重要日期图层**：手动标记的特殊日子，带倒计时
+
+---
 
 ## 📸 截图
 
@@ -39,95 +113,69 @@
 | ![周视图](docs/images/screenshot-week-view.png) | ![待办](docs/images/screenshot-todo.png) |
 | ![倒计时](docs/images/screenshot-countdown.png) | ![统计](docs/images/screenshot-stats.png) |
 
-## 🧱 技术栈
+---
 
-| 层 | 技术 |
-|---|---|
-| 前端 | React 18 · TypeScript · Vite · Tailwind CSS 4 · TanStack Query · lucide-react |
-| 桌面壳 | Tauri 2（WebView） |
-| 后端 | FastAPI · uvicorn · SQLite（标准库 `sqlite3`） |
-| 启动器 | Rust（Windows Job Object 进程生命周期管理） |
-| 打包 | Tauri bundle（MSI / NSIS）· PyInstaller（后端 sidecar） |
+## 🛠️ 对想改它的人说
 
-## 🏗️ 架构
+TT Calendar 的全部源码都在这个仓库里。**它的设计目标就是"好改"**——模块边界清晰，想加功能不用翻遍代码：
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  TT-Calendar-Launcher.exe (Rust)                    │
-│  · 拉起后端进程   · /health 轮询就绪               │
-│  · Job Object 统一生命周期（退出即清理）            │
-└──────────────┬──────────────────────────────────────┘
-               │ spawn + 端口 8765
-┌──────────────▼──────────────────────────────────────┐
-│  tt-calendar-backend (FastAPI, 127.0.0.1:8765)      │
-│  · REST API (/api/*)    · SQLite 持久化             │
-│  · 生产模式静态托管前端 dist（单端口）              │
-└──────────────┬──────────────────────────────────────┘
-               │ HTTP
-┌──────────────▼──────────────────────────────────────┐
-│  TT Calendar.exe (Tauri WebView + React)            │
-│  · 月/周/日/年视图 · 待办 · 倒计时 · 统计           │
-└─────────────────────────────────────────────────────┘
+├── frontend/            # 界面（React + Tauri）
+│   └── src/
+│       ├── components/  #   所有视图与弹窗（MonthGrid / WeekView / DayView / YearView / TodoView / CountdownView...）
+│       ├── api/         #   与后端的全部接口调用，改这里就能接新数据源
+│       └── hooks/       #   数据获取 hooks
+├── backend/             # 后端 API（FastAPI）
+│   └── routes/          #   路由：日程 / 待办 / 图层 / 倒计时 / 统计
+├── tt_calendar/         # 核心业务逻辑（Python）
+│   ├── layers/          #   数据层：节假日、集思录投资日历等
+│   ├── sources/         #   外部数据源
+│   └── utils/           #   日期 / 文本工具
+├── launcher/            # 启动器（Rust）
+├── scripts/             # 辅助脚本
+└── tests/               # 自动化测试
 ```
 
-- **启动器**（Rust）：负责进程编排 —— 启动前清理端口残留、拉起后端、通过 `/health` 轮询确认就绪后再启动界面，所有子进程挂在同一个 Job Object 上，退出时统一回收。
-- **后端**（FastAPI）：业务核心，提供日程、待办、图层、倒计时、统计等 REST API；开发时由 uvicorn 单独运行（端口 8000），生产时作为 PyInstaller sidecar 由启动器拉起。
-- **前端**（React + Tauri）：纯本地 UI，通过 `useApi` hook 与后端通信；`data/` 下的 SQLite 数据库是唯一数据源。
+**想加功能？** 直接把需求告诉你的 AI 助手，例如：
 
-## 🚀 快速开始
+> "给 TT Calendar 加一个农历节气显示，放在月视图侧边栏"
+> "待办支持重复任务，每周一自动生成"
+> "把倒计时视图改成卡片式，支持自定义背景色"
 
-### 环境要求
+**想重新发布？** 改完源码后运行一键构建脚本：
 
-- Python 3.10+
-- Node.js 18+ & npm
-- Rust（可选，仅构建启动器时需要）
-
-### 1. 启动后端
-
-```bash
-pip install -r requirements.txt
-uvicorn backend.main:app --reload --port 8000
+```bat
+build_release.bat
 ```
 
-### 2. 启动前端（开发模式）
+它会依次构建前端、桌面端、后端、启动器，产出 3 个 exe 到 `release/` 文件夹，直接分发给任何 Windows 电脑即可——**对方不需要装任何环境**。
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-浏览器打开 `http://localhost:5173`，或运行 `npm run tauri dev` 启动桌面窗口。
-
-### 3. 构建启动器（可选）
-
-```bash
-cd launcher
-cargo build --release
-```
-
-## 🗂️ 目录结构
-
-```
-├── tt_calendar/        # 核心 Python 包：数据模型、图层、数据源、工具
-│   ├── layers/         #   数据层（内置节假日、集思录等）
-│   ├── sources/        #   数据源（集思录投资日历 API）
-│   └── utils/          #   日期、文本、渐变工具
-├── backend/            # FastAPI 后端：REST API + 静态托管
-├── frontend/           # React + Tauri 桌面端
-│   └── src-tauri/      #   Tauri 壳配置与 Rust 入口
-├── launcher/           # Rust 启动器：进程编排与生命周期
-├── scripts/            # 辅助脚本（数据导出等）
-├── tests/              # 自动化测试
-└── docs/               # 文档与截图
-```
+---
 
 ## 🔒 数据与隐私
 
 - 所有数据（日程、待办、配置）存储在应用目录下的 `data/calendar.db`（SQLite）
 - 无账号体系、无云同步、无遥测、无任何网络上报
-- 集思录数据仅在用户打开相应图层时按需拉取公开的投资日历接口
+- 集思录数据仅在用户打开相应图层时按需拉取公开接口
 - 数据目录被 `.gitignore` 排除，个人数据不会进入版本库
+
+## 🏗️ 架构一览
+
+```
+TT-Calendar-Launcher.exe (Rust)
+        │ 拉起后端 + 健康检查 + 生命周期管理
+        ▼
+tt-calendar-backend.exe (FastAPI · 内嵌 Python · 127.0.0.1:8765)
+        │ REST API
+        ▼
+TT Calendar.exe (Tauri + React · 界面)
+```
+
+| 层 | 技术 |
+|---|---|
+| 界面 | React · TypeScript · Tailwind CSS · Tauri 2 |
+| 后端 | FastAPI · SQLite |
+| 启动器 | Rust（进程编排） |
 
 ## 📄 许可证
 
