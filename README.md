@@ -6,7 +6,7 @@
 
 不需要注册账号，不需要订阅会员，不需要联网。下载解压，双击即用。
 
-与其给「滴答清单」充会员费，不如给 AI 充 token 费——不满意就改源码，想要什么功能自己加。
+与其给「XX清单」「XXTODO」「XX日历」充会员费，不如给 AI 充 token 费——不满意就改源码，想要什么功能自己加。
 
 </div>
 
@@ -105,13 +105,11 @@ npm run dev
 
 ## 📸 截图
 
-> 截图待补充 —— 请将真实截图保存为 `docs/images/` 下对应文件后替换占位图。
-
 | | |
 |---|---|
-| ![主界面](docs/images/screenshot-main.png) | ![月视图](docs/images/screenshot-month-view.png) |
-| ![周视图](docs/images/screenshot-week-view.png) | ![待办](docs/images/screenshot-todo.png) |
-| ![倒计时](docs/images/screenshot-countdown.png) | ![统计](docs/images/screenshot-stats.png) |
+| ![image-20260811223032325](https://github.com/TTDiang2/TT_Calendar/raw/main/docs/images/image-20260811223032325.png) | ![image-20260811223134201](https://github.com/TTDiang2/TT_Calendar/raw/main/docs/images/image-20260811223134201.png) |
+| ![image-20260811223220215](https://github.com/TTDiang2/TT_Calendar/raw/main/docs/images/image-20260811223220215.png) | ![image-20260811223240418](https://github.com/TTDiang2/TT_Calendar/raw/main/docs/images/image-20260811223240418.png) |
+| ![image-20260811223635695](https://github.com/TTDiang2/TT_Calendar/raw/main/docs/images/image-20260811223635695.png) | ![image-20260811223832599](https://github.com/TTDiang2/TT_Calendar/raw/main/docs/images/image-20260811223832599.png) |
 
 ---
 
