@@ -42,7 +42,7 @@
 | `TT-Calendar-x64.exe` | 日历界面（Tauri 桌面端） |
 | `tt-calendar-backend-x64.exe` | 后端服务（已内置 Python 运行时） |
 
-**使用方法**：三个文件放进同一个文件夹，双击 `TT-Calendar-Launcher.exe`，等 5~10 秒窗口打开即用。
+**使用方法**：三个文件放进同一个文件夹，双击 `TT-Calendar-Launcher-x64.exe`，等 5~10 秒窗口打开即用。文件名即最终命名，无需改名。
 
 > ✅ **不需要安装 Python**——后端 exe 已内置完整 Python 运行时，开箱即用。
 > ✅ 不需要注册、不需要联网、不需要任何配置。
@@ -179,4 +179,4 @@ TT Calendar.exe (Tauri + React · 界面)
 
 ## 📄 许可证
 
-MIT License（LICENSE 文件待补充）
+MIT License

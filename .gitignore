@@ -29,6 +29,7 @@ launcher/target/
 
 # ---- Build artifacts ----
 build/
+release/
 *.exe
 *.msi
 *.bak.*

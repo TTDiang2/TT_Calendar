@@ -60,13 +60,13 @@ popd
 
 echo.
 echo === [5/6] Collecting artifacts ===
-copy /Y "%ROOT%frontend\src-tauri\target\release\app.exe" "%OUT%\TT Calendar.exe" >nul
-copy /Y "%ROOT%dist\tt-calendar-backend.exe" "%OUT%\tt-calendar-backend.exe" >nul
-copy /Y "%ROOT%launcher\target\release\tt-calendar-launcher.exe" "%OUT%\TT-Calendar-Launcher.exe" >nul
+copy /Y "%ROOT%frontend\src-tauri\target\release\app.exe" "%OUT%\TT-Calendar-x64.exe" >nul
+copy /Y "%ROOT%dist\tt-calendar-backend.exe" "%OUT%\tt-calendar-backend-x64.exe" >nul
+copy /Y "%ROOT%launcher\target\release\tt-calendar-launcher.exe" "%OUT%\TT-Calendar-Launcher-x64.exe" >nul
 
 echo.
 echo === [6/6] Verifying sizes ===
-for %%A in ("%OUT%\TT Calendar.exe" "%OUT%\tt-calendar-backend.exe" "%OUT%\TT-Calendar-Launcher.exe") do (
+for %%A in ("%OUT%\TT-Calendar-x64.exe" "%OUT%\tt-calendar-backend-x64.exe" "%OUT%\TT-Calendar-Launcher-x64.exe") do (
     if exist "%%~A" (
         echo OK  %%~nxA  %%~zA bytes
     ) else (
