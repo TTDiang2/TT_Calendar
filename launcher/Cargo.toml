@@ -1,0 +1,21 @@
+[package]
+name = "tt-calendar-launcher"
+version = "1.0.0"
+edition = "2021"
+
+[[bin]]
+name = "tt-calendar-launcher"
+path = "src/main.rs"
+
+[dependencies.windows-sys]
+version = "0.59"
+features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_System_JobObjects",
+    "Win32_System_Threading",
+]
+
+[profile.release]
+opt-level = "z"
+lto = true

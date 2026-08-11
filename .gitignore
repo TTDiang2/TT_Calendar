@@ -1,0 +1,60 @@
+# ---- Secrets ----
+access_token.md
+
+# ---- 个人历史数据/截图（本地备份于 E:\TT_Calendar_archive，禁止入库） ----
+archive/
+stats_view.png
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+.env
+
+# ---- Node / Frontend ----
+node_modules/
+frontend/node_modules/
+frontend/dist/
+dist/
+frontend/src-tauri/gen/
+frontend/src-tauri/target/
+
+# ---- Rust ----
+target/
+launcher/target/
+
+# ---- Build artifacts ----
+build/
+*.exe
+*.msi
+*.bak.*
+
+# ---- Runtime data ----
+data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+ms_todo_export.csv
+
+# ---- Logs / pid / temp ----
+*.log
+*.err
+*.pid
+*_pid.txt
+*.tmp
+
+# ---- Tooling / editor ----
+.codegraph/
+.omo/
+.playwright-mcp/
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
