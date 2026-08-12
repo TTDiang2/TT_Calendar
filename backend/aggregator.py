@@ -131,15 +131,28 @@ def _custom_layer_color(
     ev_by_layer: dict,
     todos: list,
     custom_layers: list,
+    marks_by_date: dict | None = None,
 ) -> tuple[str, str] | None:
-    """计算自定义图层对某天的染色。
+    """计算自定义涂色图层对某天的染色。
 
     custom_layers: [(layer_id, config)]，config 含 mode/color/palette/tag。
-    返回 (color, label) 或 None。优先级：手动标记事件 > tag 关联。
+    marks_by_date: {date: [Mark, ...]}，涂色标记（打卡/完成度）独立存储，不进 events。
+    返回 (color, label) 或 None。优先级：mark 标记 > 旧版 events 事件 > tag 关联。
     """
 
+    marks_by_id = {m.layer_id: m for m in (marks_by_date.get(d, []) if marks_by_date else [])}
     for lid, cfg_dict in custom_layers:
         mode = (cfg_dict or {}).get("mode", "solid")
+        mark = marks_by_id.get(lid) if marks_by_id else None
+        if mark:
+            if mode == "graded" and mark.level is not None:
+                palette = (cfg_dict or {}).get("palette") or []
+                if 0 <= mark.level < len(palette):
+                    return str(palette[mark.level]), (cfg_dict or {}).get("label") or lid
+                return None, None
+            color = (cfg_dict or {}).get("color")
+            return (str(color) if color else None), (cfg_dict or {}).get("label") or lid
+        # 旧版兼容：涂色图层以前存 events，迁移前的数据仍可显示
         events = [e for e in ev_by_layer.get(d, {}).get(lid, [])]
         if events:
             if mode == "graded":
@@ -171,9 +184,13 @@ def _build_day(
     view_month: int,
     custom_bg: tuple[str, str] | None = None,
     day_busy: dict | None = None,
+    marks_by_date: dict | None = None,
+    custom_layer_cfg: list | None = None,
 ) -> dict:
     """组装单日数据。view_year/month 用于判 other_month（月视图淡化前后月）。
     day_busy: {date: (predict_level, done_level)} 快照，视图层不做实时计算。
+    marks_by_date: {date: [Mark]}，涂色标记（打卡/完成度），独立于 events。
+    custom_layer_cfg: [(layer_id, config)]，自定义涂色图层配置（带 mode/palette/label）。
     """
 
     ev_by_layer: dict[str, list] = {}
@@ -190,6 +207,26 @@ def _build_day(
     predict_level = busy[0] if busy else None
     done_level = busy[1] if busy else None
 
+    # 当日涂色标记：展开为 {layer_id: {level, color, mode, label}} 供前端涂色条展示
+    day_marks = marks_by_date.get(d, []) if marks_by_date else []
+    cfg_by_id = {lid: (cfg or {}) for lid, cfg in (custom_layer_cfg or [])}
+    marks_out: list[dict] = []
+    for m in day_marks:
+        cfg = cfg_by_id.get(m.layer_id, {})
+        mode = cfg.get("mode", "solid")
+        if mode == "graded" and m.level is not None:
+            palette = cfg.get("palette") or []
+            color = palette[m.level] if 0 <= m.level < len(palette) else None
+        else:
+            color = cfg.get("color")
+        marks_out.append({
+            "layer_id": m.layer_id,
+            "label": cfg.get("label") or m.layer_id,
+            "level": m.level,
+            "color": color,
+            "mode": mode,
+        })
+
     out = {
         "date": d.isoformat(),
         "is_today": d == today,
@@ -204,6 +241,7 @@ def _build_day(
         "todos": todos_json,
         "predict_level": predict_level,
         "done_level": done_level,
+        "marks": marks_out,
     }
     if custom_bg and custom_bg[0]:
         out["custom_bg"] = {"color": custom_bg[0], "label": custom_bg[1]}
@@ -231,12 +269,19 @@ def build_view(
     coloring = db.fetch_coloring_between(conn, start, end)
     todos_by_date = db.fetch_todos_between(conn, start, end)
     schedule_items = db.fetch_schedule_items_between(conn, start, end)
+    marks_by_date = db.fetch_marks_between(conn, start, end)
     schedule_items_by_date: dict = defaultdict(list)
     for item in schedule_items:
         schedule_items_by_date[item.date].append(item)
 
     layers = db.fetch_layer_configs(conn)
     layer_cfg_by_id = {l.layer_id: l.config or {} for l in layers}
+    # 涂色图层：custom_* + built-in coloring（mark 渲染需要 lookup color/palette）
+    color_layer_cfgs = [
+        (l.layer_id, l.config or {})
+        for l in layers
+        if l.enabled and (l.kind == "color" or not l.kind)
+    ]
     custom_layers = [
         (l.layer_id, l.config or {})
         for l in layers
@@ -273,8 +318,10 @@ def build_view(
             _build_day(
                 d, events_by_date, schedule, schedule_items_by_date, coloring, gradient,
                 todos_by_date, today, view_year, view_month,
-                custom_bg=_custom_layer_color(d, events_by_date, todos_by_date.get(d, []), custom_layers),
+                custom_bg=_custom_layer_color(d, events_by_date, todos_by_date.get(d, []), custom_layers, marks_by_date),
                 day_busy=day_busy,
+                marks_by_date=marks_by_date,
+                custom_layer_cfg=color_layer_cfgs,
             )
             for d in days_list
         ],

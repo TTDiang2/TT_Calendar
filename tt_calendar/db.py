@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any, Iterable, Iterator
 
 from . import config as cfg
-from .models import ColoringEntry, Event, LayerConfig, ScheduleEntry, ScheduleItem, Todo, TodoList
+from .models import ColoringEntry, Event, LayerConfig, Mark, ScheduleEntry, ScheduleItem, Todo, TodoList
 from .utils.date_utils import parse_date
 
 log = logging.getLogger(__name__)
@@ -126,6 +126,18 @@ CREATE TABLE IF NOT EXISTS day_busy (
 );
 CREATE INDEX IF NOT EXISTS idx_day_busy_date ON day_busy(date);
 
+CREATE TABLE IF NOT EXISTS marks (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    layer_id   TEXT NOT NULL,
+    date       TEXT NOT NULL,           -- 'YYYY-MM-DD'
+    level      INTEGER,                 -- graded 模式 0..4；solid 模式 NULL
+    note       TEXT,
+    created_at TEXT DEFAULT (datetime('now','localtime')),
+    updated_at TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(layer_id, date)
+);
+CREATE INDEX IF NOT EXISTS idx_marks_date ON marks(date);
+
 CREATE TABLE IF NOT EXISTS countdown (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
     name           TEXT NOT NULL,
@@ -187,6 +199,17 @@ def init_db(conn: sqlite3.Connection) -> None:
         _ensure_todo_columns(cur)
         _ensure_schedule_item_columns(cur)
         _ensure_layer_config_columns(cur)
+        _drop_legacy_schedule_layer(cur)
+
+
+def _drop_legacy_schedule_layer(cur: sqlite3.Cursor) -> None:
+    """弃用旧的顶层 schedule 图层（AM/PM/EV 三段结构已拆成 schedule_items）。
+
+    schedule 表数据保留（兼容旧查询），仅删除 layer_config 里的 'schedule' 行，
+    使点点/涂色选择器不再出现顶层"日程"选项。
+    """
+
+    cur.execute("DELETE FROM layer_config WHERE layer_id = 'schedule'")
 
 
 def _ensure_schedule_item_columns(cur: sqlite3.Cursor) -> None:
@@ -675,6 +698,59 @@ def upsert_coloring(conn: sqlite3.Connection, entry: ColoringEntry) -> None:
 def delete_coloring(conn: sqlite3.Connection, d: date_t) -> None:
     with cursor(conn) as cur:
         cur.execute("DELETE FROM coloring WHERE date = ?", (d.isoformat(),))
+
+
+# ---------------------------------------------------------------------------
+# Mark CRUD（涂色标记：打卡/自定义完成度，按 layer_id+date 唯一）
+# ---------------------------------------------------------------------------
+
+
+def _row_to_mark(row: sqlite3.Row) -> Mark:
+    return Mark(
+        id=row["id"],
+        layer_id=row["layer_id"],
+        date=parse_date(row["date"]),
+        level=row["level"],
+        note=row["note"],
+        created_at=row["created_at"],
+    )
+
+
+def fetch_marks_between(
+    conn: sqlite3.Connection, start: date_t, end: date_t
+) -> dict[date_t, list[Mark]]:
+    rows = conn.execute(
+        "SELECT * FROM marks WHERE date >= ? AND date <= ? ORDER BY date, layer_id",
+        (start.isoformat(), end.isoformat()),
+    ).fetchall()
+    out: dict[date_t, list[Mark]] = defaultdict(list)
+    for r in rows:
+        out[parse_date(r["date"])].append(_row_to_mark(r))
+    return out
+
+
+def upsert_mark(conn: sqlite3.Connection, mark: Mark) -> None:
+    with cursor(conn) as cur:
+        cur.execute(
+            "INSERT INTO marks(layer_id, date, level, note, updated_at) VALUES(?,?,?,?,?) "
+            "ON CONFLICT(layer_id, date) DO UPDATE SET level=excluded.level, "
+            "note=excluded.note, updated_at=excluded.updated_at",
+            (
+                mark.layer_id,
+                mark.date.isoformat(),
+                mark.level,
+                mark.note,
+                datetime.now().isoformat(timespec="seconds"),
+            ),
+        )
+
+
+def delete_mark(conn: sqlite3.Connection, layer_id: str, d: date_t) -> None:
+    with cursor(conn) as cur:
+        cur.execute(
+            "DELETE FROM marks WHERE layer_id = ? AND date = ?",
+            (layer_id, d.isoformat()),
+        )
 
 
 # ---------------------------------------------------------------------------

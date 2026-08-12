@@ -89,6 +89,12 @@ export const deleteScheduleItem = (id: number) => del<{ ok: boolean }>(`/schedul
 export const upsertColoring = (d: string, level: number) => put(`/coloring/${d}`, { level })
 export const deleteColoring = (d: string) => del(`/coloring/${d}`)
 
+// 涂色标记（打卡 / 自定义完成度）
+export const upsertMark = (layerId: string, d: string, level: number | null, note: string | null = null) =>
+  post<{ ok: boolean }>('/marks', { layer_id: layerId, date: d, level, note })
+export const deleteMark = (layerId: string, d: string) =>
+  del<{ ok: boolean }>(`/marks/${layerId}/${d}`)
+
 // 拖拽改期
 export const moveDay = (src: string, dst: string) =>
   post<{ moved_events: number; moved_schedule: boolean }>('/move-day', { src, dst })

@@ -65,6 +65,21 @@ class ColoringEntry(BaseModel):
     level: int  # 0..4
 
 
+class Mark(BaseModel):
+    """涂色标记（打卡/自定义完成度）。按 layer_id+date 唯一，不进 events 表。
+
+    打卡(solid)：level=None，仅记录"打卡了"；
+    完成度(graded)：level=0..4，对应图层 palette 的档位。
+    """
+
+    id: Optional[int] = None
+    layer_id: str
+    date: date_t
+    level: Optional[int] = None
+    note: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+
 class LayerConfig(BaseModel):
     """图层配置（在 sidebar 中显示）。"""
 

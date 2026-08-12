@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 from tt_calendar import db
 from tt_calendar.config import LayerID
-from tt_calendar.models import ColoringEntry, Event, LayerConfig, ScheduleEntry, ScheduleItem, Todo, TodoList
+from tt_calendar.models import ColoringEntry, Event, LayerConfig, Mark, ScheduleEntry, ScheduleItem, Todo, TodoList
 from tt_calendar.sources import get_source
 from tt_calendar.sources.jisilu import JisiluSource
 from tt_calendar.utils.date_utils import parse_date, shift_month
@@ -146,6 +146,38 @@ def upsert_coloring(d: str, body: ColoringBody, conn=Depends(get_db)):
 @router.delete("/coloring/{d}")
 def delete_coloring(d: str, conn=Depends(get_db)):
     db.delete_coloring(conn, parse_date(d))
+    conn.commit()
+    return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# 涂色标记（打卡 / 自定义完成度）
+# ---------------------------------------------------------------------------
+
+
+class MarkBody(BaseModel):
+    layer_id: str
+    date: str
+    level: Optional[int] = None
+    note: Optional[str] = None
+
+
+@router.post("/marks")
+def upsert_mark(body: MarkBody, conn=Depends(get_db)):
+    mark = Mark(
+        layer_id=body.layer_id,
+        date=parse_date(body.date),
+        level=body.level,
+        note=body.note,
+    )
+    db.upsert_mark(conn, mark)
+    conn.commit()
+    return {"ok": True}
+
+
+@router.delete("/marks/{layer_id}/{date}")
+def delete_mark(layer_id: str, date: str, conn=Depends(get_db)):
+    db.delete_mark(conn, layer_id, parse_date(date))
     conn.commit()
     return {"ok": True}
 

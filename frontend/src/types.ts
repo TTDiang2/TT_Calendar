@@ -34,6 +34,14 @@ export interface CustomBg {
   label: string
 }
 
+export interface DayMark {
+  layer_id: string
+  label: string
+  level: number | null
+  color: string | null
+  mode: string
+}
+
 export interface Layer {
   layer_id: string
   display_name: string
@@ -62,6 +70,7 @@ export interface Day {
   // done = completed_at 当天的 todo 加权（过去日期显示）；今天双层叠加
   predict_level: number | null
   done_level: number | null
+  marks: DayMark[]
 }
 
 export interface MonthData {

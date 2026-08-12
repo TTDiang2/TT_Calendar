@@ -3,7 +3,7 @@ import { CalendarDays, CheckCircle2, Clock, Palette, Pencil, Sparkles, Trash2 } 
 import clsx from 'clsx'
 import type { CalEvent, Day, Layer } from '../types'
 import { COLORING_COLORS, parseDate, TODO_BUSY_PREDICT_COLORS, TODO_BUSY_DONE_COLORS } from '../data'
-import { deleteEvent, deleteScheduleItem, getTodoBusyConfig, updateTodo } from '../api/client'
+import { deleteEvent, deleteMark, deleteScheduleItem, getTodoBusyConfig, updateTodo } from '../api/client'
 
 interface Props {
   day: Day | null
@@ -32,6 +32,12 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
       qc.invalidateQueries({ queryKey: ['scheduleItems'] })
     },
   })
+  const delMarkMut = useMutation({
+    mutationFn: ({ layerId, date }: { layerId: string; date: string }) => deleteMark(layerId, date),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['view'] })
+    },
+  })
   const toggleTodoMut = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => updateTodo(id, data),
     onSuccess: () => {
@@ -51,8 +57,10 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
   const { y, m, d } = parseDate(day.date)
   const weekday = '一二三四五六日'[new Date(y, m - 1, d).getDay() === 0 ? 6 : new Date(y, m - 1, d).getDay() - 1]
   const enabledSet = new Set(layers.filter((l) => l.enabled).map((l) => l.layer_id))
+  // 涂色图层（kind=color 且 custom_*）的旧 events 不当事件显示（已迁到 marks）
+  const colorLayerIds = new Set(layers.filter((l) => l.kind === 'color' && l.layer_id.startsWith('custom_')).map((l) => l.layer_id))
   const events = Object.entries(day.events_by_layer)
-    .filter(([lid]) => lid === 'important' || lid === 'schedule' || enabledSet.has(lid))
+    .filter(([lid]) => (lid === 'important' || enabledSet.has(lid)) && !colorLayerIds.has(lid))
     .flatMap(([, evs]) => evs)
   const layerColor = (lid: string) => layers.find((l) => l.layer_id === lid)?.color ?? '#9ca3af'
   const layerName = (lid: string) => layers.find((l) => l.layer_id === lid)?.display_name ?? lid
@@ -101,6 +109,42 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
             ))}
           </div>
           <span className="text-xs text-gray-500">{day.coloring_level + 1}/5</span>
+        </div>
+      )}
+
+      {day.marks && day.marks.length > 0 && (
+        <div className="mb-3 space-y-1">
+          {day.marks.map((mk) => (
+            <div key={mk.layer_id} className="flex items-center gap-2 group">
+              <span className="text-[11px] text-gray-500 w-16 flex-shrink-0 truncate">{mk.label}</span>
+              {mk.mode === 'graded' && mk.level != null ? (
+                <div className="flex-1 flex gap-px h-2 rounded overflow-hidden">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex-1"
+                      style={{
+                        backgroundColor: mk.color ?? '#9ca3af',
+                        opacity: i <= mk.level! ? 1 : 0.3,
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center gap-1">
+                  <span className="w-3 h-3 rounded flex-shrink-0" style={{ backgroundColor: mk.color ?? '#9ca3af' }} />
+                  <span className="text-[11px] text-gray-400">已标记</span>
+                </div>
+              )}
+              <button
+                onClick={() => delMarkMut.mutate({ layerId: mk.layer_id, date: day.date })}
+                className="p-0.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition flex-shrink-0"
+                title="删除标记"
+              >
+                <Trash2 size={11} />
+              </button>
+            </div>
+          ))}
         </div>
       )}
 

@@ -9,6 +9,8 @@ import {
   upsertSchedule,
   upsertColoring,
   deleteColoring,
+  upsertMark,
+  deleteMark,
   searchEvents,
   importJisilu,
   getScheduleItems,
@@ -533,31 +535,42 @@ export function DotEntryDialog({
   onClose: () => void
 }) {
   const qc = useQueryClient()
-  // 点点图层候选：schedule_*（日程）、自定义 dot 图层、其他非外部数据源的 dot 图层
+  // 点点图层候选：自定义 dot 图层（含日程类）、其他非外部数据源的 dot 图层。
   // 不限 enabled（让用户能给隐藏中的图层添加内容），排除 jisilu_* 外部数据源（手动加会被同步覆盖）
+  // 和顶层 schedule 图层（已弃用，AM/PM/EV 结构被 schedule_items 取代）。
+  const SCHEDULE_CATEGORIES = ['work', 'course', 'sport', 'play', 'other']
   const dotLayers = layers.filter((l) =>
-    l.kind === 'dot' && !l.layer_id.startsWith('jisilu_'),
+    l.kind === 'dot'
+    && !l.layer_id.startsWith('jisilu_')
+    && l.layer_id !== 'schedule',
   )
-  const scheduleCatLayers = dotLayers.filter((l) => l.layer_id.startsWith('schedule_'))
-  const otherDotLayers = dotLayers.filter((l) => !l.layer_id.startsWith('schedule_') && l.layer_id !== 'schedule')
+  // 日程类点点图层：config.category 属于 5 种日程分类之一
+  const scheduleCatLayers = dotLayers.filter((l) => {
+    const cat = (l.config as Record<string, unknown>)?.category as string | undefined
+    return SCHEDULE_CATEGORIES.includes(cat ?? '')
+  })
+  const otherDotLayers = dotLayers.filter((l) => {
+    const cat = (l.config as Record<string, unknown>)?.category as string | undefined
+    return !SCHEDULE_CATEGORIES.includes(cat ?? '')
+  })
   const firstOpt = scheduleCatLayers.find((l) => l.enabled) ?? otherDotLayers.find((l) => l.enabled) ?? scheduleCatLayers[0] ?? otherDotLayers[0]
   const [targetLayer, setTargetLayer] = useState<string>(firstOpt?.layer_id ?? '')
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('10:00')
   const [title, setTitle] = useState('')
 
-  const isSchedule = targetLayer.startsWith('schedule_')
   const targetCfg = layers.find((l) => l.layer_id === targetLayer)
+  const targetCategory = (targetCfg?.config as Record<string, unknown>)?.category as string | undefined
+  const isSchedule = SCHEDULE_CATEGORIES.includes(targetCategory ?? '')
   const targetColor = targetCfg?.color ?? '#3D6BFB'
 
   const saveMut = useMutation({
     mutationFn: async () => {
       if (!title.trim()) throw new Error('请填写内容')
       if (isSchedule) {
-        const category = (targetCfg?.config as Record<string, unknown>)?.category as string ?? 'other'
         await createScheduleItem({
           id: null, date, start_time: startTime || null, end_time: endTime || null,
-          title: title.trim(), color: targetColor, category, sort_order: 0,
+          title: title.trim(), color: targetColor, category: targetCategory ?? 'other', sort_order: 0,
         })
       } else {
         await createEvent({
@@ -644,9 +657,8 @@ export function ColorEntryDialog({
   onClose: () => void
 }) {
   const qc = useQueryClient()
-  // 涂色图层候选：coloring（充实度）、custom_*（自定义涂色）。
-  // 排除 holiday/important/todo（自动生成，不允许手动新增标记）和 jisilu_*（外部数据源）。
-  const AUTO_LAYERS = ['holiday', 'important', 'todo']
+  // 自动涂色图层（holiday/important/todo/todo_done）和外部数据源（jisilu_*）不允许手动新增标记
+  const AUTO_LAYERS = ['holiday', 'important', 'todo', 'todo_done']
   const colorLayers = layers.filter((l) =>
     l.kind === 'color'
     && !l.layer_id.startsWith('jisilu_')
@@ -672,14 +684,8 @@ export function ColorEntryDialog({
         await upsertColoring(date, level)
         return
       }
-      const color = isGraded ? (palette?.[level] ?? '#9ca3af') : (targetCfg?.color ?? '#9ca3af')
-      const extra: Record<string, unknown> = {}
-      if (isGraded) extra.level = level
-      await createEvent({
-        id: null, layer_id: targetLayer, source: 'manual', date,
-        title: targetCfg?.display_name ?? '标记',
-        description: null, color, extra, source_ref: null, sort_key: 0,
-      })
+      // 自定义涂色图层走 marks 表（打卡/完成度），不进 events
+      await upsertMark(targetLayer, date, isGraded ? level : null)
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['view'] })
@@ -687,31 +693,39 @@ export function ColorEntryDialog({
     },
   })
 
-  const builtinLayers = colorLayers.filter((l) => !l.layer_id.startsWith('custom_'))
-  const customLayers = colorLayers.filter((l) => l.layer_id.startsWith('custom_'))
+  // 按 mode 分组：打卡（solid）/ 完成度（graded + 内置 coloring）/ 关联（tag）
+  const grouped: { label: string; items: typeof colorLayers }[] = [
+    { label: '习惯打卡', items: colorLayers.filter((l) => {
+        if (l.layer_id === 'coloring') return false
+        const m = (l.config as Record<string, unknown>)?.mode as string | undefined
+        return m === 'solid' || !m
+      }) },
+    { label: '工作完成度', items: colorLayers.filter((l) => {
+        if (l.layer_id === 'coloring') return true
+        const m = (l.config as Record<string, unknown>)?.mode as string | undefined
+        return m === 'graded'
+      }) },
+    { label: '关联涂色', items: colorLayers.filter((l) => {
+        const m = (l.config as Record<string, unknown>)?.mode as string | undefined
+        return m === 'tag'
+      }) },
+  ]
 
   return (
     <Modal title={`新增涂色 ${date}`} onClose={onClose} width={440}>
       <div className="flex flex-col gap-3">
         <Field label="选择涂色图层">
           <select className="tt-input" value={targetLayer} onChange={(e) => setTargetLayer(e.target.value)}>
-            {builtinLayers.length > 0 && (
-              <optgroup label="内置">
-                {builtinLayers.map((l) => (
-                  <option key={l.layer_id} value={l.layer_id}>
-                    {l.display_name}{l.enabled ? '' : '（隐藏）'}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            {customLayers.length > 0 && (
-              <optgroup label="自定义">
-                {customLayers.map((l) => (
-                  <option key={l.layer_id} value={l.layer_id}>
-                    {l.display_name}{l.enabled ? '' : '（隐藏）'}
-                  </option>
-                ))}
-              </optgroup>
+            {grouped.map((g) =>
+              g.items.length > 0 ? (
+                <optgroup key={g.label} label={g.label}>
+                  {g.items.map((l) => (
+                    <option key={l.layer_id} value={l.layer_id}>
+                      {l.display_name}{l.enabled ? '' : '（隐藏）'}
+                    </option>
+                  ))}
+                </optgroup>
+              ) : null,
             )}
           </select>
         </Field>

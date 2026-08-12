@@ -37,21 +37,19 @@ export const DayCell = memo(function DayCell({ day, layers, selected, dragOver, 
     const out: string[] = []
     for (const lid of Object.keys(day.events_by_layer)) {
       const layer = layers.find((l) => l.layer_id === lid)
-      if (!layer?.enabled && lid !== 'important' && lid !== 'schedule') continue
+      if (!layer?.enabled && lid !== 'important') continue
       const c = layer?.color ?? '#9ca3af'
       if (!seen.has(c) && visibleEvents.some((e) => e.layer_id === lid)) {
         seen.add(c)
         out.push(c)
       }
     }
-    // 日程类型图层：按 category 显示色点（点点图层，不涂色）
+    // 日程类型点点图层：按图层 config.category 匹配当日 schedule_items 的 category
     const items = day.schedule_items ?? []
     if (items.length > 0) {
       const catSet = new Set(items.map((i) => i.category ?? 'work'))
-      for (const lid of Object.keys(layers)) {
-        if (!lid.startsWith('schedule_')) continue
-        const layer = layers.find((l) => l.layer_id === lid)
-        if (!layer?.enabled) continue
+      for (const layer of layers) {
+        if (layer.kind !== 'dot' || !layer.enabled) continue
         const cat = (layer.config as Record<string, unknown>)?.category as string | undefined
         if (cat && catSet.has(cat) && layer.color && !seen.has(layer.color)) {
           seen.add(layer.color)
