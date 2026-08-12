@@ -101,10 +101,12 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
         </div>
       )}
 
-      {/* 所有 5 档涂色：内置充实度 + 自定义 graded marks 合并展示 */}
-      {(day.coloring_level != null || day.marks?.some((mk) => mk.mode === 'graded')) && (
+      {/* 5 档涂色：内置充实度 + 自定义 graded marks + 待办忙度 predict/done（无标题） */}
+      {(day.coloring_level != null
+        || day.marks?.some((mk) => mk.mode === 'graded')
+        || day.predict_level != null
+        || day.done_level != null) && (
         <div className="mb-3 space-y-1">
-          <p className="text-[11px] text-gray-400">所有 5 档涂色</p>
           {day.coloring_level != null && (
             <div className="flex items-center gap-2 group">
               <span className="text-[11px] text-gray-500 w-16 flex-shrink-0 truncate">充实度</span>
@@ -146,13 +148,34 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
                 </button>
               </div>
             ))}
+          {day.predict_level != null && (
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-gray-500 w-16 flex-shrink-0 truncate">待办·未完成</span>
+              <div className="flex-1 flex gap-px h-2 rounded overflow-hidden">
+                {(busyConfig?.predict_colors ?? TODO_BUSY_PREDICT_COLORS).map((c, i) => (
+                  <div key={i} className="flex-1" style={{ backgroundColor: c, opacity: i <= day.predict_level! ? 1 : 0.3 }} />
+                ))}
+              </div>
+              <span className="text-xs text-gray-500">{day.predict_level! + 1}/5</span>
+            </div>
+          )}
+          {day.done_level != null && (
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-gray-500 w-16 flex-shrink-0 truncate">待办·已完成</span>
+              <div className="flex-1 flex gap-px h-2 rounded overflow-hidden">
+                {(busyConfig?.done_colors ?? TODO_BUSY_DONE_COLORS).map((c, i) => (
+                  <div key={i} className="flex-1" style={{ backgroundColor: c, opacity: i <= day.done_level! ? 1 : 0.3 }} />
+                ))}
+              </div>
+              <span className="text-xs text-gray-500">{day.done_level! + 1}/5</span>
+            </div>
+          )}
         </div>
       )}
 
-      {/* 所有单色涂色：自定义 solid marks */}
+      {/* 单色涂色：自定义 solid marks（无标题） */}
       {day.marks?.some((mk) => mk.mode !== 'graded') && (
         <div className="mb-3 space-y-1">
-          <p className="text-[11px] text-gray-400">所有单色涂色</p>
           {day.marks
             .filter((mk) => mk.mode !== 'graded')
             .map((mk) => (
@@ -171,34 +194,6 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
                 </button>
               </div>
             ))}
-        </div>
-      )}
-
-      {(day.predict_level != null || day.done_level != null) && (
-        <div className="mb-3 space-y-1.5">
-          <p className="text-[11px] text-gray-400">待办忙度</p>
-          {day.predict_level != null && (
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] text-gray-500 w-12 flex-shrink-0">未来</span>
-              <div className="flex-1 flex gap-px h-2 rounded overflow-hidden">
-                {(busyConfig?.predict_colors ?? TODO_BUSY_PREDICT_COLORS).map((c, i) => (
-                  <div key={i} className="flex-1" style={{ backgroundColor: c, opacity: i <= day.predict_level! ? 1 : 0.3 }} />
-                ))}
-              </div>
-              <span className="text-xs text-gray-500">{day.predict_level! + 1}/5</span>
-            </div>
-          )}
-          {day.done_level != null && (
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] text-gray-500 w-12 flex-shrink-0">过去</span>
-              <div className="flex-1 flex gap-px h-2 rounded overflow-hidden">
-                {(busyConfig?.done_colors ?? TODO_BUSY_DONE_COLORS).map((c, i) => (
-                  <div key={i} className="flex-1" style={{ backgroundColor: c, opacity: i <= day.done_level! ? 1 : 0.3 }} />
-                ))}
-              </div>
-              <span className="text-xs text-gray-500">{day.done_level! + 1}/5</span>
-            </div>
-          )}
         </div>
       )}
 

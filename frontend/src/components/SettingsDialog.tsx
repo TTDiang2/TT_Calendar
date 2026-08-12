@@ -35,7 +35,7 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
   const customLayers = layers.filter((l) => l.layer_id.startsWith('custom_'))
 
   return (
-    <Modal title="设置" onClose={onClose} width={500}>
+    <Modal title="设置" onClose={onClose} width={720}>
       <div className="flex flex-col gap-5">
         <section>
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">事件导入</h3>
