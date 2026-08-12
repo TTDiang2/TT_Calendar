@@ -23,5 +23,6 @@ def connect_db():
     except Exception:
         pass
     db.ensure_default_layer_configs(conn)
-    db.ensure_todo_layer(conn)  # 旧 DB 升级时补 todo 图层配置
+    db.ensure_todo_layer(conn)
+    db.ensure_todo_done_layer(conn)
     return conn

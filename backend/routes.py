@@ -329,6 +329,7 @@ class CountdownIn(BaseModel):
 def create_countdown(body: CountdownIn, conn=Depends(get_db)):
     cd = _countdown_from_in(body)
     db.upsert_countdown(conn, cd)
+    db.sync_countdown_events(conn)
     conn.commit()
     return _countdown_to_json(conn, cd)
 
@@ -341,6 +342,7 @@ def update_countdown(cd_id: int, body: CountdownIn, conn=Depends(get_db)):
     cd = _countdown_from_in(body)
     cd.id = cd_id
     db.upsert_countdown(conn, cd)
+    db.sync_countdown_events(conn)
     conn.commit()
     return _countdown_to_json(conn, cd)
 
@@ -348,6 +350,7 @@ def update_countdown(cd_id: int, body: CountdownIn, conn=Depends(get_db)):
 @router.delete("/countdown/{cd_id}")
 def delete_countdown(cd_id: int, conn=Depends(get_db)):
     db.delete_countdown(conn, cd_id)
+    db.sync_countdown_events(conn)
     conn.commit()
     return {"ok": True}
 
@@ -374,6 +377,54 @@ def _countdown_to_json(conn, cd):
         if item["id"] == target_id:
             return item
     return cd.model_dump(mode="json")
+
+
+# ---------------------------------------------------------------------------
+# 设置：待办忙度算法配置
+# ---------------------------------------------------------------------------
+
+
+@router.get("/settings/todo-busy")
+def get_todo_busy_config(conn=Depends(get_db)):
+    return db.get_todo_busy_config(conn)
+
+
+@router.put("/settings/todo-busy")
+def put_todo_busy_config(body: dict, conn=Depends(get_db)):
+    cfg = db.DEFAULT_TODO_BUSY_CONFIG | body
+    db.set_todo_busy_config(conn, cfg)
+    conn.commit()
+    return cfg
+
+
+@router.post("/settings/todo-busy/recompute")
+def recompute_day_busy_all(conn=Depends(get_db)):
+    """调参后全量重算 day_busy：扫所有 todo 的受影响日期，逐个重算 predict + done。"""
+    cfg = db.get_todo_busy_config(conn)
+    # 找出所有受 todo 影响的日期（due_date + planned_date + date(completed_at)）
+    rows = conn.execute(
+        "SELECT id, due_date, planned_date, completed_at FROM todo "
+        "WHERE due_date IS NOT NULL OR planned_date IS NOT NULL OR completed_at IS NOT NULL"
+    ).fetchall()
+    dates: set[date_t] = set()
+    for r in rows:
+        for col in ("due_date", "planned_date"):
+            if r[col]:
+                try: dates.add(parse_date(r[col]))
+                except Exception: pass
+        if r["completed_at"]:
+            try: dates.add(datetime.fromisoformat(r["completed_at"]).date())
+            except Exception: pass
+    written = 0
+    for d in dates:
+        predict_todos = [t for t in db.fetch_todos_between(conn, d, d).get(d, [])
+                         if t.status != "completed"]
+        done_todos = db.fetch_todos_completed_on(conn, d)
+        predict_level = aggregator.compute_todo_busy_level(d, predict_todos, cfg, mode="predict")
+        done_level = aggregator.compute_todo_busy_level(d, done_todos, cfg, mode="done")
+        db.upsert_day_busy(conn, d, predict_level, done_level)
+        written += 1
+    return {"days_written": written}
 
 
 # ---------------------------------------------------------------------------
@@ -560,10 +611,60 @@ def _todo_from_in(body: TodoIn) -> Todo:
     )
 
 
+def _completed_date(t: Todo | None) -> date_t | None:
+    """提取 todo.completed_at 的 date 部分；为空或格式异常返回 None。
+    db._row_to_todo 会把 completed_at 解析成 datetime 对象，_todo_from_in 则保留字符串，
+    所以这里两种都要兼容。
+    """
+    if t is None or not t.completed_at:
+        return None
+    if isinstance(t.completed_at, datetime):
+        return t.completed_at.date()
+    try:
+        return datetime.fromisoformat(t.completed_at).date()
+    except Exception:
+        return None
+
+
+def _recompute_day_busy_for_todo(
+    conn,
+    todo_id: str,
+    old: Todo | None,
+    new: Todo | None,
+) -> None:
+    """todo CRUD 后增量刷新 day_busy 快照。
+
+    受影响日期 = old 的 (due, planned, completed_date) ∪ new 的 (due, planned, completed_date)
+    每个受影响日期都重算 predict_level + done_level 写回（不写就删除）。
+    """
+    cfg = db.get_todo_busy_config(conn)
+    dates: set[date_t] = set()
+    for t in (old, new):
+        if t is None:
+            continue
+        if t.due_date: dates.add(t.due_date)
+        if t.planned_date: dates.add(t.planned_date)
+        cd = _completed_date(t)
+        if cd: dates.add(cd)
+    if not dates:
+        return
+
+    today = date_t.today()
+    for d in dates:
+        start = end = d
+        predict_todos = [t for t in db.fetch_todos_between(conn, start, end).get(d, [])
+                         if t.status != "completed"]
+        done_todos = db.fetch_todos_completed_on(conn, d)
+        predict_level = aggregator.compute_todo_busy_level(d, predict_todos, cfg, mode="predict")
+        done_level = aggregator.compute_todo_busy_level(d, done_todos, cfg, mode="done")
+        db.upsert_day_busy(conn, d, predict_level, done_level)
+
+
 @router.post("/todo")
 def create_todo(body: TodoIn, conn=Depends(get_db)):
     t = _todo_from_in(body)
     db.upsert_todo(conn, t)
+    _recompute_day_busy_for_todo(conn, todo_id=t.id, old=None, new=t)
     conn.commit()
     return t.model_dump(mode="json")
 
@@ -571,19 +672,24 @@ def create_todo(body: TodoIn, conn=Depends(get_db)):
 @router.put("/todo/{todo_id}")
 def update_todo(todo_id: str, body: TodoIn, conn=Depends(get_db)):
     existing = conn.execute("SELECT completed_at FROM todo WHERE id = ?", (todo_id,)).fetchone()
+    old_todo = db.get_todo(conn, todo_id)
     t = _todo_from_in(body)
     t.id = todo_id
     # 保留已完成的 completed_at（避免每次 PUT 重置时间）
     if body.status == "completed" and existing and existing["completed_at"]:
         t.completed_at = datetime.fromisoformat(existing["completed_at"])
     db.upsert_todo(conn, t)
+    _recompute_day_busy_for_todo(conn, todo_id=todo_id, old=old_todo, new=t)
     conn.commit()
     return t.model_dump(mode="json")
 
 
 @router.delete("/todo/{todo_id}")
 def delete_todo(todo_id: str, conn=Depends(get_db)):
+    old_todo = db.get_todo(conn, todo_id)
     db.delete_todo(conn, todo_id)
+    if old_todo is not None:
+        _recompute_day_busy_for_todo(conn, todo_id=todo_id, old=old_todo, new=None)
     conn.commit()
     return {"ok": True}
 

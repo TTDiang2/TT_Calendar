@@ -1,6 +1,8 @@
+import { useQuery } from '@tanstack/react-query'
 import clsx from 'clsx'
 import type { Day, Layer, MonthData } from '../types'
-import { COLORING_COLORS, parseDate } from '../data'
+import { COLORING_COLORS, getBusyColors, parseDate, todayStr } from '../data'
+import { getTodoBusyConfig } from '../api/client'
 
 interface Props {
   monthData: MonthData
@@ -13,6 +15,7 @@ interface Props {
 const WEEK_NAMES = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 
 export function DayView({ monthData, layers, selectedDate, onSelect, onDoubleClick }: Props) {
+  const { data: busyConfig } = useQuery({ queryKey: ['todoBusyConfig'], queryFn: getTodoBusyConfig, staleTime: 60_000 })
   const day = monthData.days[0]
   if (!day) return <div className="flex-1 flex items-center justify-center text-gray-400">无数据</div>
 
@@ -32,6 +35,9 @@ export function DayView({ monthData, layers, selectedDate, onSelect, onDoubleCli
   }
   if (layerById.get('coloring')?.enabled && day.coloring_level != null) {
     colorLayers.push(COLORING_COLORS[day.coloring_level])
+  }
+  for (const b of getBusyColors(day, todayStr(), busyConfig)) {
+    if (layerById.get(b.id)?.enabled) colorLayers.push(b.color)
   }
   // 多个染色维度时按优先级取一个做色条（避免多条色条叠加）
   const barColor = colorLayers[0]

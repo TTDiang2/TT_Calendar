@@ -1,28 +1,35 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CalendarDays, CheckCircle2, Clock, Palette, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { CalendarDays, CheckCircle2, Clock, Palette, Pencil, Sparkles, Trash2 } from 'lucide-react'
 import clsx from 'clsx'
 import type { CalEvent, Day, Layer } from '../types'
-import { COLORING_COLORS, parseDate } from '../data'
-import { deleteEvent, updateTodo } from '../api/client'
+import { COLORING_COLORS, parseDate, TODO_BUSY_PREDICT_COLORS, TODO_BUSY_DONE_COLORS } from '../data'
+import { deleteEvent, deleteScheduleItem, getTodoBusyConfig, updateTodo } from '../api/client'
 
 interface Props {
   day: Day | null
   layers: Layer[]
   onEditEvent: (date: string, event: CalEvent) => void
-  onAddEvent: (date: string) => void
   onEditSchedule: (date: string) => void
   onSetColoring: (date: string) => void
   onAddDot: (date: string) => void
   onAddColor: (date: string) => void
 }
 
-export function DetailPanel({ day, layers, onEditEvent, onAddEvent, onEditSchedule, onSetColoring, onAddDot, onAddColor }: Props) {
+export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetColoring, onAddDot, onAddColor }: Props) {
   const qc = useQueryClient()
+  const { data: busyConfig } = useQuery({ queryKey: ['todoBusyConfig'], queryFn: getTodoBusyConfig, staleTime: 60_000 })
   const delMut = useMutation({
     mutationFn: (id: number) => deleteEvent(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['view'] })
       qc.invalidateQueries({ queryKey: ['countdown'] })
+    },
+  })
+  const delScheduleMut = useMutation({
+    mutationFn: (id: number) => deleteScheduleItem(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['view'] })
+      qc.invalidateQueries({ queryKey: ['scheduleItems'] })
     },
   })
   const toggleTodoMut = useMutation({
@@ -63,13 +70,6 @@ export function DetailPanel({ day, layers, onEditEvent, onAddEvent, onEditSchedu
             {day.is_today && <span className="ml-2 text-blue-500 text-xs">今天</span>}
           </p>
         </div>
-        <button
-          onClick={() => onAddEvent(day.date)}
-          className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50"
-          title="新建事件"
-        >
-          <Plus size={18} />
-        </button>
       </div>
 
       <div className="flex gap-1 mb-4">
@@ -104,20 +104,79 @@ export function DetailPanel({ day, layers, onEditEvent, onAddEvent, onEditSchedu
         </div>
       )}
 
+      {(day.predict_level != null || day.done_level != null) && (
+        <div className="mb-3 space-y-1.5">
+          <p className="text-[11px] text-gray-400">待办忙度</p>
+          {day.predict_level != null && (
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-gray-500 w-12 flex-shrink-0">未来</span>
+              <div className="flex-1 flex gap-px h-2 rounded overflow-hidden">
+                {(busyConfig?.predict_colors ?? TODO_BUSY_PREDICT_COLORS).map((c, i) => (
+                  <div key={i} className="flex-1" style={{ backgroundColor: c, opacity: i <= day.predict_level! ? 1 : 0.3 }} />
+                ))}
+              </div>
+              <span className="text-xs text-gray-500">{day.predict_level! + 1}/5</span>
+            </div>
+          )}
+          {day.done_level != null && (
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-gray-500 w-12 flex-shrink-0">过去</span>
+              <div className="flex-1 flex gap-px h-2 rounded overflow-hidden">
+                {(busyConfig?.done_colors ?? TODO_BUSY_DONE_COLORS).map((c, i) => (
+                  <div key={i} className="flex-1" style={{ backgroundColor: c, opacity: i <= day.done_level! ? 1 : 0.3 }} />
+                ))}
+              </div>
+              <span className="text-xs text-gray-500">{day.done_level! + 1}/5</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {(day.schedule_items?.length ?? 0) > 0 && (
         <div className="mb-4">
-          <div className="flex items-center gap-1 mb-1.5 text-xs text-gray-400">
-            <Clock size={12} /> 日程
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1 text-xs text-gray-400">
+              <Clock size={12} /> 日程
+            </div>
+            <button
+              onClick={() => onEditSchedule(day.date)}
+              className="text-[11px] text-gray-400 hover:text-blue-500"
+              title="编辑全部日程"
+            >
+              编辑
+            </button>
           </div>
           <div className="space-y-1">
             {[...(day.schedule_items ?? [])]
               .sort((a, b) => (a.start_time ?? '').localeCompare(b.start_time ?? ''))
               .map((it) => (
-                <Row
+                <div
                   key={it.id ?? `${it.title}-${it.start_time}`}
-                  label={it.start_time ? (it.end_time ? `${it.start_time}-${it.end_time}` : it.start_time) : '全天'}
-                  text={it.title}
-                />
+                  className="flex items-center gap-1.5 group rounded -mx-1 px-1 py-0.5 hover:bg-gray-50"
+                >
+                  <span className="text-gray-400 flex-shrink-0 tabular-nums whitespace-nowrap text-sm">
+                    {it.start_time ? (it.end_time ? `${it.start_time}-${it.end_time}` : it.start_time) : '全天'}
+                  </span>
+                  <span className="text-sm text-gray-700 flex-1 min-w-0 truncate">{it.title}</span>
+                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition flex-shrink-0">
+                    <button
+                      onClick={() => onEditSchedule(day.date)}
+                      className="p-1 text-gray-400 hover:text-blue-500"
+                      title="编辑日程"
+                    >
+                      <Pencil size={12} />
+                    </button>
+                    {it.id && (
+                      <button
+                        onClick={() => delScheduleMut.mutate(it.id!)}
+                        className="p-1 text-gray-400 hover:text-red-500"
+                        title="删除这条日程"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </div>
+                </div>
               ))}
           </div>
         </div>
@@ -206,14 +265,5 @@ export function DetailPanel({ day, layers, onEditEvent, onAddEvent, onEditSchedu
         </div>
       )}
     </aside>
-  )
-}
-
-function Row({ label, text }: { label: string; text: string }) {
-  return (
-    <div className="flex gap-2 text-sm items-baseline">
-      <span className="text-gray-400 flex-shrink-0 tabular-nums whitespace-nowrap">{label}</span>
-      <span className="text-gray-700">{text}</span>
-    </div>
   )
 }

@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import clsx from 'clsx'
 import { Trash2 } from 'lucide-react'
 import { Modal, Field } from './ui/Modal'
-import { toggleLayer, importJisilu, getLayerSubActions, updateLayerConfig, deleteLayer } from '../api/client'
+import {
+  toggleLayer, importJisilu, getLayerSubActions, updateLayerConfig, deleteLayer,
+  getTodoBusyConfig, setTodoBusyConfig, recomputeTodoBusy, type TodoBusyConfig,
+} from '../api/client'
 import type { Layer } from '../types'
 
 interface Props {
@@ -92,11 +95,146 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
             </div>
           )}
         </section>
+
+        <BusyConfigSection />
       </div>
       <p className="mt-5 pt-3 border-t border-gray-100 text-center text-[11px] text-gray-400 select-none">
         TT Calendar <span className="font-medium">v0.4.2-dragfix</span>
       </p>
     </Modal>
+  )
+}
+
+function BusyConfigSection() {
+  const qc = useQueryClient()
+  const { data: cfg } = useQuery({ queryKey: ['todoBusyConfig'], queryFn: getTodoBusyConfig, staleTime: 60_000 })
+  const [local, setLocal] = useState<TodoBusyConfig | null>(null)
+  const [msg, setMsg] = useState<string | null>(null)
+  useEffect(() => {
+    if (cfg && !local) setLocal(cfg)
+  }, [cfg, local])
+
+  const saveMut = useMutation({
+    mutationFn: async () => {
+      if (!local) return
+      await setTodoBusyConfig(local)
+      const res = await recomputeTodoBusy()
+      return res.days_written
+    },
+    onSuccess: (days) => {
+      qc.invalidateQueries({ queryKey: ['todoBusyConfig'] })
+      qc.invalidateQueries({ queryKey: ['view'] })
+      setMsg(`已保存并重算 ${days} 天的忙度快照`)
+    },
+  })
+
+  const setNum = (path: (string | number)[], v: string) => {
+    if (!local) return
+    const n = Number(v)
+    if (Number.isNaN(n)) return
+    setLocal((prev) => {
+      const next = structuredClone(prev)
+      const root = next as unknown as Record<string, unknown>
+      let cur: Record<string, unknown> = root
+      for (let i = 0; i < path.length - 1; i++) {
+        cur = cur[path[i]] as Record<string, unknown>
+      }
+      cur[path[path.length - 1]] = n
+      return next
+    })
+  }
+
+  return (
+    <section>
+      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">待办忙度</h3>
+      <p className="text-xs text-gray-400 mb-2">
+        预测层：未完成待办按「截止×5 + 计划×3 + 重要度 + 复杂度」加权，用于未来日期；实际层：勾选当天计分，用于过去日期。
+      </p>
+      {!local ? (
+        <p className="text-sm text-gray-400">加载中…</p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-2">
+            <Field label="截止权重">
+              <input type="number" step="0.5" className="tt-input w-full" value={local.weights.due_date}
+                onChange={(e) => setNum(['weights', 'due_date'], e.target.value)} />
+            </Field>
+            <Field label="计划权重">
+              <input type="number" step="0.5" className="tt-input w-full" value={local.weights.planned_date}
+                onChange={(e) => setNum(['weights', 'planned_date'], e.target.value)} />
+            </Field>
+          </div>
+          <div className="flex gap-2">
+            <Field label="重要度 高/中/低">
+              <div className="flex gap-1">
+                {(['high', 'medium', 'low'] as const).map((k) => (
+                  <input key={k} type="number" step="0.5" className="tt-input w-14" value={local.weights.importance[k]}
+                    onChange={(e) => setNum(['weights', 'importance', k], e.target.value)} />
+                ))}
+              </div>
+            </Field>
+            <Field label="复杂度 高/中/低">
+              <div className="flex gap-1">
+                {(['high', 'medium', 'low'] as const).map((k) => (
+                  <input key={k} type="number" step="0.5" className="tt-input w-14" value={local.weights.complexity[k]}
+                    onChange={(e) => setNum(['weights', 'complexity', k], e.target.value)} />
+                ))}
+              </div>
+            </Field>
+          </div>
+          <Field label="分档阈值（5 个）">
+            <div className="flex gap-1">
+              {local.thresholds.map((t, i) => (
+                <input key={i} type="number" className="tt-input w-12" value={t}
+                  onChange={(e) => {
+                    const n = Number(e.target.value)
+                    if (Number.isNaN(n)) return
+                    const next = structuredClone(local)
+                    next.thresholds[i] = n
+                    setLocal(next)
+                  }} />
+              ))}
+            </div>
+          </Field>
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] text-gray-500 flex-shrink-0">预测层</span>
+            <div className="flex gap-1">
+              {local.predict_colors.map((c, i) => (
+                <input key={i} type="color" value={c} title={`档位 ${i + 1}`}
+                  onChange={(e) => {
+                    const next = structuredClone(local)
+                    next.predict_colors[i] = e.target.value
+                    setLocal(next)
+                  }} />
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] text-gray-500 flex-shrink-0">实际层</span>
+            <div className="flex gap-1">
+              {local.done_colors.map((c, i) => (
+                <input key={i} type="color" value={c} title={`档位 ${i + 1}`}
+                  onChange={(e) => {
+                    const next = structuredClone(local)
+                    next.done_colors[i] = e.target.value
+                    setLocal(next)
+                  }} />
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => saveMut.mutate()}
+              disabled={saveMut.isPending}
+              className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40"
+            >
+              {saveMut.isPending ? '保存中…' : '保存并重算'}
+            </button>
+            {msg && <span className="text-sm text-green-600">{msg}</span>}
+          </div>
+        </div>
+      )}
+    </section>
   )
 }
 

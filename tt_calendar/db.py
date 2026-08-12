@@ -119,6 +119,13 @@ CREATE INDEX IF NOT EXISTS idx_todo_list   ON todo(list_id);
 CREATE INDEX IF NOT EXISTS idx_todo_due    ON todo(due_date);
 CREATE INDEX IF NOT EXISTS idx_todo_status ON todo(status);
 
+CREATE TABLE IF NOT EXISTS day_busy (
+    date          TEXT PRIMARY KEY,
+    predict_level INTEGER,
+    done_level    INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_day_busy_date ON day_busy(date);
+
 CREATE TABLE IF NOT EXISTS countdown (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
     name           TEXT NOT NULL,
@@ -231,6 +238,64 @@ def set_meta(conn: sqlite3.Connection, key: str, value: str) -> None:
             "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
             (key, value),
         )
+
+
+# 待办忙度配置：双图层（预测/实际活动量），共用 weights+thresholds+双调色板
+TODO_BUSY_CONFIG_KEY = "todo_busy_config_v1"
+
+DEFAULT_TODO_BUSY_CONFIG: dict = {
+    "weights": {
+        "due_date": 5,
+        "planned_date": 3,
+        "importance": {"high": 3, "medium": 2, "low": 1},
+        "complexity": {"high": 2, "medium": 1.5, "low": 1},
+    },
+    "thresholds": [0, 3, 8, 15, 25],
+    "predict_colors": ["#FEF3C7", "#FDE68A", "#FBBF24", "#F59E0B", "#B45309"],
+    "done_colors":    ["#E0E7FF", "#C7D2FE", "#818CF8", "#4F46E5", "#3730A3"],
+}
+
+
+def get_todo_busy_config(conn) -> dict:
+    """读取待办忙度配置；不存在或损坏则返回默认值。"""
+    raw = get_meta(conn, TODO_BUSY_CONFIG_KEY)
+    if not raw:
+        return DEFAULT_TODO_BUSY_CONFIG
+    try:
+        cfg = json.loads(raw)
+        for k, v in DEFAULT_TODO_BUSY_CONFIG.items():
+            cfg.setdefault(k, v)
+        return cfg
+    except Exception:
+        return DEFAULT_TODO_BUSY_CONFIG
+
+
+def set_todo_busy_config(conn, cfg: dict) -> None:
+    """写入待办忙度配置（JSON 字符串）。"""
+    set_meta(conn, TODO_BUSY_CONFIG_KEY, json.dumps(cfg, ensure_ascii=False))
+
+
+def upsert_day_busy(conn, date_: date_t, predict_level: int | None, done_level: int | None) -> None:
+    """写入某日的双层忙度快照。level=None 表示该层无数据。"""
+    with cursor(conn) as cur:
+        cur.execute(
+            "INSERT INTO day_busy(date, predict_level, done_level) VALUES(?, ?, ?) "
+            "ON CONFLICT(date) DO UPDATE SET "
+            "predict_level=excluded.predict_level, done_level=excluded.done_level",
+            (date_.isoformat(), predict_level, done_level),
+        )
+
+
+def fetch_day_busy_between(conn, start: date_t, end: date_t) -> dict[date_t, tuple[int | None, int | None]]:
+    """取 [start, end] 区间的 day_busy 快照，按日期分组。"""
+    rows = conn.execute(
+        "SELECT date, predict_level, done_level FROM day_busy WHERE date >= ? AND date <= ?",
+        (start.isoformat(), end.isoformat()),
+    ).fetchall()
+    out: dict[date_t, tuple[int | None, int | None]] = {}
+    for r in rows:
+        out[parse_date(r["date"])] = (r["predict_level"], r["done_level"])
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -885,6 +950,25 @@ def ensure_todo_layer(conn: sqlite3.Connection) -> None:
     )
 
 
+def ensure_todo_done_layer(conn: sqlite3.Connection) -> None:
+    """幂等插入 todo_done 图层（实际活动量，过去日期的「勾掉了多少」加权染色）。"""
+
+    row = conn.execute("SELECT 1 FROM layer_config WHERE layer_id = ?", ("todo_done",)).fetchone()
+    if row:
+        return
+    upsert_layer_config(
+        conn,
+        LayerConfig(
+            layer_id="todo_done",
+            display_name="待办·已完成",
+            enabled=True,
+            color="#818CF8",
+            sort_order=5,
+            kind="color",
+        ),
+    )
+
+
 SCHEDULE_CATEGORIES: list[tuple[str, str, str, int]] = [
     # (category, display_name, color, sort_order)
     ("work", "工作", "#3D6BFB", 0),
@@ -1019,6 +1103,21 @@ def reorder_todos(conn: sqlite3.Connection, ordered_ids: list[str]) -> None:
     with cursor(conn) as cur:
         for i, tid in enumerate(ordered_ids):
             cur.execute("UPDATE todo SET sort_order = ? WHERE id = ?", (i, tid))
+
+
+def get_todo(conn: sqlite3.Connection, todo_id: str) -> Todo | None:
+    """按 id 取单条 todo；不存在返回 None。"""
+    row = conn.execute("SELECT * FROM todo WHERE id = ?", (todo_id,)).fetchone()
+    return _row_to_todo(row) if row else None
+
+
+def fetch_todos_completed_on(conn: sqlite3.Connection, d: date_t) -> list[Todo]:
+    """取所有 completed_at 日期 = d 的 todo（无论 due_date 在哪天），用于实际活动量算法。"""
+    rows = conn.execute(
+        "SELECT * FROM todo WHERE completed_at IS NOT NULL AND date(completed_at) = ?",
+        (d.isoformat(),),
+    ).fetchall()
+    return [_row_to_todo(r) for r in rows]
 
 
 _TODO_SORT_SQL = {
@@ -1228,3 +1327,93 @@ def upsert_countdown(conn: sqlite3.Connection, cd) -> None:
 def delete_countdown(conn: sqlite3.Connection, cd_id: int) -> None:
     with cursor(conn) as cur:
         cur.execute("DELETE FROM countdown WHERE id = ?", (cd_id,))
+
+
+_CN_DIGITS = "零一二三四五六七八九"
+
+
+def _cn_num(n: int) -> str:
+    if n <= 0:
+        return _CN_DIGITS[0]
+    if n < 10:
+        return _CN_DIGITS[n]
+    if n < 20:
+        return "十" if n == 10 else "十" + _CN_DIGITS[n - 10]
+    tens, ones = divmod(n, 10)
+    return _CN_DIGITS[tens] + "十" + (_CN_DIGITS[ones] if ones else "")
+
+
+def _countdown_event_specs(cd, today: date_t) -> list[tuple[date_t, str, int, str, int]]:
+    """根据单条 countdown 推导出 (date, title, offset, color, sort_key) 列表。"""
+
+    name = cd.name
+    base = cd.base_date
+    base_color = cd.color or "#FF4D4D"
+    out: list[tuple[date_t, str, int, str, int]] = []
+
+    if cd.repeat_yearly:
+        for year_offset in range(-5, 11):
+            try:
+                d = base.replace(year=today.year + year_offset)
+            except ValueError:
+                d = base.replace(year=today.year + year_offset, day=28)
+            out.append((d, name, 0, base_color, 0))
+    else:
+        out.append((base, name, 0, base_color, 0))
+
+    if cd.milestone_rule:
+        for raw in cd.milestone_rule.split(","):
+            raw = raw.strip()
+            if not raw.isdigit():
+                continue
+            days = int(raw)
+            d = base + timedelta(days=days)
+            if days > 0 and days % 365 == 0:
+                label = f"{_cn_num(days // 365)}周年"
+            else:
+                label = f"{days} 天"
+            out.append((d, f"{name} {label}", days, "#FFB0B0", 1))
+
+    return out
+
+
+def sync_countdown_events(conn: sqlite3.Connection) -> int:
+    """根据 countdown 表重新生成 important 图层事件。
+
+    countdown 表是纪念日/生日/节日的真源；events 表里 important 图层的事件
+    只是月视图等渲染用的派生数据。每次 countdown 增删改后调用本函数，确保
+    两张表一致——否则会出现「在倒数日里改了日期，月视图里旧日期的色点/文字
+    还在、新日期没有」的脱节。
+
+    保留 source='manual' 的手动事件；删除 source='migrated'/'countdown' 的
+    派生事件后按当前 countdown 重新生成。返回写入事件数。
+    """
+
+    today = date_t.today()
+    with cursor(conn) as cur:
+        cur.execute(
+            "DELETE FROM events WHERE layer_id = ? AND source IN ('migrated', 'countdown')",
+            (cfg.LayerID.IMPORTANT,),
+        )
+
+    written = 0
+    for cd in fetch_countdowns(conn):
+        for d, title, offset, color, sort_key in _countdown_event_specs(cd, today):
+            ev = Event(
+                layer_id=cfg.LayerID.IMPORTANT,
+                source="countdown",
+                date=d,
+                title=title,
+                description=None,
+                color=color,
+                extra={
+                    "auto": offset != 0,
+                    "offset": offset,
+                    "countdown_id": cd.id,
+                },
+                source_ref=f"countdown::{cd.id}::off{offset}::{d.isoformat()}",
+                sort_key=sort_key,
+            )
+            upsert_event(conn, ev)
+            written += 1
+    return written

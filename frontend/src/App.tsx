@@ -287,7 +287,6 @@ export default function App() {
                 day={selectedDay}
                 layers={layers}
                 onEditEvent={openEvent}
-                onAddEvent={(d) => openEvent(d)}
                 onEditSchedule={(d) => setDialog({ kind: 'schedule', date: d })}
                 onSetColoring={(d) => setDialog({ kind: 'coloring', date: d })}
                 onAddDot={(d) => setDialog({ kind: 'dot', date: d })}

@@ -158,6 +158,20 @@ Start-Process "TT-Calendar-Launcher.exe"
 - 之前多次"修好又坏"，是因为一直在调第 1、3 层（build/缓存），而真正的病在**第 2 层（sidecar 里的 CORS）**。sidecar 是 8/5 打包的，早于 main.py 加 CORS 白名单，一直没人重建它。
 - 用浏览器验证（5173 正常）会**强烈误导**排查方向，因为浏览器走 dev 后端，CORS 白名单里一直有它。
 
+**反向踩坑（2026-08-12，UI 改动后看不到）**：
+
+- 现象：纯前端业务改动（DetailPanel/DotEntryDialog/ColorEntryDialog 改 dot/color 图层过滤、日程区加编辑/删除按钮、删 Plus 加号按钮），dev 前端（HMR）看着生效，但用户**唤起 TT Calendar.exe 看不出任何变化**。
+- 排查：按 §7 方法在 exe 里搜新代码字符串（如「（隐藏）」）→ 0 次命中；搜新 dist 文件名 hash → 旧 hash 在、新 hash 不在 → **exe 内嵌的还是旧 dist**。
+- 根因：跟"sidecar CORS 旧"是**对称的反例**——这次是**第 1 层（前端 dist）+ 第 3 层（WebView2 缓存）漏更新**。改 `frontend/src/*.tsx` 后：
+  - **dev 前端（vite HMR）** 自动热更新 → 浏览器立刻能看到
+  - **Tauri exe 内嵌的是构建时的 dist** → 改了 src 不重 build，exe 加载的还是旧 dist
+  - 即便重 build 了，WebView2 缓存目录 `%LOCALAPPDATA%\com.tt.calendar` 还在，会优先用缓存的旧版
+- 修复：杀进程 → `npm run build` → `npx tauri build --no-bundle` → 复制 `target/release/app.exe` 为项目根 `TT Calendar.exe` → 删 `%LOCALAPPDATA%\com.tt.calendar` → 启动 launcher。验证：新 dist hash 在新 exe 里 1 次，旧的 0 次；4 个 API 请求 200 无重试。
+
+**核心方法论（双向都对）**：改任何业务代码后，**别只用 dev 前端（5173）判断"改完了"**。5173 能看到 ≠ exe 能看到。
+- 5173 ≠ exe 体现在三处：① dev 后端 vs sidecar 后端；② vite HMR vs 内嵌 dist；③ 浏览器 vs WebView2（CORS / 拖拽 / 缓存路径都不同）。
+- 唯一可靠的事后验证：按 §7 字符串搜新 exe，确认新 hash / 新字符串存在 + launcher 启动后 4 个 API 200 无重试。
+
 ---
 
 ## 6. 一键更新脚本（build_and_update_exe.bat）

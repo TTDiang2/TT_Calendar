@@ -1,5 +1,54 @@
 export const COLORING_COLORS = ['#f1f8f4', '#c8e6c9', '#81c784', '#388e3c', '#1b5e20']
 
+// 待办忙度双调色板：predict = 未来（琥珀），done = 过去（钢蓝）
+export const TODO_BUSY_PREDICT_COLORS = ['#fef3c7', '#fde68a', '#fbbf24', '#f59e0b', '#b45309']
+export const TODO_BUSY_DONE_COLORS    = ['#e0e7ff', '#c7d2fe', '#818cf8', '#4f46e5', '#3730a3']
+
+// 解析 'YYYY-MM-DD' 为本地 date（避开 toISOString 的 UTC 偏移问题）
+export function parseDateStr(s: string): Date {
+  const { y, m, d } = parseDate(s)
+  return new Date(y, m - 1, d)
+}
+
+export function todayStr(): string {
+  const n = new Date()
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`
+}
+
+// 给 day + today + config（可选），返回当日应展示的忙度图层颜色数组：
+//   过去日期返回 done 色；今天双层（done 在下、predict 在上）；未来返回 predict 色
+// 颜色从 config.predict_colors / config.done_colors 取，缺省走 TODO_BUSY_*_COLORS
+export function getBusyColors(
+  day: { date: string; predict_level: number | null; done_level: number | null },
+  todayStr: string,
+  config?: { predict_colors?: string[]; done_colors?: string[] },
+): { id: string; color: string }[] {
+  const predictColors = config?.predict_colors ?? TODO_BUSY_PREDICT_COLORS
+  const doneColors = config?.done_colors ?? TODO_BUSY_DONE_COLORS
+  const isPast = day.date < todayStr
+  const isToday = day.date === todayStr
+  const out: { id: string; color: string }[] = []
+  if (isPast) {
+    if (day.done_level != null && day.done_level >= 0 && day.done_level < 5) {
+      out.push({ id: 'todo_done', color: doneColors[day.done_level] })
+    }
+    return out
+  }
+  if (isToday) {
+    if (day.predict_level != null && day.predict_level >= 0 && day.predict_level < 5) {
+      out.push({ id: 'todo', color: predictColors[day.predict_level] })
+    }
+    if (day.done_level != null && day.done_level >= 0 && day.done_level < 5) {
+      out.push({ id: 'todo_done', color: doneColors[day.done_level] })
+    }
+    return out
+  }
+  if (day.predict_level != null && day.predict_level >= 0 && day.predict_level < 5) {
+    out.push({ id: 'todo', color: predictColors[day.predict_level] })
+  }
+  return out
+}
+
 export function parseDate(s: string): { y: number; m: number; d: number } {
   const [y, m, d] = s.split('-').map(Number)
   return { y, m, d }

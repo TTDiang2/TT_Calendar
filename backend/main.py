@@ -30,6 +30,7 @@ async def lifespan(app: FastAPI):
         db.migrate_schedule_to_items(conn)
         db.ensure_schedule_category_layers(conn)
         db.backfill_layer_kind_group(conn)
+        db.sync_countdown_events(conn)
         conn.commit()
         yield
     finally:

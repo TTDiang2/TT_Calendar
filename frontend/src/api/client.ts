@@ -121,6 +121,24 @@ export const getStatsSummary = () => get<StatsSummary>('/stats/summary')
 export const importJisilu = (start: string, end: string, qtypes?: string[]) =>
   post<{ inserted: number; error: string | null }>('/import/jisilu', { start, end, qtypes })
 
+// 待办忙度算法配置
+export interface TodoBusyConfig {
+  weights: {
+    due_date: number
+    planned_date: number
+    importance: { high: number; medium: number; low: number }
+    complexity: { high: number; medium: number; low: number }
+  }
+  thresholds: number[]
+  predict_colors: string[]
+  done_colors: string[]
+}
+export const getTodoBusyConfig = () => get<TodoBusyConfig>('/settings/todo-busy')
+export const setTodoBusyConfig = (cfg: Partial<TodoBusyConfig>) =>
+  put<TodoBusyConfig>('/settings/todo-busy', cfg)
+export const recomputeTodoBusy = () =>
+  post<{ days_written: number }>('/settings/todo-busy/recompute')
+
 // Todo 列表
 export const getTodoLists = () => get<TodoList[]>('/todo/lists')
 export const createTodoList = (display_name: string) =>

@@ -1,7 +1,9 @@
 import { Fragment, memo, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import clsx from 'clsx'
 import type { Day, Layer } from '../types'
-import { COLORING_COLORS, parseDate, pickContrastColor } from '../data'
+import { COLORING_COLORS, getBusyColors, parseDate, pickContrastColor, todayStr } from '../data'
+import { getTodoBusyConfig } from '../api/client'
 
 interface Props {
   day: Day
@@ -19,6 +21,7 @@ interface Props {
 
 export const DayCell = memo(function DayCell({ day, layers, selected, dragOver, onClick, onDoubleClick, onContextMenu, onDragStart, onDragEnter, onDrop, maxLabels = 3 }: Props) {
   const { d } = parseDate(day.date)
+  const { data: busyConfig } = useQuery({ queryKey: ['todoBusyConfig'], queryFn: getTodoBusyConfig, staleTime: 60_000 })
 
   const visibleEvents = useMemo(() => {
     // important/schedule 图层的事件始终显示（开关只控染色）；其他图层按开关过滤
@@ -70,9 +73,8 @@ export const DayCell = memo(function DayCell({ day, layers, selected, dragOver, 
   if (layerById.get('holiday')?.enabled && day.holiday?.name) {
     colorLayers.push({ id: 'holiday', color: layerById.get('holiday')!.color ?? '#8E24AA' })
   }
-  const activeTodos = day.todos?.filter((t) => t.status !== 'completed') ?? []
-  if (layerById.get('todo')?.enabled && activeTodos.length > 0) {
-    colorLayers.push({ id: 'todo', color: layerById.get('todo')!.color ?? '#F59E0B' })
+  for (const b of getBusyColors(day, todayStr(), busyConfig)) {
+    if (layerById.get(b.id)?.enabled) colorLayers.push(b)
   }
   if (day.custom_bg && day.custom_bg.color) {
     colorLayers.push({ id: 'custom', color: day.custom_bg.color })

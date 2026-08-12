@@ -533,11 +533,14 @@ export function DotEntryDialog({
   onClose: () => void
 }) {
   const qc = useQueryClient()
-  // 点点图层候选：schedule_*（日程，转 schedule_item）、custom dot 图层、important（事件）
-  const dotLayers = layers.filter((l) => l.kind === 'dot' && l.enabled)
+  // 点点图层候选：schedule_*（日程）、自定义 dot 图层、其他非外部数据源的 dot 图层
+  // 不限 enabled（让用户能给隐藏中的图层添加内容），排除 jisilu_* 外部数据源（手动加会被同步覆盖）
+  const dotLayers = layers.filter((l) =>
+    l.kind === 'dot' && !l.layer_id.startsWith('jisilu_'),
+  )
   const scheduleCatLayers = dotLayers.filter((l) => l.layer_id.startsWith('schedule_'))
   const otherDotLayers = dotLayers.filter((l) => !l.layer_id.startsWith('schedule_') && l.layer_id !== 'schedule')
-  const firstOpt = scheduleCatLayers[0] ?? otherDotLayers[0]
+  const firstOpt = scheduleCatLayers.find((l) => l.enabled) ?? otherDotLayers.find((l) => l.enabled) ?? scheduleCatLayers[0] ?? otherDotLayers[0]
   const [targetLayer, setTargetLayer] = useState<string>(firstOpt?.layer_id ?? '')
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('10:00')
@@ -577,12 +580,20 @@ export function DotEntryDialog({
           <select className="tt-input" value={targetLayer} onChange={(e) => setTargetLayer(e.target.value)}>
             {scheduleCatLayers.length > 0 && (
               <optgroup label="日程">
-                {scheduleCatLayers.map((l) => <option key={l.layer_id} value={l.layer_id}>{l.display_name}</option>)}
+                {scheduleCatLayers.map((l) => (
+                  <option key={l.layer_id} value={l.layer_id}>
+                    {l.display_name}{l.enabled ? '' : '（隐藏）'}
+                  </option>
+                ))}
               </optgroup>
             )}
             {otherDotLayers.length > 0 && (
               <optgroup label="其他">
-                {otherDotLayers.map((l) => <option key={l.layer_id} value={l.layer_id}>{l.display_name}</option>)}
+                {otherDotLayers.map((l) => (
+                  <option key={l.layer_id} value={l.layer_id}>
+                    {l.display_name}{l.enabled ? '' : '（隐藏）'}
+                  </option>
+                ))}
               </optgroup>
             )}
           </select>
@@ -633,10 +644,16 @@ export function ColorEntryDialog({
   onClose: () => void
 }) {
   const qc = useQueryClient()
-  const colorLayers = layers.filter((l) => l.kind === 'color' && l.enabled)
-  const customColor = colorLayers.find((l) => l.layer_id.startsWith('custom_'))
-  const coloringLayer = colorLayers.find((l) => l.layer_id === 'coloring')
-  const firstOpt = customColor ?? coloringLayer
+  // 涂色图层候选：coloring（充实度）、important/holiday/todo（内置）、custom_*（自定义涂色）
+  // 不限 enabled，让用户能给隐藏中的涂色图层添加标记；coloring 是最常用，默认选它
+  const colorLayers = layers.filter((l) =>
+    l.kind === 'color' && !l.layer_id.startsWith('jisilu_'),
+  )
+  const firstOpt =
+    colorLayers.find((l) => l.layer_id === 'coloring') ??
+    colorLayers.find((l) => l.layer_id.startsWith('custom_') && l.enabled) ??
+    colorLayers.find((l) => l.layer_id === 'important') ??
+    colorLayers[0]
   const [targetLayer, setTargetLayer] = useState<string>(firstOpt?.layer_id ?? '')
   const [pickedColor, setPickedColor] = useState<string | null>(null)
   const [level, setLevel] = useState<number>(2)
@@ -668,12 +685,32 @@ export function ColorEntryDialog({
     },
   })
 
+  const builtinLayers = colorLayers.filter((l) => !l.layer_id.startsWith('custom_'))
+  const customLayers = colorLayers.filter((l) => l.layer_id.startsWith('custom_'))
+
   return (
     <Modal title={`新增涂色 ${date}`} onClose={onClose} width={440}>
       <div className="flex flex-col gap-3">
         <Field label="选择涂色图层">
           <select className="tt-input" value={targetLayer} onChange={(e) => { setTargetLayer(e.target.value); setPickedColor(null) }}>
-            {colorLayers.map((l) => <option key={l.layer_id} value={l.layer_id}>{l.display_name}</option>)}
+            {builtinLayers.length > 0 && (
+              <optgroup label="内置">
+                {builtinLayers.map((l) => (
+                  <option key={l.layer_id} value={l.layer_id}>
+                    {l.display_name}{l.enabled ? '' : '（隐藏）'}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {customLayers.length > 0 && (
+              <optgroup label="自定义">
+                {customLayers.map((l) => (
+                  <option key={l.layer_id} value={l.layer_id}>
+                    {l.display_name}{l.enabled ? '' : '（隐藏）'}
+                  </option>
+                ))}
+              </optgroup>
+            )}
           </select>
         </Field>
 

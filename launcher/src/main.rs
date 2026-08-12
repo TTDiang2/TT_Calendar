@@ -1,10 +1,11 @@
-// TT Calendar Launcher: 拉起内嵌 Python 的 backend exe，启动前清理端口残留，
-// HTTP /health 轮询确认 ready，backend + 界面同 Job Object 一起死。日志写 launcher.log
+// TT Calendar Launcher: 拉起 backend（优先系统 Python，回退 PyInstaller exe），
+// 启动前清理端口残留，HTTP /health 轮询确认 ready（不是只 TCP connect），
+// backend + 界面同 Job Object 一起死。日志写 launcher.log
 #![windows_subsystem = "windows"]
 
 use std::env;
 use std::fs::OpenOptions;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpStream};
 use std::os::windows::io::AsRawHandle;
 use std::os::windows::process::CommandExt;
@@ -51,39 +52,16 @@ fn main() {
             std::process::exit(1);
         }
     };
-    let backend_exe = match find_file(
-        &exe_dir,
-        &["tt-calendar-backend.exe", "tt-calendar-backend-x64.exe"],
-    ) {
-        Some(p) => p,
-        None => {
-            log(format!("ERROR tt-calendar-backend.exe not found near {}", exe_dir.display()));
-            std::process::exit(1);
-        }
-    };
-    log(format!("pake={} backend={}", pake.display(), backend_exe.display()));
 
     // 启动前清理 8765 残留：上次 backend 若未被 Job Object 完全回收，TCP 轮询会误判 ready
     ensure_port_free(PORT);
 
     let job = create_job();
 
-    log("spawning backend...");
-    let mut backend_cmd = Command::new(&backend_exe);
-    backend_cmd
-        .current_dir(&exe_dir)
-        .creation_flags(CREATE_NO_WINDOW);
-    let err_path = exe_dir.join("backend.stderr.log");
-    let out_path = exe_dir.join("backend.stdout.log");
-    if let Ok(f) = std::fs::File::create(&err_path) {
-        backend_cmd.stderr(std::process::Stdio::from(f));
-    }
-    if let Ok(f) = std::fs::File::create(&out_path) {
-        backend_cmd.stdout(std::process::Stdio::from(f));
-    }
-    let mut backend_proc = match spawn_into_job(&mut backend_cmd, job) {
-        Ok(c) => {
-            log(format!("backend spawned pid={}", c.id()));
+    // 后端启动策略：优先用系统 Python（启动快，~1.5s），找不到或依赖不全则回退 PyInstaller exe
+    let mut backend_proc = match spawn_backend(&exe_dir, job) {
+        Ok((c, mode)) => {
+            log(format!("backend spawned pid={} via {}", c.id(), mode));
             c
         }
         Err(e) => {
@@ -92,21 +70,21 @@ fn main() {
         }
     };
 
-    // HTTP /health 轮询替代纯 TCP connect：确认 backend 已完成 lifespan startup 并真正响应
+    // HTTP /health 轮询：必须收到真 200，确认 lifespan startup 已完成、首个前端请求不会被卡
     let t0 = Instant::now();
-    let ready = wait_for_health(PORT, 20_000);
+    let ready = wait_for_health(PORT, 30_000);
     log(format!(
         "backend ready={} after {:.2}s",
         ready,
         t0.elapsed().as_secs_f64()
     ));
     if !ready {
-        log("ERROR backend not ready in 20s, killing and exit");
+        log("ERROR backend not ready in 30s, killing and exit");
         let _ = backend_proc.kill();
         std::process::exit(1);
     }
 
-    log("spawning pake...");
+    log(format!("spawning pake at {}...", pake.display()));
     let mut pake_cmd = Command::new(&pake);
     let mut pake_proc = match spawn_into_job(&mut pake_cmd, job) {
         Ok(c) => {
@@ -125,6 +103,96 @@ fn main() {
     drop(pake_proc);
     drop(backend_proc);
     std::process::exit(0);
+}
+
+// 尝试用系统 Python 启动 backend；失败（找不到 python 或依赖不全）则回退 PyInstaller exe
+fn spawn_backend(exe_dir: &PathBuf, job: HANDLE) -> std::io::Result<(Child, &'static str)> {
+    let err_path = exe_dir.join("backend.stderr.log");
+    let out_path = exe_dir.join("backend.stdout.log");
+
+    if let Some(python) = find_system_python() {
+        log(format!("found system python: {}", python));
+        // 二次校验：项目依赖是否齐全（避免启动到一半才崩）
+        if check_python_deps(&python, exe_dir) {
+            let mut cmd = Command::new(&python);
+            cmd.args([
+                "-m", "uvicorn", "backend.main:app",
+                "--host", HOST, "--port", &PORT.to_string(),
+            ])
+            .current_dir(exe_dir)
+            .creation_flags(CREATE_NO_WINDOW);
+            redirect_logs(&mut cmd, &err_path, &out_path);
+            let child = spawn_into_job(&mut cmd, job)?;
+            return Ok((child, "system-python"));
+        }
+        log("system python deps incomplete, falling back to bundled exe");
+    } else {
+        log("no system python in PATH, using bundled exe");
+    }
+
+    let backend_exe = match find_file(exe_dir, &["tt-calendar-backend.exe", "tt-calendar-backend-x64.exe"]) {
+        Some(p) => p,
+        None => return Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "tt-calendar-backend.exe not found near launcher exe",
+        )),
+    };
+    let mut cmd = Command::new(&backend_exe);
+    cmd.current_dir(exe_dir).creation_flags(CREATE_NO_WINDOW);
+    redirect_logs(&mut cmd, &err_path, &out_path);
+    let child = spawn_into_job(&mut cmd, job)?;
+    Ok((child, "pyinstaller-exe"))
+}
+
+fn redirect_logs(cmd: &mut Command, err_path: &PathBuf, out_path: &PathBuf) {
+    if let Ok(f) = std::fs::File::create(err_path) {
+        cmd.stderr(std::process::Stdio::from(f));
+    }
+    if let Ok(f) = std::fs::File::create(out_path) {
+        cmd.stdout(std::process::Stdio::from(f));
+    }
+}
+
+fn find_system_python() -> Option<String> {
+    for name in &["python", "python3", "py"] {
+        let out = Command::new(name)
+            .arg("--version")
+            .creation_flags(CREATE_NO_WINDOW)
+            .output();
+        if let Ok(o) = out {
+            if o.status.success() {
+                return Some((*name).to_string());
+            }
+        }
+    }
+    None
+}
+
+// 用 `python -c "import fastapi, uvicorn, pydantic, chinese_calendar, bs4, dateutil, httpx"`
+// 验证依赖齐全。失败原因常见：装了 Python 但没 pip install -r requirements.txt
+fn check_python_deps(python: &str, exe_dir: &PathBuf) -> bool {
+    let deps = "import fastapi, uvicorn, pydantic, chinese_calendar, bs4, dateutil, httpx";
+    let out = Command::new(python)
+        .args(["-c", deps])
+        .current_dir(exe_dir)
+        .creation_flags(CREATE_NO_WINDOW)
+        .output();
+    match out {
+        Ok(o) => {
+            if !o.status.success() {
+                let err = String::from_utf8_lossy(&o.stderr);
+                let first_line = err.lines().next().unwrap_or("(no stderr)");
+                log(format!("deps check failed: {}", first_line));
+                false
+            } else {
+                true
+            }
+        }
+        Err(e) => {
+            log(format!("deps check error: {}", e));
+            false
+        }
+    }
 }
 
 // 检测 8765 是否被占；若被占（通常是上次 backend 残留），找 LISTENING PID taskkill 掉
@@ -170,27 +238,46 @@ fn ensure_port_free(port: u16) {
     }
 }
 
+// HTTP /health 轮询：发真 GET，检查状态码 200 + 响应体含 ok
+// 比 TCP connect 严：uvicorn 一绑 socket 就能 TCP connect，但 lifespan 钩子（sync_countdown_events
+// 等）还没跑完时 HTTP /health 会失败或超时
 fn wait_for_health(port: u16, timeout_ms: u64) -> bool {
     let start = Instant::now();
     let mut attempts = 0u32;
     while start.elapsed().as_millis() < timeout_ms as u128 {
         attempts += 1;
-        if port_open(port) {
-            log(format!("port open after {} attempts", attempts));
+        if health_ok(port) {
+            log(format!("/health 200 OK after {} attempts", attempts));
             return true;
         }
         thread::sleep(Duration::from_millis(150));
     }
-    log(format!("port still closed after {} attempts", attempts));
+    log(format!("/health still failing after {} attempts", attempts));
     false
 }
 
-fn port_open(port: u16) -> bool {
+fn health_ok(port: u16) -> bool {
     let addr: SocketAddr = match format!("{}:{}", HOST, port).parse() {
         Ok(a) => a,
         Err(_) => return false,
     };
-    TcpStream::connect_timeout(&addr, Duration::from_millis(500)).is_ok()
+    let mut stream = match TcpStream::connect_timeout(&addr, Duration::from_millis(500)) {
+        Ok(s) => s,
+        Err(_) => return false,
+    };
+    let _ = stream.set_read_timeout(Some(Duration::from_millis(800)));
+    let _ = stream.set_write_timeout(Some(Duration::from_millis(500)));
+    let req = b"GET /health HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n";
+    if stream.write_all(req).is_err() {
+        return false;
+    }
+    let mut buf = [0u8; 256];
+    let n = match stream.read(&mut buf) {
+        Ok(n) if n > 0 => n,
+        _ => return false,
+    };
+    let resp = String::from_utf8_lossy(&buf[..n]);
+    resp.lines().next().map(|l| l.contains(" 200 ")).unwrap_or(false)
 }
 
 fn create_job() -> HANDLE {

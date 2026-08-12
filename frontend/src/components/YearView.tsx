@@ -1,7 +1,9 @@
 import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import clsx from 'clsx'
 import type { Day, Layer, YearData } from '../types'
-import { COLORING_COLORS, parseDate } from '../data'
+import { COLORING_COLORS, getBusyColors, parseDate, todayStr } from '../data'
+import { getTodoBusyConfig, type TodoBusyConfig } from '../api/client'
 
 interface Props {
   yearData: YearData
@@ -11,7 +13,7 @@ interface Props {
 }
 
 // 迷你格太小无法分层，按优先级取第一个启用的染色维度颜色
-function miniCellColor(day: Day, layerById: Map<string, Layer>): string | null {
+function miniCellColor(day: Day, layerById: Map<string, Layer>, busyConfig?: TodoBusyConfig): string | null {
   const coloringL = layerById.get('coloring')
   if (coloringL?.enabled && day.coloring_level != null) return COLORING_COLORS[day.coloring_level]
   const importantL = layerById.get('important')
@@ -22,15 +24,16 @@ function miniCellColor(day: Day, layerById: Map<string, Layer>): string | null {
   }
   const holidayL = layerById.get('holiday')
   if (holidayL?.enabled && day.holiday?.name) return holidayL.color ?? '#8E24AA'
-  const todoL = layerById.get('todo')
-  const activeTodos = day.todos?.filter((t) => t.status !== 'completed') ?? []
-  if (todoL?.enabled && activeTodos.length > 0) return todoL.color ?? '#F59E0B'
+  for (const b of getBusyColors(day, todayStr(), busyConfig)) {
+    if (layerById.get(b.id)?.enabled) return b.color
+  }
   if (day.custom_bg?.color) return day.custom_bg.color
   return null
 }
 
 export function YearView({ yearData, layers, selectedDate, onSelectDate }: Props) {
   const layerById = useMemo(() => new Map(layers.map((l) => [l.layer_id, l])), [layers])
+  const { data: busyConfig } = useQuery({ queryKey: ['todoBusyConfig'], queryFn: getTodoBusyConfig, staleTime: 60_000 })
 
   const byMonth = useMemo(() => {
     const map = new Map<number, Day[]>()

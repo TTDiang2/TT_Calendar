@@ -75,6 +75,57 @@ def _holiday_of(d: date) -> dict | None:
     return out or None
 
 
+def compute_todo_busy_level(
+    d: date,
+    todos: list,
+    cfg: dict,
+    mode: str = "predict",
+) -> int | None:
+    """按 config 权重把当日 todo 折算成 0..4 档；无 todo 返回 None。
+
+    mode='predict': todos 已经是「未完成 todo」+ due/planned 命中当日
+    mode='done': todos 已经是「completed_at 命中当日」的所有 todo（含完成时 due 哪天无所谓）
+    """
+    if not todos:
+        return None
+    w = cfg["weights"]
+    imp = w["importance"]
+    comp = w["complexity"]
+    score = 0.0
+    for t in todos:
+        # fetch_todos_between 把同一条 todo 同时挂到 due_date 和 planned_date 两个日期
+        # → 累加是设计意图（用户特意标两个日期就是想强调那天）
+        if t.due_date == d:
+            score += w["due_date"]
+        if t.planned_date == d:
+            score += w["planned_date"]
+        score += imp.get(t.importance, imp.get("medium", 1)) * comp.get(t.complexity, comp.get("medium", 1))
+    thresholds = cfg["thresholds"]
+    level = 0
+    for i in range(4, -1, -1):
+        if score >= thresholds[i]:
+            level = i
+            break
+    return level if score >= thresholds[0] else None
+
+
+
+
+
+    """用 chinese_calendar 判定节假日 + 调休补班。"""
+
+    try:
+        on_h, name = cc.get_holiday_detail(d)
+    except Exception:
+        return None
+    out: dict = {}
+    if on_h and name:
+        out["name"] = name
+    if cc.is_workday(d) and d.weekday() >= 5:
+        out["is_workday_made_up"] = True
+    return out or None
+
+
 def _custom_layer_color(
     d: date,
     ev_by_layer: dict,
@@ -119,8 +170,11 @@ def _build_day(
     view_year: int,
     view_month: int,
     custom_bg: tuple[str, str] | None = None,
+    day_busy: dict | None = None,
 ) -> dict:
-    """组装单日数据。view_year/month 用于判 other_month（月视图淡化前后月）。"""
+    """组装单日数据。view_year/month 用于判 other_month（月视图淡化前后月）。
+    day_busy: {date: (predict_level, done_level)} 快照，视图层不做实时计算。
+    """
 
     ev_by_layer: dict[str, list] = {}
     for lid, evs in events_by_date.get(d, {}).items():
@@ -132,6 +186,9 @@ def _build_day(
     day_todos = todos_by_date.get(d, [])
     todos_json = [t.model_dump(mode="json") for t in day_todos]
     items = [i.model_dump(mode="json") for i in schedule_items_by_date.get(d, [])]
+    busy = day_busy.get(d) if day_busy else None
+    predict_level = busy[0] if busy else None
+    done_level = busy[1] if busy else None
 
     out = {
         "date": d.isoformat(),
@@ -145,6 +202,8 @@ def _build_day(
         "holiday": h,
         "gradient_bg": gradient.get(gkey),
         "todos": todos_json,
+        "predict_level": predict_level,
+        "done_level": done_level,
     }
     if custom_bg and custom_bg[0]:
         out["custom_bg"] = {"color": custom_bg[0], "label": custom_bg[1]}
@@ -185,6 +244,7 @@ def build_view(
         and l.enabled
         and (l.kind == "color" or not l.kind)
     ]
+    day_busy = db.fetch_day_busy_between(conn, start, end)
 
     events_by_date: dict = defaultdict(lambda: defaultdict(list))
     for ev in events:
@@ -214,6 +274,7 @@ def build_view(
                 d, events_by_date, schedule, schedule_items_by_date, coloring, gradient,
                 todos_by_date, today, view_year, view_month,
                 custom_bg=_custom_layer_color(d, events_by_date, todos_by_date.get(d, []), custom_layers),
+                day_busy=day_busy,
             )
             for d in days_list
         ],

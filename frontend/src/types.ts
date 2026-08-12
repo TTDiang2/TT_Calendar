@@ -58,6 +58,10 @@ export interface Day {
   gradient_bg: string | null
   custom_bg?: CustomBg | null
   todos: Todo[]
+  // 待办忙度双层快照：predict = 未完成 todo 加权（未来日期显示）
+  // done = completed_at 当天的 todo 加权（过去日期显示）；今天双层叠加
+  predict_level: number | null
+  done_level: number | null
 }
 
 export interface MonthData {

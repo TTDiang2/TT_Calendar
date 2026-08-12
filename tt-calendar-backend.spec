@@ -10,7 +10,22 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=[
+        # 开发机 site-packages 里被 PyInstaller modulegraph 误判拉进来的大模块，
+        # backend 完全不用（grep 全代码 0 引用）。打进去会让 onefile exe 多 50+ MB，
+        # 每次启动解压到 %TEMP% 多花 5-7 秒。
+        'numpy', 'numpy.libs', 'scipy', 'scipy.libs',
+        'pandas', 'matplotlib', 'PIL', 'Pillow',
+        'lxml', 'tkinter', 'tcl', 'tk',
+        'cryptography', 'bcrypt',
+        'jedi', 'parso', 'ipython', 'jupyter', 'notebook', 'ipykernel',
+        'jupyter_client', 'jupyter_core', 'nbformat', 'nbconvert',
+        'qtconsole', 'qt', 'PyQt5', 'PyQt6', 'PySide2', 'PySide6',
+        'pytest', '_pytest', 'py', 'coverage',
+        'tensorflow', 'keras', 'torch', 'sklearn', 'scikit-learn',
+        'gevent', 'greenlet', 'Cython', 'pythonnet',
+        'sphinx', 'docutils',
+    ],
     noarchive=False,
     optimize=0,
 )

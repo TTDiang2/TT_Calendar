@@ -1115,3 +1115,51 @@ Graph API 集成（device code flow）方案已在 brainstorming 阶段调研完
 - playwright ȫ���̸���ͨ����DueDateQuickPicker չ��/�������ص�����ק����+�־û�+��ԭ�������� tab������ɫ��� pink/amber/violet/blue �Ǻ�ɫ�������� N �졹�ڻҡ����� select ����+ �Զ��塭���л�����������������׺��
 - tsc --noEmit EXIT:0������� console 0 errors
 - ��֪��΢覴ã�δ�ģ���ȫ��δ��ɻձ���ʾ scoped ��ѡ���б���22������ȫ�� 33
+
+
+## §21 启动性能优化 v2（2026-08-12）
+
+### 问题
+用户反馈：双击 launcher 到窗口可用 ~6-7s。`launcher.log` 实测 backend spawn → ready **7-10s**（偶发 13.86s），这是感知慢的真凶。
+
+### 诊断
+| 阶段 | 耗时 |
+|---|---|
+| Launcher 自启 + 端口清理 | ~0.3s |
+| **Backend exe spawn → ready（真凶）** | **7-10s** |
+| Pake (Tauri) spawn + 窗口出现 | ~10ms + 1-2s |
+
+**根因**：`e7a3f6a feat: standalone release build without system Python dependency`（8-11）为了 release 不依赖系统 Python，把 launcher 从 8-5 的「spawn 系统 python」改回「spawn PyInstaller exe」。但 **spec 的 `excludes=[]` 没改回来**——等于回到 8-5 之前的慢启动状态：
+- 旧 exe = 69.64MB（单文件 onefile），每次启动解压 135MB 到 `%TEMP%\_MEIxxxxx`
+- 解压目录里打包了 numpy/scipy/matplotlib/PIL/lxml/pandas/cryptography/tkinter/jupyter 全家桶——**项目代码 grep 0 引用**，纯属 PyInstaller modulegraph 把开发机 site-packages 全扫进去的误判
+- 纯 Python 启动 + 全部 lifespan 钩子（含 `sync_countdown_events`）实测只要 1.7s
+
+**附带 bug**：launcher 注释/函数名都叫 `wait_for_health`（"HTTP /health 轮询"），但代码实际只 `TcpStream::connect`——uvicorn 一绑 socket 就 true，lifespan 钩子还没跑完就误判 ready，前端第一个请求被卡几百毫秒。
+
+### 双轨方案（用户选）
+- 本机 + 有 Python 的用户：launcher 优先 spawn 系统 python（`python -m uvicorn`），启动 ~1.5s
+- 没装 Python 的用户：fallback 到瘦身后的 PyInstaller exe，启动 ~2.5s
+- Release 同时包含两种部署方式，launcher 自适应
+
+### 改动
+1. **`tt-calendar-backend.spec`** `excludes` 加 numpy/scipy/PIL/matplotlib/pandas/lxml/tkinter/cryptography/jupyter/pytest/tensorflow 等。exe 从 **69.64MB → 20.97MB**。
+2. **`launcher/src/main.rs`** 重写：
+   - `spawn_backend` 优先尝试 `find_system_python`（试 `python`/`python3`/`py` 的 `--version`）
+   - **二次校验**：`check_python_deps` 跑 `python -c "import fastapi, uvicorn, pydantic, chinese_calendar, bs4, dateutil, httpx"`，避免装了 python 但没 `pip install -r requirements.txt` 时启动到一半崩
+   - 系统 python 不可用 → fallback 到 `tt-calendar-backend.exe`
+   - `wait_for_health` 改成真 HTTP GET /health（手写原始 HTTP/1.0 请求 + 检查 ` 200 ` 状态码），不再被 lifespan 未跑完误导
+3. **`backend/main.py`** lifespan 启动新增 `db.sync_countdown_events(conn)`（见上一节 sync_countdown_events 说明，本次顺便验证启动耗时包含它也只有 1.7s）
+
+### 实测对比
+| 指标 | 优化前 | 优化后（系统 python）| 优化后（PyInstaller exe） |
+|---|---|---|---|
+| Backend spawn → /health 200 | 7-10s | **1.98s** | **2.48s** |
+| 总启动到 pake spawn | 8-10s | **3.55s** | ~4s |
+| 用户感知"加载中"消失 | 8-10s | **4-5s** | ~5-6s |
+| exe 大小 | 69.64MB | — | **20.97MB** |
+
+### 注意
+- 系统 python 模式需要部署机器装 Python 3.10+ 且 `pip install -r requirements.txt`；不装也能用，launcher 自动 fallback
+- PyInstaller 重打包耗时 ~120s（开发周期考虑）
+- launcher 编译需要 MSVC 工具链（参考 `build_release.bat`）
+- 旧的 `docs/MIGRATION_PLAN.md` §14（2026-08-05）曾经做过类似优化但当时只走系统 python；这次合并两条路线
