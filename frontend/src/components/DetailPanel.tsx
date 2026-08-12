@@ -101,50 +101,76 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
         </div>
       )}
 
-      {day.coloring_level != null && (
-        <div className="mb-3 flex items-center gap-2">
-          <div className="flex-1 flex gap-px h-2 rounded overflow-hidden">
-            {COLORING_COLORS.map((c, i) => (
-              <div key={i} className="flex-1" style={{ backgroundColor: c, opacity: i <= day.coloring_level! ? 1 : 0.3 }} />
+      {/* 所有 5 档涂色：内置充实度 + 自定义 graded marks 合并展示 */}
+      {(day.coloring_level != null || day.marks?.some((mk) => mk.mode === 'graded')) && (
+        <div className="mb-3 space-y-1">
+          <p className="text-[11px] text-gray-400">所有 5 档涂色</p>
+          {day.coloring_level != null && (
+            <div className="flex items-center gap-2 group">
+              <span className="text-[11px] text-gray-500 w-16 flex-shrink-0 truncate">充实度</span>
+              <div className="flex-1 flex gap-px h-2 rounded overflow-hidden">
+                {COLORING_COLORS.map((c, i) => (
+                  <div key={i} className="flex-1" style={{ backgroundColor: c, opacity: i <= day.coloring_level! ? 1 : 0.3 }} />
+                ))}
+              </div>
+              <span className="text-xs text-gray-500">{day.coloring_level + 1}/5</span>
+            </div>
+          )}
+          {(day.marks ?? [])
+            .filter((mk) => mk.mode === 'graded')
+            .map((mk) => (
+              <div key={mk.layer_id} className="flex items-center gap-2 group">
+                <span className="text-[11px] text-gray-500 w-16 flex-shrink-0 truncate">{mk.display_name}</span>
+                {mk.level != null ? (
+                  <>
+                    <div className="flex-1 flex gap-px h-2 rounded overflow-hidden">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="flex-1"
+                          style={{ backgroundColor: mk.color ?? '#9ca3af', opacity: i <= mk.level! ? 1 : 0.3 }}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-xs text-gray-500">{(mk.level ?? 0) + 1}/5</span>
+                  </>
+                ) : (
+                  <span className="flex-1 text-[11px] text-gray-300">未标记档位</span>
+                )}
+                <button
+                  onClick={() => delMarkMut.mutate({ layerId: mk.layer_id, date: day.date })}
+                  className="p-0.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition flex-shrink-0"
+                  title="删除标记"
+                >
+                  <Trash2 size={11} />
+                </button>
+              </div>
             ))}
-          </div>
-          <span className="text-xs text-gray-500">{day.coloring_level + 1}/5</span>
         </div>
       )}
 
-      {day.marks && day.marks.length > 0 && (
+      {/* 所有单色涂色：自定义 solid marks */}
+      {day.marks?.some((mk) => mk.mode !== 'graded') && (
         <div className="mb-3 space-y-1">
-          {day.marks.map((mk) => (
-            <div key={mk.layer_id} className="flex items-center gap-2 group">
-              <span className="text-[11px] text-gray-500 w-16 flex-shrink-0 truncate">{mk.label}</span>
-              {mk.mode === 'graded' && mk.level != null ? (
-                <div className="flex-1 flex gap-px h-2 rounded overflow-hidden">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="flex-1"
-                      style={{
-                        backgroundColor: mk.color ?? '#9ca3af',
-                        opacity: i <= mk.level! ? 1 : 0.3,
-                      }}
-                    />
-                  ))}
-                </div>
-              ) : (
+          <p className="text-[11px] text-gray-400">所有单色涂色</p>
+          {day.marks
+            .filter((mk) => mk.mode !== 'graded')
+            .map((mk) => (
+              <div key={mk.layer_id} className="flex items-center gap-2 group">
+                <span className="text-[11px] text-gray-500 w-16 flex-shrink-0 truncate">{mk.display_name}</span>
                 <div className="flex-1 flex items-center gap-1">
                   <span className="w-3 h-3 rounded flex-shrink-0" style={{ backgroundColor: mk.color ?? '#9ca3af' }} />
                   <span className="text-[11px] text-gray-400">已标记</span>
                 </div>
-              )}
-              <button
-                onClick={() => delMarkMut.mutate({ layerId: mk.layer_id, date: day.date })}
-                className="p-0.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition flex-shrink-0"
-                title="删除标记"
-              >
-                <Trash2 size={11} />
-              </button>
-            </div>
-          ))}
+                <button
+                  onClick={() => delMarkMut.mutate({ layerId: mk.layer_id, date: day.date })}
+                  className="p-0.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition flex-shrink-0"
+                  title="删除标记"
+                >
+                  <Trash2 size={11} />
+                </button>
+              </div>
+            ))}
         </div>
       )}
 

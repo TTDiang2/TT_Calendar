@@ -186,11 +186,13 @@ def _build_day(
     day_busy: dict | None = None,
     marks_by_date: dict | None = None,
     custom_layer_cfg: list | None = None,
+    layer_names: dict | None = None,
 ) -> dict:
     """组装单日数据。view_year/month 用于判 other_month（月视图淡化前后月）。
     day_busy: {date: (predict_level, done_level)} 快照，视图层不做实时计算。
     marks_by_date: {date: [Mark]}，涂色标记（打卡/完成度），独立于 events。
     custom_layer_cfg: [(layer_id, config)]，自定义涂色图层配置（带 mode/palette/label）。
+    layer_names: {layer_id: display_name}，给前端显示图层名称。
     """
 
     ev_by_layer: dict[str, list] = {}
@@ -207,9 +209,10 @@ def _build_day(
     predict_level = busy[0] if busy else None
     done_level = busy[1] if busy else None
 
-    # 当日涂色标记：展开为 {layer_id: {level, color, mode, label}} 供前端涂色条展示
+    # 当日涂色标记：展开为 {layer_id, display_name, level, color, mode} 供前端涂色条展示
     day_marks = marks_by_date.get(d, []) if marks_by_date else []
     cfg_by_id = {lid: (cfg or {}) for lid, cfg in (custom_layer_cfg or [])}
+    layer_names = layer_names or {}
     marks_out: list[dict] = []
     for m in day_marks:
         cfg = cfg_by_id.get(m.layer_id, {})
@@ -221,7 +224,7 @@ def _build_day(
             color = cfg.get("color")
         marks_out.append({
             "layer_id": m.layer_id,
-            "label": cfg.get("label") or m.layer_id,
+            "display_name": layer_names.get(m.layer_id) or cfg.get("label") or m.layer_id,
             "level": m.level,
             "color": color,
             "mode": mode,
@@ -276,6 +279,7 @@ def build_view(
 
     layers = db.fetch_layer_configs(conn)
     layer_cfg_by_id = {l.layer_id: l.config or {} for l in layers}
+    layer_names = {l.layer_id: l.display_name for l in layers}
     # 涂色图层：custom_* + built-in coloring（mark 渲染需要 lookup color/palette）
     color_layer_cfgs = [
         (l.layer_id, l.config or {})
@@ -322,6 +326,7 @@ def build_view(
                 day_busy=day_busy,
                 marks_by_date=marks_by_date,
                 custom_layer_cfg=color_layer_cfgs,
+                layer_names=layer_names,
             )
             for d in days_list
         ],

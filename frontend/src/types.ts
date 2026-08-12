@@ -36,7 +36,7 @@ export interface CustomBg {
 
 export interface DayMark {
   layer_id: string
-  label: string
+  display_name: string
   level: number | null
   color: string | null
   mode: string
