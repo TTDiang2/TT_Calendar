@@ -644,10 +644,13 @@ export function ColorEntryDialog({
   onClose: () => void
 }) {
   const qc = useQueryClient()
-  // 涂色图层候选：coloring（充实度）、important/holiday/todo（内置）、custom_*（自定义涂色）
-  // 不限 enabled，让用户能给隐藏中的涂色图层添加标记；coloring 是最常用，默认选它
+  // 涂色图层候选：coloring（充实度）、custom_*（自定义涂色）。
+  // 排除 holiday/important/todo（自动生成，不允许手动新增标记）和 jisilu_*（外部数据源）。
+  const AUTO_LAYERS = ['holiday', 'important', 'todo']
   const colorLayers = layers.filter((l) =>
-    l.kind === 'color' && !l.layer_id.startsWith('jisilu_'),
+    l.kind === 'color'
+    && !l.layer_id.startsWith('jisilu_')
+    && !AUTO_LAYERS.includes(l.layer_id),
   )
   const firstOpt =
     colorLayers.find((l) => l.layer_id === 'coloring') ??
@@ -655,7 +658,6 @@ export function ColorEntryDialog({
     colorLayers.find((l) => l.layer_id === 'important') ??
     colorLayers[0]
   const [targetLayer, setTargetLayer] = useState<string>(firstOpt?.layer_id ?? '')
-  const [pickedColor, setPickedColor] = useState<string | null>(null)
   const [level, setLevel] = useState<number>(2)
 
   const targetCfg = layers.find((l) => l.layer_id === targetLayer)
@@ -670,7 +672,7 @@ export function ColorEntryDialog({
         await upsertColoring(date, level)
         return
       }
-      const color = isGraded ? (palette?.[level] ?? '#9ca3af') : (pickedColor ?? targetCfg?.color ?? '#9ca3af')
+      const color = isGraded ? (palette?.[level] ?? '#9ca3af') : (targetCfg?.color ?? '#9ca3af')
       const extra: Record<string, unknown> = {}
       if (isGraded) extra.level = level
       await createEvent({
@@ -692,7 +694,7 @@ export function ColorEntryDialog({
     <Modal title={`新增涂色 ${date}`} onClose={onClose} width={440}>
       <div className="flex flex-col gap-3">
         <Field label="选择涂色图层">
-          <select className="tt-input" value={targetLayer} onChange={(e) => { setTargetLayer(e.target.value); setPickedColor(null) }}>
+          <select className="tt-input" value={targetLayer} onChange={(e) => setTargetLayer(e.target.value)}>
             {builtinLayers.length > 0 && (
               <optgroup label="内置">
                 {builtinLayers.map((l) => (
@@ -743,18 +745,16 @@ export function ColorEntryDialog({
             </div>
           </Field>
         ) : (
-          <Field label="颜色">
-            <div className="flex gap-1.5 flex-wrap">
-              {['#3D6BFB', '#F59E0B', '#10B981', '#EF4444', '#8E24AA', '#0EA5E9', '#F97316', '#64748B'].map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setPickedColor(c)}
-                  className={clsx('w-7 h-7 rounded-full', (pickedColor ?? targetCfg?.color) === c && 'ring-2 ring-blue-400 ring-offset-2')}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
+          <Field label="图层颜色（固定）">
+            <div className="flex items-center gap-2">
+              <span
+                className="w-8 h-8 rounded-lg flex-shrink-0"
+                style={{ backgroundColor: targetCfg?.color ?? '#9ca3af' }}
+              />
+              <p className="text-[11px] text-gray-400">
+                标记将使用图层预设颜色，不可在此修改。如需改色请到设置页编辑图层。
+              </p>
             </div>
-            <p className="text-[11px] text-gray-400 mt-1">默认用图层颜色（{targetCfg?.color ?? '无'}），可点选其他颜色覆盖。</p>
           </Field>
         )}
 

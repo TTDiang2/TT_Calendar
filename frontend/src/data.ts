@@ -1,5 +1,26 @@
 export const COLORING_COLORS = ['#f1f8f4', '#c8e6c9', '#81c784', '#388e3c', '#1b5e20']
 
+// 新建图层时可选的预设颜色（24 色，按色相环递进：红→橙→黄→绿→青→蓝→紫→粉→棕→灰）
+export const COLOR_PRESETS = [
+  '#EF4444', '#F97316', '#F59E0B', '#EAB308', '#FCD34D',
+  '#84CC16', '#22C55E', '#10B981', '#14B8A6', '#06B6D4',
+  '#0EA5E9', '#3B82F6', '#3D6BFB', '#6366F1', '#8B5CF6',
+  '#A855F7', '#8E24AA', '#EC4899', '#F472B6', '#BE185D',
+  '#A16207', '#92400E', '#64748B', '#475569',
+]
+
+// 分级图层可选的 5 档调色板（8 套，每套从浅到深递进）
+export const GRADED_PALETTES = {
+  绿: ['#f0fdf4', '#bbf7d0', '#4ade80', '#16a34a', '#14532d'],
+  蓝: ['#eff6ff', '#bfdbfe', '#60a5fa', '#2563eb', '#1e3a8a'],
+  橙: ['#fff7ed', '#fed7aa', '#fb923c', '#ea580c', '#7c2d12'],
+  紫: ['#faf5ff', '#e9d5ff', '#c084fc', '#9333ea', '#581c87'],
+  红: ['#fef2f2', '#fecaca', '#f87171', '#dc2626', '#7f1d1d'],
+  青: ['#ecfeff', '#a5f3fc', '#22d3ee', '#0891b2', '#164e63'],
+  靛: ['#eef2ff', '#c7d2fe', '#818cf8', '#4f46e5', '#312e81'],
+  灰: ['#f8fafc', '#e2e8f0', '#94a3b8', '#475569', '#1e293b'],
+}
+
 // 待办忙度双调色板：predict = 未来（琥珀），done = 过去（钢蓝）
 export const TODO_BUSY_PREDICT_COLORS = ['#fef3c7', '#fde68a', '#fbbf24', '#f59e0b', '#b45309']
 export const TODO_BUSY_DONE_COLORS    = ['#e0e7ff', '#c7d2fe', '#818cf8', '#4f46e5', '#3730a3']

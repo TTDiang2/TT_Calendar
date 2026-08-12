@@ -4,20 +4,13 @@ import clsx from 'clsx'
 import { ChevronDown, ChevronRight, Plus } from 'lucide-react'
 import type { Layer } from '../types'
 import { createLayer } from '../api/client'
+import { COLOR_PRESETS, GRADED_PALETTES } from '../data'
 import { Modal, Field } from './ui/Modal'
 
 interface Props {
   layers: Layer[]
   onToggle: (layerId: string) => void
   countdown: string
-}
-
-const COLOR_PRESETS = ['#3D6BFB', '#F59E0B', '#10B981', '#EF4444', '#8E24AA', '#0EA5E9', '#F97316', '#64748B']
-const GRADED_PALETTES = {
-  绿: ['#f0fdf4', '#bbf7d0', '#4ade80', '#16a34a', '#14532d'],
-  蓝: ['#eff6ff', '#bfdbfe', '#60a5fa', '#2563eb', '#1e3a8a'],
-  橙: ['#fff7ed', '#fed7aa', '#fb923c', '#ea580c', '#7c2d12'],
-  紫: ['#faf5ff', '#e9d5ff', '#c084fc', '#9333ea', '#581c87'],
 }
 
 export function Sidebar({ layers, onToggle, countdown }: Props) {
