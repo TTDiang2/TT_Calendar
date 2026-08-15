@@ -59,7 +59,9 @@ def import_plan(conn: sqlite3.Connection, upsert: Upsert,
                 k = row.get(key)
                 if not k:
                     continue
-                cols = [c for c in row.keys() if c != "id"]
+                # 自增表 export 时已 pop 掉本地 id（导入时让本地重新自增分配）；
+                # TEXT 主键表（todo/todo_list 等）的 id 就是主键，必须保留。
+                cols = [c for c in row.keys() if not (auto and c == "id")]
                 placeholders = ", ".join("?" * len(cols))
                 sets = ", ".join(f"{c} = excluded.{c}" for c in cols)
                 cur.execute(

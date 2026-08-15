@@ -16,9 +16,11 @@ import sqlite3
 AUTO_INT_TABLES = ("events", "schedule_items", "countdown", "marks")
 
 # 同步的 10 张用户表：表名 -> (主键列, 行身份列, 是否自增整型主键)
+# 注意：字典顺序 = import_plan 的导入顺序，有外键依赖时必须父表在前
+# （todo.list_id → todo_list.id，todo_list 必须先导入，否则 foreign_keys=ON 下报错）
 SYNC_TABLES: dict[str, tuple[str, str, bool]] = {
-    "todo":           ("id", "id", False),
     "todo_list":      ("id", "id", False),
+    "todo":           ("id", "id", False),
     "layer_config":   ("layer_id", "layer_id", False),
     "meta":           ("key", "key", False),
     "schedule":       ("date", "date", False),

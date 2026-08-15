@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from tt_calendar import db
-from tt_calendar.sync.schema import ensure_sync_schema
+from tt_calendar.sync.schema import ensure_sync_schema, SYNC_TABLES
 from tt_calendar.sync import snapshot as S
 
 conn = db.connect_memory() if hasattr(db, "connect_memory") else None
@@ -85,5 +85,26 @@ n_tomb = conn2.execute("SELECT COUNT(*) c FROM sync_tombstones").fetchone()["c"]
 snap3 = S.export_data(conn2)
 assert snap2 == snap3 and n_tomb == 0, "重复导入应幂等且零墓碑"
 print("10. re-import idempotent, zero tombstones: OK")
+
+# 11. 外键依赖导入顺序：todo.list_id → todo_list.id，且 TEXT 主键表必须保留 id
+#     （第二台 pull_overwrite 曾因 import 顺序违反外键 + 误删主键 id 而 500）
+conn3 = sqlite3.connect(":memory:", detect_types=sqlite3.PARSE_DECLTYPES)
+conn3.row_factory = sqlite3.Row
+conn3.execute("PRAGMA foreign_keys=ON;")
+db.init_db(conn3)
+ensure_sync_schema(conn3)
+fk_upsert = {
+    "todo_list": [{"id": "L1", "display_name": "默认", "sort_order": 0,
+                   "created_at": "2026-01-01 00:00:00", "updated_at": "2026-01-01 00:00:00"}],
+    "todo": [{"id": "t1", "list_id": "L1", "title": "hello", "status": "notStarted",
+              "importance": "normal", "complexity": "medium",
+              "created_at": "2026-01-01 00:00:00", "updated_at": "2026-01-01 00:00:00"}],
+}
+for t in SYNC_TABLES:
+    fk_upsert.setdefault(t, [])
+S.import_plan(conn3, fk_upsert, {}, {})
+row = conn3.execute("SELECT list_id FROM todo WHERE id='t1'").fetchone()
+assert row and row["list_id"] == "L1", "todo 主键 id 丢失或外键未关联"
+print("11. FK order + TEXT pk id preserved: OK")
 
 print("\nALL DB INTEGRATION CHECKS PASSED")
