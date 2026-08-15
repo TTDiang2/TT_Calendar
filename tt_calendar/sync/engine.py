@@ -167,7 +167,7 @@ def _sync_now(conn: sqlite3.Connection, on_imported) -> dict:
                   f"(pull {report['pulled']} / push {report['pushed']})"
             try:
                 files = P.encode_files(result["data"], result["tombstones"], device)
-                commit_url = prov.push(files, msg, remote.tree_sha)
+                commit_url = prov.push(files, msg)
             except ProviderError as e:
                 if "并发冲突" in str(e) and attempt == 1:
                     continue
@@ -218,8 +218,7 @@ def _resolve_first_bind(conn: sqlite3.Connection, mode: str, on_imported) -> dic
 
     device = socket.gethostname()
     files = P.encode_files(result["data"], result["tombstones"], device)
-    commit_url = prov.push(files, f"sync: first bind ({mode}) by {device}",
-                           remote.tree_sha)
+    commit_url = prov.push(files, f"sync: first bind ({mode}) by {device}")
     _save_base(result["data"], result["tombstones"])
     S.prune_tombstones(conn)
     report = dict(result["report"])
@@ -235,7 +234,7 @@ def _init_upload(conn: sqlite3.Connection, prov: GitHubProvider,
     tombs = S.export_tombstones(conn)
     device = socket.gethostname()
     files = P.encode_files(local, tombs, device)
-    prov.push(files, f"sync: init upload by {device}", None)
+    prov.push(files, f"sync: init upload by {device}")
     _save_base(local, tombs)
     status = {"at": datetime.now().isoformat(timespec="seconds"),
               "ok": True, "report": {"initialized": True},

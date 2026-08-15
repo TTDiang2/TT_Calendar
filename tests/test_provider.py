@@ -16,9 +16,12 @@ def handler(request: httpx.Request) -> httpx.Response:
     method = request.method
     calls.append((method, path))
 
+    if path.endswith("/contents/.tt-calendar-sync") and method == "PUT":
+        BOOTSTRAPPED[0] = True
+        return httpx.Response(201, json={"commit": {"sha": "initcommit"}})
     if path.endswith("/git/ref/heads/main"):
-        if EMPTY_REPO:
-            return httpx.Response(404, json={"message": "Not Found"})
+        if EMPTY_REPO and not BOOTSTRAPPED[0]:
+            return httpx.Response(409, json={"message": "Git Repository is empty."})
         return httpx.Response(200, json={"object": {"sha": "headsha"}})
     if path.endswith("/git/commits/headsha"):
         return httpx.Response(200, json={"tree": {"sha": "treesha"}})
@@ -39,8 +42,6 @@ def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(201, json={"sha": "newtree"})
     if path.endswith("/git/commits"):
         return httpx.Response(201, json={"sha": "newcommit"})
-    if path.endswith("/git/refs") and method == "POST":
-        return httpx.Response(201, json={"ref": "refs/heads/main"})
     if "/git/refs/heads/main" in path and method == "PATCH":
         if PUSH_CONFLICT:
             return httpx.Response(422, json={"message": "Update is not a fast forward"})
@@ -52,6 +53,7 @@ def handler(request: httpx.Request) -> httpx.Response:
 
 calls: list = []
 EMPTY_REPO = False
+BOOTSTRAPPED = [False]
 PUSH_CONFLICT = False
 
 
@@ -82,22 +84,24 @@ def test_empty_repo_fetch_409_returns_none():
     assert p.fetch() is None
 
 
-def test_empty_repo_push_creates_ref():
-    global EMPTY_REPO, calls
+def test_empty_repo_push_bootstraps():
+    global EMPTY_REPO, calls, BOOTSTRAPPED
     EMPTY_REPO = True
+    BOOTSTRAPPED[0] = False
     calls = []
     files = encode_files({"todo": [{"id": "t1"}]}, {}, "pc1")
-    url = make_provider().push(files, "init", None)
+    url = make_provider().push(files, "init")
     assert url.endswith("/commit/newcommit")
-    # 空仓库必须 POST /git/refs 创建分支，而不是 PATCH
-    assert ("POST", "/repos/TTDiang2/tt-calendar-data/git/refs") in calls
-    assert not any(m == "PATCH" and p.endswith("/git/refs/heads/main")
-                   for m, p in calls)
+    # 空仓库必须先 PUT 占位文件制造第一个 commit，再 PATCH ref（而非 POST /git/refs）
+    assert ("PUT", "/repos/TTDiang2/tt-calendar-data/contents/.tt-calendar-sync") in calls
+    assert ("PATCH", "/repos/TTDiang2/tt-calendar-data/git/refs/heads/main") in calls
+    assert not any(m == "POST" and p.endswith("/git/refs") for m, p in calls)
 
 
 def test_normal_fetch_reads_files():
-    global EMPTY_REPO
+    global EMPTY_REPO, BOOTSTRAPPED
     EMPTY_REPO = False
+    BOOTSTRAPPED[0] = False
     snap = make_provider().fetch()
     assert snap is not None
     assert snap.data == {"todo": [{"id": "t1"}]}
@@ -105,11 +109,12 @@ def test_normal_fetch_reads_files():
 
 
 def test_push_conflict_raises():
-    global PUSH_CONFLICT, EMPTY_REPO
+    global PUSH_CONFLICT, EMPTY_REPO, BOOTSTRAPPED
     PUSH_CONFLICT = True
     EMPTY_REPO = False
+    BOOTSTRAPPED[0] = False
     try:
-        make_provider().push({"data/x.json": "{}"}, "m", None)
+        make_provider().push({"data/x.json": "{}"}, "m")
         assert False, "应抛 ProviderError"
     except ProviderError as e:
         assert "并发冲突" in str(e)

@@ -186,21 +186,23 @@ class GitHubProvider:
         resp = self._ok(self._req(c, "GET", f"/repos/{self.repo}/git/blobs/{sha}"), "下载文件")
         return base64.b64decode(resp.json()["content"]).decode("utf-8")
 
-    def push(self, files: dict[str, str], message: str, parent_tree_sha: str | None) -> str:
-        """files: {path: json 文本}。返回新 commit html_url。parent_tree_sha 用于 base_tree。"""
+    def push(self, files: dict[str, str], message: str) -> str:
+        """files: {path: json 文本}。返回新 commit html_url。"""
         if not files:
             raise ProviderError("没有可推送的变更")
         with self._client() as c:
             resp = self._req(c, "GET", f"/repos/{self.repo}/git/ref/heads/{self.branch}")
-            # 409=空仓库 / 404=分支不存在 → 无父提交，走初始化推送
             if resp.status_code in (404, 409):
-                parent_sha = None
-                base_tree = None
-            else:
-                parent_sha = resp.json()["object"]["sha"]
-                resp = self._ok(self._req(c, "GET",
-                                f"/repos/{self.repo}/git/commits/{parent_sha}"), "读取父提交")
-                base_tree = resp.json()["tree"]["sha"]
+                # 空仓库：Git Data API 在没有任何 commit 时连 blob 都无法创建
+                # （POST blobs 也返回 409），必须先用 Contents API 制造第一个 commit
+                self._bootstrap_empty_repo(c)
+                resp = self._req(c, "GET", f"/repos/{self.repo}/git/ref/heads/{self.branch}")
+            self._ok(resp, "读取分支")
+            parent_sha = resp.json()["object"]["sha"]
+
+            resp = self._ok(self._req(c, "GET",
+                            f"/repos/{self.repo}/git/commits/{parent_sha}"), "读取父提交")
+            base_tree = resp.json()["tree"]["sha"]
 
             tree_entries = []
             for path, text in files.items():
@@ -210,38 +212,37 @@ class GitHubProvider:
                 tree_entries.append({"path": path, "mode": "100644",
                                      "type": "blob", "sha": resp.json()["sha"]})
 
-            body: dict = {"tree": tree_entries}
-            if base_tree:
-                body["base_tree"] = base_tree
-            resp = self._ok(self._req(c, "POST", f"/repos/{self.repo}/git/trees", json=body),
+            resp = self._ok(self._req(c, "POST", f"/repos/{self.repo}/git/trees",
+                            json={"tree": tree_entries, "base_tree": base_tree}),
                             "构建文件树")
             tree_sha = resp.json()["sha"]
 
             resp = self._ok(self._req(
                 c, "POST", f"/repos/{self.repo}/git/commits",
-                json={"tree": tree_sha,
-                      "parents": [parent_sha] if parent_sha else [],
+                json={"tree": tree_sha, "parents": [parent_sha],
                       "message": message}), "创建提交")
             commit_sha = resp.json()["sha"]
 
-            if parent_sha:
-                resp = self._req(c, "PATCH",
-                                 f"/repos/{self.repo}/git/refs/heads/{self.branch}",
-                                 json={"sha": commit_sha, "force": False})
-                if resp.status_code == 422:
-                    raise ProviderError("远端有新提交（并发冲突），请重试同步")
-                if resp.is_error:
-                    raise ProviderError(f"更新分支失败：HTTP {resp.status_code}")
-            else:
-                # 空仓库：分支 ref 尚不存在，走创建而非更新
-                resp = self._req(c, "POST", f"/repos/{self.repo}/git/refs",
-                                 json={"ref": f"refs/heads/{self.branch}",
-                                       "sha": commit_sha})
-                if resp.is_error:
-                    detail = resp.json().get("message", resp.status_code)
-                    raise ProviderError(f"创建分支失败：{detail}")
+            resp = self._req(c, "PATCH",
+                             f"/repos/{self.repo}/git/refs/heads/{self.branch}",
+                             json={"sha": commit_sha, "force": False})
+            if resp.status_code == 422:
+                raise ProviderError("远端有新提交（并发冲突），请重试同步")
+            if resp.is_error:
+                raise ProviderError(f"更新分支失败：HTTP {resp.status_code}")
+
             owner, name = self.repo.split("/", 1)
             return f"https://github.com/{owner}/{name}/commit/{commit_sha}"
+
+    def _bootstrap_empty_repo(self, c: httpx.Client) -> None:
+        """空仓库没有任何 commit，Git Data API 连 blob 都无法创建。
+        Contents API 是 GitHub 官方推荐的初始化入口：放一个占位文件制造第一个 commit。"""
+        content = base64.b64encode(b"tt-calendar sync bootstrap").decode("ascii")
+        self._ok(self._req(c, "PUT",
+                 f"/repos/{self.repo}/contents/.tt-calendar-sync",
+                 json={"message": "init: bootstrap empty repository",
+                       "content": content}),
+                 "初始化空仓库")
 
 
 def encode_files(data: Data, tombstones: Tombstones, device: str) -> dict[str, str]:
