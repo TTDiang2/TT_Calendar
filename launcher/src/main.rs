@@ -168,10 +168,12 @@ fn find_system_python() -> Option<String> {
     None
 }
 
-// 用 `python -c "import fastapi, uvicorn, pydantic, chinese_calendar, bs4, dateutil, httpx"`
-// 验证依赖齐全。失败原因常见：装了 Python 但没 pip install -r requirements.txt
+// 用 `python -c "import ..."` 验证依赖齐全。失败原因常见：装了 Python 但没 pip install
+// 或目录里没有 backend/tt_calendar 源码（纯 exe 部署场景，必须回退 PyInstaller exe）
 fn check_python_deps(python: &str, exe_dir: &PathBuf) -> bool {
-    let deps = "import fastapi, uvicorn, pydantic, chinese_calendar, bs4, dateutil, httpx";
+    // 必须同时验证第三方依赖 AND 项目源码包：仅 exe 的干净目录里 import backend 会失败，
+    // 此时若仍选 system-python，uvicorn 会因 No module named 'backend' 崩溃、界面永远不启动
+    let deps = "import fastapi, uvicorn, pydantic, chinese_calendar, bs4, dateutil, httpx, backend, tt_calendar";
     let out = Command::new(python)
         .args(["-c", deps])
         .current_dir(exe_dir)
