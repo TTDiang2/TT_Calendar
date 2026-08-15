@@ -137,3 +137,13 @@ def test_first_bind_pull_overwrite_ignores_local():
     assert len(out["data"]["todo"]) == 1
     assert out["data"]["todo"][0]["title"] == "remote"
     assert out["deletes"]["todo"] == ["l1"]
+
+
+def test_first_bind_pull_overwrite_covers_local_only_tables():
+    # 本地独有表（远端快照缺失）也必须纳入 deletes，否则「覆盖」后残留本地行
+    remote = data(row("r1", "remote", "11:00"))
+    local = {"todo": [row("r1", "local-older", "09:00")],
+             "marks": [{"id": "m1", "sync_uid": "u1", "updated_at": "10:00"}]}
+    out = first_bind_merge("pull_overwrite", remote, local, {}, {})
+    assert out["data"].get("marks", []) == []
+    assert out["deletes"].get("marks") == ["u1"]

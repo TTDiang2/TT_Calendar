@@ -26,7 +26,7 @@ def merge(
 ) -> dict:
     """diff_local：计算 upsert/deletes 差集的基准（默认=local）。
     pull_overwrite 场景合并参与者传空、差集基准传真实本地。"""
-    tables = set(remote) | set(local) | set(base or {})
+    tables = set(remote) | set(local) | set(diff_local or {}) | set(base or {})
     merged: Data = {}
     upsert: Data = {}
     deletes: Deletes = {}
