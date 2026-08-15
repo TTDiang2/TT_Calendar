@@ -66,6 +66,22 @@ def test_empty_repo_fetch_returns_none():
     assert make_provider().fetch() is None
 
 
+def test_empty_repo_fetch_409_returns_none():
+    # GitHub 对空仓库的 GET ref 返回 409 "Git Repository is empty."（不是 404），
+    # 曾经 KeyError 炸成 500 → 前端 "Failed to fetch"
+    def h(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/repos/TTDiang2/tt-calendar-data"):
+            return httpx.Response(200, json={"visibility": "private"})
+        if "/git/ref/heads/main" in request.url.path:
+            return httpx.Response(409, json={"message": "Git Repository is empty.",
+                                             "status": "409"})
+        return httpx.Response(404, json={"message": "Not Found"})
+
+    p = GitHubProvider("TTDiang2/tt-calendar-data", "github_pat_x",
+                       transport=httpx.MockTransport(h))
+    assert p.fetch() is None
+
+
 def test_empty_repo_push_creates_ref():
     global EMPTY_REPO, calls
     EMPTY_REPO = True
@@ -148,3 +164,43 @@ def test_bad_token_message():
     r = p.test()
     assert r["ok"] is False
     assert "401" in r["detail"]
+
+
+def test_readonly_contents_fails_test_with_guidance():
+    # 用户实际踩到的坑：Contents 只读时「测试连接」通过但同步失败，
+    # test() 必须用写探针提前暴露（403 "Resource not accessible by PAT"）
+    def h(req: httpx.Request) -> httpx.Response:
+        if req.url.path == "/user":
+            return httpx.Response(200, json={"login": "TTDiang2"})
+        if req.url.path.endswith("/repos/TTDiang2/tt-calendar-data"):
+            return httpx.Response(200, json={"visibility": "private",
+                                             "default_branch": "main"})
+        if req.url.path.endswith("/git/blobs") and req.method == "POST":
+            return httpx.Response(403, json={
+                "message": "Resource not accessible by personal access token"})
+        return httpx.Response(404, json={"message": "Not Found"})
+
+    p = GitHubProvider("TTDiang2/tt-calendar-data", "github_pat_x",
+                       transport=httpx.MockTransport(h))
+    r = p.test()
+    assert r["ok"] is False
+    assert "Contents" in r["detail"]
+    assert "Read and write" in r["detail"]
+
+
+def test_readwrite_passes_and_reports():
+    def h(req: httpx.Request) -> httpx.Response:
+        if req.url.path == "/user":
+            return httpx.Response(200, json={"login": "TTDiang2"})
+        if req.url.path.endswith("/repos/TTDiang2/tt-calendar-data"):
+            return httpx.Response(200, json={"visibility": "private",
+                                             "default_branch": "main"})
+        if req.url.path.endswith("/git/blobs") and req.method == "POST":
+            return httpx.Response(201, json={"sha": "x"})
+        return httpx.Response(404, json={"message": "Not Found"})
+
+    p = GitHubProvider("TTDiang2/tt-calendar-data", "github_pat_x",
+                       transport=httpx.MockTransport(h))
+    r = p.test()
+    assert r["ok"] is True
+    assert "读写权限" in r["detail"]

@@ -45,6 +45,7 @@
 
 | 现象 | 处理 |
 |---|---|
+| 「PAT 权限不足（403）…Contents 设为 Read and write」 | fine-grained PAT 的 Contents 权限是**只读**。到 github.com/settings/personal-access-tokens 编辑该 PAT → Permissions → Repository permissions → **Contents → Read and write** → 保存（token 不变，应用里无需重填）。注意勾了仓库（Repository access）≠ 给了写权限，两处要分别设置 |
 | 「PAT 无法访问仓库 …（404）」或提示「该 PAT 只可见：…」 | fine-grained PAT 没勾选数据仓库（**先建 PAT 后建仓库时必然踩到**：新建的仓库不会自动进入旧 PAT 的授权列表）。到 github.com/settings/personal-access-tokens 编辑该 PAT → Repository access → 勾选 `tt-calendar-data` → 保存。token 不变，应用里无需重填 |
 | 「PAT 无效或过期（401）」 | PAT 被删/过期 → 重新生成，粘贴到设置里保存 |
 | 「触发 GitHub 限流」 | 正常频率不会遇到；遇到就等几分钟 |

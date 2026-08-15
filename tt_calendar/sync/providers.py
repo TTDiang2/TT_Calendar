@@ -23,6 +23,14 @@ class ProviderError(Exception):
     pass
 
 
+def _safe_json(resp: httpx.Response) -> dict:
+    try:
+        j = resp.json()
+        return j if isinstance(j, dict) else {}
+    except Exception:
+        return {}
+
+
 class Snapshot:
     def __init__(self, data: Data, tombstones: Tombstones, tree_sha: str):
         self.data = data
@@ -53,12 +61,29 @@ class GitHubProvider:
         )
 
     def _req(self, client: httpx.Client, method: str, path: str, **kw) -> httpx.Response:
-        """404 原样返回（空仓库的 ref/树查询依赖它），调用方自行解释。"""
+        """404 原样返回（空仓库判定依赖它）；401/403/429 转成带修复指引的错误。
+
+        403 有两种完全不同的含义，必须区分：
+        - "Resource not accessible by personal access token" = fine-grained PAT
+          权限级别不足（如 Contents 只读），报权限指引
+        - x-ratelimit-remaining: 0 = 真限流
+        """
         resp = client.request(method, path, **kw)
         if resp.status_code == 401:
-            raise ProviderError("PAT 无效或过期（401）")
-        if resp.status_code in (403, 429):
-            raise ProviderError("触发 GitHub 限流（403/429），稍后重试")
+            raise ProviderError("PAT 无效或过期（401），请重新生成并填入")
+        if resp.status_code == 429 or (
+            resp.status_code == 403
+            and resp.headers.get("x-ratelimit-remaining") == "0"
+        ):
+            raise ProviderError("触发 GitHub 限流，请稍后重试")
+        if resp.status_code == 403:
+            body = _safe_json(resp)
+            if "not accessible" in str(body.get("message", "")).lower():
+                raise ProviderError(
+                    "PAT 权限不足（403）：请到 github.com/settings/personal-access-tokens "
+                    "编辑该 PAT，把 Permissions → Repository permissions → Contents "
+                    "设为 Read and write 后保存（token 不变，应用里无需重填）")
+            raise ProviderError(f"GitHub 拒绝访问（403）：{body.get('message', '未知原因')}")
         return resp
 
     def test(self) -> dict:
@@ -74,8 +99,14 @@ class GitHubProvider:
                     return {"ok": False, "detail": f"HTTP {resp.status_code}"}
                 info = resp.json()
                 vis = info.get("visibility", "?")
+                # 写探针：同步推送用的就是 blob 上传；只读 Contents 会「测试通过、
+                # 同步失败」，必须提前在这里验掉（孤儿 blob 无引用，GitHub 自行回收）
+                self._ok(self._req(c, "POST", f"/repos/{self.repo}/git/blobs",
+                                   json={"content": "dGVzdA==", "encoding": "base64"}),
+                         "验证写权限")
                 return {"ok": True,
-                        "detail": f"连通正常（{self.repo}，{vis}，默认分支 {info.get('default_branch')}）"}
+                        "detail": f"连通正常（{self.repo}，{vis}，默认分支 "
+                                  f"{info.get('default_branch')}，读写权限 ✓）"}
         except ProviderError as e:
             return {"ok": False, "detail": str(e)}
         except (httpx.HTTPError, socket.error) as e:
@@ -120,8 +151,11 @@ class GitHubProvider:
             self._ok(resp, "访问仓库")
 
             resp = self._req(c, "GET", f"/repos/{self.repo}/git/ref/heads/{self.branch}")
-            if resp.status_code == 404:
+            # 空仓库返回 409 "Git Repository is empty."；分支不存在返回 404。
+            # 两者都代表「远端没有同步状态」。
+            if resp.status_code in (404, 409):
                 return None
+            self._ok(resp, "读取分支")
             head = resp.json()["object"]["sha"]
 
             resp = self._ok(self._req(c, "GET",
@@ -158,7 +192,8 @@ class GitHubProvider:
             raise ProviderError("没有可推送的变更")
         with self._client() as c:
             resp = self._req(c, "GET", f"/repos/{self.repo}/git/ref/heads/{self.branch}")
-            if resp.status_code == 404:
+            # 409=空仓库 / 404=分支不存在 → 无父提交，走初始化推送
+            if resp.status_code in (404, 409):
                 parent_sha = None
                 base_tree = None
             else:

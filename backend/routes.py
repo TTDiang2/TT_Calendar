@@ -508,6 +508,10 @@ def sync_now(conn=Depends(get_db)):
                                          "remote_rows": e.remote_pulled})
     except (sync_engine.SyncError, OSError) as e:
         raise HTTPException(400, detail=str(e))
+    except Exception as e:  # noqa: BLE001
+        # 未预期异常若穿透出去，500 由最外层中间件生成、不带 CORS 头，
+        # 前端只能看到 "Failed to fetch"。必须就地转成 HTTPException。
+        raise HTTPException(500, detail=f"同步内部错误：{e!r}")
 
 
 @router.post("/sync/resolve")
@@ -517,6 +521,8 @@ def sync_resolve(body: dict, conn=Depends(get_db)):
             conn, body.get("mode", ""), on_imported=_recompute_day_busy)
     except (sync_engine.SyncError, OSError) as e:
         raise HTTPException(400, detail=str(e))
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(500, detail=f"同步内部错误：{e!r}")
 
 
 # ---------------------------------------------------------------------------

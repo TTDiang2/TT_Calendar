@@ -8,19 +8,30 @@ base 快照 = 上次同步完成时的数据形态，存 data/sync_base/snapshot
 import json
 import socket
 import sqlite3
+import threading
 from datetime import datetime
 from pathlib import Path
+
+from tt_calendar.config import DATA_DIR
 
 from . import merge as M
 from . import providers as P
 from . import secrets, snapshot as S
 from .providers import GitHubProvider, ProviderError
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "sync_base"
+BASE_DIR = DATA_DIR / "sync_base"
 BASE_FILE = BASE_DIR / "snapshot.json"
+
+# 同步全程互斥：启动自动同步与手动「立即同步」可能并发，撞车会导致
+# 两份合并结果互相覆盖。锁只在本进程内有效（sidecar 是唯一写入口，足够）。
+_sync_lock = threading.Lock()
 
 
 class SyncError(Exception):
+    pass
+
+
+class SyncBusy(SyncError):
     pass
 
 
@@ -111,10 +122,14 @@ def _has_base() -> bool:
 def sync_now(conn: sqlite3.Connection,
              on_imported=None) -> dict:
     """完整同步。返回报告 dict；首次绑定抛 NeedsDecision；失败抛 SyncError。"""
+    if not _sync_lock.acquire(blocking=False):
+        raise SyncBusy("同步正在进行中，请稍候")
     try:
         return _sync_now(conn, on_imported)
     except ProviderError as e:
         raise SyncError(str(e))
+    finally:
+        _sync_lock.release()
 
 
 def _sync_now(conn: sqlite3.Connection, on_imported) -> dict:
@@ -176,10 +191,14 @@ def resolve_first_bind(conn: sqlite3.Connection, mode: str, on_imported=None) ->
     """首次绑定二选一：pull_overwrite / merge_push。"""
     if mode not in ("pull_overwrite", "merge_push"):
         raise SyncError(f"未知模式 {mode}")
+    if not _sync_lock.acquire(blocking=False):
+        raise SyncBusy("同步正在进行中，请稍候")
     try:
         return _resolve_first_bind(conn, mode, on_imported)
     except ProviderError as e:
         raise SyncError(str(e))
+    finally:
+        _sync_lock.release()
 
 
 def _resolve_first_bind(conn: sqlite3.Connection, mode: str, on_imported) -> dict:
