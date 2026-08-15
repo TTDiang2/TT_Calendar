@@ -45,6 +45,7 @@
 
 | 现象 | 处理 |
 |---|---|
+| 「PAT 无法访问仓库 …（404）」或提示「该 PAT 只可见：…」 | fine-grained PAT 没勾选数据仓库（**先建 PAT 后建仓库时必然踩到**：新建的仓库不会自动进入旧 PAT 的授权列表）。到 github.com/settings/personal-access-tokens 编辑该 PAT → Repository access → 勾选 `tt-calendar-data` → 保存。token 不变，应用里无需重填 |
 | 「PAT 无效或过期（401）」 | PAT 被删/过期 → 重新生成，粘贴到设置里保存 |
 | 「触发 GitHub 限流」 | 正常频率不会遇到；遇到就等几分钟 |
 | 「远端有新提交（并发冲突）」 | 两台电脑同时在同步 → 再点一次即可（引擎也会自动重试一次） |

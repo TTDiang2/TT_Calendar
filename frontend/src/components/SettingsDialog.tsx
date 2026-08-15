@@ -102,7 +102,7 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
         <SyncConfigSection />
       </div>
       <p className="mt-5 pt-3 border-t border-gray-100 text-center text-[11px] text-gray-400 select-none">
-        TT Calendar <span className="font-medium">v2.1.0</span>
+        TT Calendar <span className="font-medium">v2.2.0</span>
       </p>
     </Modal>
   )
