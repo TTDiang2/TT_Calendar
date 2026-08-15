@@ -193,3 +193,60 @@ export const importTodosCsv = (file: File) => {
 
 export { API_BASE }
 export type { Day }
+
+// 多端同步
+export interface SyncConfig {
+  repo: string
+  branch: string
+  auto_on_start: boolean
+  has_token: boolean
+}
+export interface SyncReport {
+  pulled?: number
+  pushed?: number
+  conflicts?: number
+  deleted?: number
+  revived?: number
+  warning?: string
+  initialized?: boolean
+}
+export interface SyncStatus {
+  configured: boolean
+  at?: string
+  ok?: boolean
+  report?: SyncReport
+  commit?: string | null
+}
+export interface SyncResult {
+  result: string
+  pulled?: number
+  pushed?: number
+  conflicts?: number
+  deleted?: number
+  revived?: number
+  warning?: string
+  commit_url?: string | null
+  remote_rows?: number
+}
+
+export const getSyncStatus = () => get<SyncStatus>('/sync/status')
+export const getSyncConfig = () => get<SyncConfig>('/sync/config')
+export const saveSyncConfig = (cfg: { repo: string; branch: string; token?: string; auto_on_start: boolean }) =>
+  put<{ ok: boolean }>('/sync/config', cfg)
+export const testSync = () => post<{ ok: boolean; detail: string }>('/sync/test')
+
+export async function syncNow(): Promise<SyncResult> {
+  const r = await fetch(`${API_BASE}/api/sync/now`, { method: 'POST' })
+  if (r.status === 409) {
+    const d = await r.json()
+    return { result: 'needs_decision', remote_rows: d.detail?.remote_rows ?? 0 }
+  }
+  if (!r.ok) {
+    const d = await r.json().catch(() => null)
+    throw new Error(d?.detail ?? `同步失败（${r.status}）`)
+  }
+  return r.json()
+}
+
+export const resolveSync = (mode: 'pull_overwrite' | 'merge_push') =>
+  post<SyncResult>('/sync/resolve', { mode })

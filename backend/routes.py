@@ -21,6 +21,8 @@ from tt_calendar.utils.date_utils import parse_date, shift_month
 
 from backend import aggregator
 from backend.deps import get_db
+from tt_calendar.sync import engine as sync_engine
+from tt_calendar.sync.providers import GitHubProvider
 
 router = APIRouter()
 
@@ -432,8 +434,11 @@ def put_todo_busy_config(body: dict, conn=Depends(get_db)):
 @router.post("/settings/todo-busy/recompute")
 def recompute_day_busy_all(conn=Depends(get_db)):
     """调参后全量重算 day_busy：扫所有 todo 的受影响日期，逐个重算 predict + done。"""
+    return {"days_written": _recompute_day_busy(conn)}
+
+
+def _recompute_day_busy(conn) -> int:
     cfg = db.get_todo_busy_config(conn)
-    # 找出所有受 todo 影响的日期（due_date + planned_date + date(completed_at)）
     rows = conn.execute(
         "SELECT id, due_date, planned_date, completed_at FROM todo "
         "WHERE due_date IS NOT NULL OR planned_date IS NOT NULL OR completed_at IS NOT NULL"
@@ -456,7 +461,62 @@ def recompute_day_busy_all(conn=Depends(get_db)):
         done_level = aggregator.compute_todo_busy_level(d, done_todos, cfg, mode="done")
         db.upsert_day_busy(conn, d, predict_level, done_level)
         written += 1
-    return {"days_written": written}
+    return written
+
+
+# ---------------------------------------------------------------------------
+# 多端同步
+# ---------------------------------------------------------------------------
+
+
+@router.get("/sync/status")
+def sync_status(conn=Depends(get_db)):
+    st = sync_engine.last_status(conn)
+    return {"configured": sync_engine.is_configured(conn), **st}
+
+
+@router.get("/sync/config")
+def sync_get_config(conn=Depends(get_db)):
+    cfg = sync_engine.get_sync_config(conn)
+    return {"repo": cfg["repo"], "branch": cfg["branch"],
+            "auto_on_start": cfg["auto_on_start"],
+            "has_token": bool(cfg["token_dpapi"])}
+
+
+@router.put("/sync/config")
+def sync_put_config(body: dict, conn=Depends(get_db)):
+    sync_engine.save_sync_config(
+        conn, body.get("repo", ""), body.get("branch", "main") or "main",
+        body.get("token"), bool(body.get("auto_on_start", True)))
+    return {"ok": True}
+
+
+@router.post("/sync/test")
+def sync_test(conn=Depends(get_db)):
+    try:
+        return sync_engine.test_connection(conn)
+    except sync_engine.SyncError as e:
+        return {"ok": False, "detail": str(e)}
+
+
+@router.post("/sync/now")
+def sync_now(conn=Depends(get_db)):
+    try:
+        return sync_engine.sync_now(conn, on_imported=_recompute_day_busy)
+    except sync_engine.NeedsDecision as e:
+        raise HTTPException(409, detail={"needs_decision": True,
+                                         "remote_rows": e.remote_pulled})
+    except (sync_engine.SyncError, OSError) as e:
+        raise HTTPException(400, detail=str(e))
+
+
+@router.post("/sync/resolve")
+def sync_resolve(body: dict, conn=Depends(get_db)):
+    try:
+        return sync_engine.resolve_first_bind(
+            conn, body.get("mode", ""), on_imported=_recompute_day_busy)
+    except (sync_engine.SyncError, OSError) as e:
+        raise HTTPException(400, detail=str(e))
 
 
 # ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import clsx from 'clsx'
 import { Trash2 } from 'lucide-react'
@@ -6,6 +6,8 @@ import { Modal, Field } from './ui/Modal'
 import {
   toggleLayer, importJisilu, getLayerSubActions, updateLayerConfig, deleteLayer,
   getTodoBusyConfig, setTodoBusyConfig, recomputeTodoBusy, type TodoBusyConfig,
+  getSyncConfig, getSyncStatus, saveSyncConfig, testSync, syncNow, resolveSync,
+  type SyncResult,
 } from '../api/client'
 import type { Layer } from '../types'
 
@@ -97,6 +99,7 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
         </section>
 
         <BusyConfigSection />
+        <SyncConfigSection />
       </div>
       <p className="mt-5 pt-3 border-t border-gray-100 text-center text-[11px] text-gray-400 select-none">
         TT Calendar <span className="font-medium">v2.1.0</span>
@@ -234,6 +237,148 @@ function BusyConfigSection() {
           </div>
         </div>
       )}
+    </section>
+  )
+}
+
+function reportText(r: SyncResult): string {
+  return `拉取 ${r.pulled ?? 0} · 推送 ${r.pushed ?? 0} · 冲突 ${r.conflicts ?? 0} · 删除 ${r.deleted ?? 0}` + (r.warning ? `（${r.warning}）` : '')
+}
+
+function SyncConfigSection() {
+  const qc = useQueryClient()
+  const { data: cfg } = useQuery({ queryKey: ['syncConfig'], queryFn: getSyncConfig })
+  const { data: status } = useQuery({ queryKey: ['syncStatus'], queryFn: getSyncStatus })
+  const [repo, setRepo] = useState('')
+  const [branch, setBranch] = useState('main')
+  const [token, setToken] = useState('')
+  const [auto, setAuto] = useState(true)
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [busy, setBusy] = useState<'save' | 'test' | 'sync' | null>(null)
+  const [decision, setDecision] = useState<number | null>(null)
+  const loaded = useRef(false)
+
+  useEffect(() => {
+    if (cfg && !loaded.current) {
+      loaded.current = true
+      setRepo(cfg.repo)
+      setBranch(cfg.branch)
+      setAuto(cfg.auto_on_start)
+    }
+  }, [cfg])
+
+  const persist = () => saveSyncConfig({
+    repo, branch, token: token || undefined, auto_on_start: auto,
+  })
+
+  const onSave = async () => {
+    setBusy('save'); setMsg(null)
+    try {
+      await persist()
+      setToken('')
+      qc.invalidateQueries({ queryKey: ['syncConfig'] })
+      setMsg({ ok: true, text: '已保存' })
+    } catch (e) { setMsg({ ok: false, text: String(e) }) } finally { setBusy(null) }
+  }
+
+  const onTest = async () => {
+    setBusy('test'); setMsg(null)
+    try {
+      await persist()
+      setToken('')
+      const r = await testSync()
+      qc.invalidateQueries({ queryKey: ['syncConfig'] })
+      setMsg({ ok: r.ok, text: r.detail })
+    } catch (e) { setMsg({ ok: false, text: String(e) }) } finally { setBusy(null) }
+  }
+
+  const onSync = async () => {
+    setBusy('sync'); setMsg(null)
+    try {
+      const r = await syncNow()
+      if (r.result === 'needs_decision') {
+        setDecision(r.remote_rows ?? 0)
+      } else if (r.result === 'initialized') {
+        setMsg({ ok: true, text: `首次初始化完成：已上传 ${r.pushed} 行` })
+      } else {
+        setMsg({ ok: true, text: reportText(r) })
+      }
+      qc.invalidateQueries()
+    } catch (e) { setMsg({ ok: false, text: String(e) }) } finally { setBusy(null) }
+  }
+
+  const onResolve = async (mode: 'pull_overwrite' | 'merge_push') => {
+    setBusy('sync'); setMsg(null)
+    try {
+      const r = await resolveSync(mode)
+      setDecision(null)
+      setMsg({ ok: true, text: `绑定完成：${reportText(r)}` })
+      qc.invalidateQueries()
+    } catch (e) { setMsg({ ok: false, text: String(e) }) } finally { setBusy(null) }
+  }
+
+  const lastLine = status?.at
+    ? `${status.ok ? '✓' : '⚠'} 上次同步 ${status.at.slice(11, 19)}`
+    : '尚未同步过'
+
+  return (
+    <section>
+      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">数据同步</h3>
+      <p className="text-xs text-gray-400 mb-2">
+        通过你的 GitHub 私有仓库在多台电脑间同步全部数据（待办、涂色、纪念日、配置）。数据明文存于你的仓库；PAT 用 Windows 加密保存、永不上传。配置步骤见 docs/SYNC_SETUP.md。
+      </p>
+      {decision !== null && (
+        <div className="mb-3 p-3 rounded-md bg-amber-50 border border-amber-200 text-sm">
+          <p className="mb-2">远端仓库已有 {decision} 行数据，本地是首次绑定。如何处理？</p>
+          <div className="flex gap-2">
+            <button disabled={busy !== null} onClick={() => onResolve('merge_push')}
+              className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40">
+              合并两边并上传（推荐）
+            </button>
+            <button disabled={busy !== null} onClick={() => onResolve('pull_overwrite')}
+              className="px-3 py-1.5 text-sm bg-white border border-red-300 text-red-600 rounded-lg hover:bg-red-50 disabled:opacity-40">
+              用远端覆盖本地
+            </button>
+          </div>
+        </div>
+      )}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500 w-20 flex-shrink-0">{status?.configured ? lastLine : '未配置'}</span>
+        </div>
+        <div className="flex gap-2">
+          <Field label="仓库（owner/repo）">
+            <input className="tt-input w-full" placeholder="TTDiang2/tt-calendar-data"
+              value={repo} onChange={(e) => setRepo(e.target.value)} />
+          </Field>
+          <Field label="分支">
+            <input className="tt-input w-24" value={branch} onChange={(e) => setBranch(e.target.value)} />
+          </Field>
+        </div>
+        <Field label={`PAT（${cfg?.has_token ? '已存储，留空则不修改' : 'fine-grained，见操作指引'}）`}>
+          <input type="password" className="tt-input w-full" placeholder={cfg?.has_token ? '••••••••' : 'github_pat_...'}
+            value={token} onChange={(e) => setToken(e.target.value)} />
+        </Field>
+        <label className="flex items-center gap-2 text-sm text-gray-700 select-none">
+          <input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} />
+          启动时自动同步一次
+        </label>
+        <div className="flex items-center gap-2">
+          <button onClick={onSave} disabled={busy !== null || !repo}
+            className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-40">
+            {busy === 'save' ? '保存中…' : '保存'}
+          </button>
+          <button onClick={onTest} disabled={busy !== null || !repo || (!token && !cfg?.has_token)}
+            className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-40">
+            {busy === 'test' ? '测试中…' : '测试连接'}
+          </button>
+          <button onClick={onSync} disabled={busy !== null || !repo || !cfg?.has_token}
+            className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40">
+            {busy === 'sync' ? '同步中…' : '立即同步'}
+          </button>
+          {msg && <span className={`text-sm ${msg.ok ? 'text-green-600' : 'text-red-500'}`}>{msg.text}</span>}
+        </div>
+      </div>
     </section>
   )
 }

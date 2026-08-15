@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useViewData, useCountdown } from './hooks/useApi'
-import { toggleLayer, moveDay, getTodoStats, getTodos } from './api/client'
+import { toggleLayer, moveDay, getTodoStats, getTodos, getSyncStatus, getSyncConfig, syncNow } from './api/client'
 import { shiftMonthKey, shiftYearKey } from './data'
 import type { CalEvent, Layer, MonthData, TopTab, ViewMode, YearData } from './types'
 import { TopBar } from './components/TopBar'
@@ -71,6 +71,22 @@ export default function App() {
       qc.prefetchQuery({ queryKey: ['todos', null, 'incomplete', 'due_importance'], queryFn: () => getTodos({ status: 'notStarted', sort: 'due_importance' }) })
     }
   }, [qc, topTab])
+
+  // 启动自动同步：延迟到首屏渲染后静默执行，失败不打扰
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      try {
+        const [st, cfg] = await Promise.all([getSyncStatus(), getSyncConfig()])
+        if (st.configured && cfg.auto_on_start) {
+          await syncNow()
+          qc.invalidateQueries()
+        }
+      } catch {
+        /* 网络异常等，静默跳过 */
+      }
+    }, 2000)
+    return () => clearTimeout(t)
+  }, [qc])
 
   const layers = monthData?.layers ?? []
 
