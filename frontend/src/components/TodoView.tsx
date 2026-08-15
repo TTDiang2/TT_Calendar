@@ -63,6 +63,7 @@ export function TodoView() {
   const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null)
   const [creatingList, setCreatingList] = useState(false)
   const [newListName, setNewListName] = useState('')
+  const [autoList, setAutoList] = useState(false)
   const [csvResult, setCsvResult] = useState<string | null>(null)
   const [showCompleted, setShowCompleted] = useState(false)
   const [leavingIds, setLeavingIds] = useState<Set<string>>(new Set())
@@ -310,11 +311,22 @@ export function TodoView() {
               <input type="file" accept=".csv,text/csv" className="hidden" onChange={handleFile} />
             </label>
             <button
-              onClick={() => {
-                const newId = '__NEW__'
-                setSelectedTodoId(newId)
+              onClick={async () => {
+                if (!lists.length) {
+                  setAutoList(true)
+                  try {
+                    const tl = await createTodoList('任务')
+                    setSelectedList(tl.id)
+                    invalidate()
+                  } catch {
+                    setAutoList(false)
+                    return
+                  }
+                  setAutoList(false)
+                }
+                setSelectedTodoId('__NEW__')
               }}
-              disabled={!lists.length}
+              disabled={autoList}
               className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40"
             >
               <Plus size={14} /> 新建待办
@@ -327,7 +339,7 @@ export function TodoView() {
         <div className="flex-1 overflow-y-auto">
           {filteredIncomplete.length === 0 && completedCount === undefined ? (
             <div className="h-full flex items-center justify-center text-gray-300 text-sm">
-              {lists.length === 0 ? '先新建一个列表' : (tagFilter ? `没有「${tagFilter}」标签的待办` : '暂无待办，点「新建待办」开始')}
+              {tagFilter ? `没有「${tagFilter}」标签的待办` : '暂无待办，点「新建待办」开始'}
             </div>
           ) : (
             <div className="flex flex-col gap-1">
