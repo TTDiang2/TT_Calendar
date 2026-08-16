@@ -75,6 +75,7 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
           </p>
           <p className="text-sm text-gray-500">
             {y} 年 · 周{weekday}
+            {day.lunar && <span className="ml-2 text-gray-400">{day.lunar}</span>}
             {day.is_today && <span className="ml-2 text-blue-500 text-xs">今天</span>}
           </p>
         </div>

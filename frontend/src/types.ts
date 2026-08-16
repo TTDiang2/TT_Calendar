@@ -63,6 +63,7 @@ export interface Day {
   schedule_items?: ScheduleItem[]
   coloring_level: number | null
   holiday: { name: string | null; is_workday_made_up: boolean } | null
+  lunar: string
   gradient_bg: string | null
   custom_bg?: CustomBg | null
   todos: Todo[]
@@ -124,6 +125,7 @@ export interface CountdownItem {
   category: string
   base_date: string
   repeat_yearly: boolean
+  repeat_type?: 'solar' | 'lunar'
   milestone_rule: string | null
   never_expire: boolean
   notes: string | null

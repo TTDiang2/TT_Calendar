@@ -138,7 +138,8 @@ class Countdown(BaseModel):
     """倒数日（独立表，日期动态计算）。
 
     base_date 为基准日期；repeat_yearly 表示每年重置（生日/节日）；
-    milestone_rule 为里程碑规则（如 "100,365,520,1000,3650"），
+    repeat_type='solar' 按公历月日重复，'lunar' 按农历月日重复（春节=正月初一，
+    公历日期年年不同）；milestone_rule 为里程碑规则（如 "100,365,520,1000,3650"），
     从 base_date 起自动推算特殊日子；never_expire 表示过期后
     不显示「已过 N 天」（纪念日类事件）。
     """
@@ -148,10 +149,33 @@ class Countdown(BaseModel):
     category: str = "其他"          # 生日/纪念日/节日/重要事件/自定义
     base_date: date_t
     repeat_yearly: bool = False
+    repeat_type: str = "solar"      # solar | lunar
     milestone_rule: Optional[str] = None  # 逗号分隔天数
     never_expire: bool = False
     notes: Optional[str] = None
     color: Optional[str] = None
     sort_order: int = 0
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+
+class Subscription(BaseModel):
+    """订阅：外部日历数据源。
+
+    内置订阅（source_key='jisilu'）开箱即用；自定义订阅由用户登记
+    url/rules_text（自然语言需求单，给 agent 读），status='pending' 等 agent 适配。
+    适配规范见 docs/SUBSCRIPTION_SPEC.md。
+    """
+
+    id: str                        # 内置固定 id（builtin:jisilu）；自定义用 uuid
+    display_name: str
+    source_key: str                # jisilu / custom:<slug>（agent 适配后改为实际 key）
+    url: Optional[str] = None
+    rules_text: Optional[str] = None   # 自然语言抓取规则（给 agent 的需求单）
+    enabled: bool = True
+    auto_update: bool = True       # 打开应用时自动拉取（一年一更的可关）
+    status: str = "active"         # active | pending | error
+    last_synced_at: Optional[str] = None
+    config_json: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

@@ -352,6 +352,7 @@ class CountdownIn(BaseModel):
     category: str = "其他"
     base_date: str
     repeat_yearly: bool = False
+    repeat_type: str = "solar"      # solar | lunar
     milestone_rule: Optional[str] = None
     never_expire: bool = False
     notes: Optional[str] = None
@@ -397,6 +398,7 @@ def _countdown_from_in(body: CountdownIn):
         category=body.category.strip() or "其他",
         base_date=parse_date(body.base_date),
         repeat_yearly=body.repeat_yearly,
+        repeat_type=body.repeat_type if body.repeat_type in ("solar", "lunar") else "solar",
         milestone_rule=(body.milestone_rule or "").strip() or None,
         never_expire=body.never_expire,
         notes=body.notes,
@@ -480,6 +482,7 @@ def sync_get_config(conn=Depends(get_db)):
     cfg = sync_engine.get_sync_config(conn)
     return {"repo": cfg["repo"], "branch": cfg["branch"],
             "auto_on_start": cfg["auto_on_start"],
+            "sync_on_close": cfg["sync_on_close"],
             "has_token": bool(cfg["token_dpapi"])}
 
 
@@ -487,7 +490,8 @@ def sync_get_config(conn=Depends(get_db)):
 def sync_put_config(body: dict, conn=Depends(get_db)):
     sync_engine.save_sync_config(
         conn, body.get("repo", ""), body.get("branch", "main") or "main",
-        body.get("token"), bool(body.get("auto_on_start", True)))
+        body.get("token"), bool(body.get("auto_on_start", True)),
+        bool(body.get("sync_on_close", True)))
     return {"ok": True}
 
 
@@ -594,6 +598,173 @@ async def import_jisilu(body: ImportBody, conn=Depends(get_db)):
         if source:
             await source.close()
         raise HTTPException(500, str(e))
+
+
+# ---------------------------------------------------------------------------
+# 订阅（外部日历数据源；适配规范见 docs/SUBSCRIPTION_SPEC.md）
+# ---------------------------------------------------------------------------
+
+
+async def _fetch_jisilu_range(conn, start: date_t, end: date_t) -> tuple[int, str | None]:
+    """集思录抓取核心（区间 → 写 events，按图层开关过滤）。"""
+    source = None
+    try:
+        source = get_source("jisilu")
+        if source is None or not isinstance(source, JisiluSource):
+            return 0, "jisilu source unavailable"
+        events, result = await source.fetch(start, end)
+        enabled_ids = {l.layer_id for l in db.fetch_layer_configs(conn) if l.enabled}
+        inserted = 0
+        for ev in events:
+            if ev.layer_id not in enabled_ids:
+                continue
+            db.upsert_event(conn, ev)
+            inserted += 1
+        conn.commit()
+        return inserted, result.error
+    finally:
+        if source:
+            await source.close()
+
+
+def _refresh_one_subscription(conn, sub) -> dict:
+    """按 source_key 分发刷新。未知的 source_key = 待适配，返回需要提示。"""
+    if sub.source_key == "jisilu":
+        start = date_t.today() - timedelta(days=180)
+        if sub.last_synced_at:
+            try:
+                start = max(start, datetime.fromisoformat(sub.last_synced_at).date())
+            except Exception:
+                pass
+        end = date_t.today() + timedelta(days=90)
+        try:
+            inserted, err = asyncio_run(_fetch_jisilu_range(conn, start, end))
+        except Exception as e:
+            db.touch_subscription_synced(conn, sub.id, "error", str(e))
+            conn.commit()
+            return {"id": sub.id, "ok": False, "error": str(e)}
+        if err:
+            db.touch_subscription_synced(conn, sub.id, "error", err)
+            conn.commit()
+            return {"id": sub.id, "ok": False, "error": err, "inserted": inserted}
+        db.touch_subscription_synced(conn, sub.id, "active")
+        conn.commit()
+        return {"id": sub.id, "ok": True, "inserted": inserted}
+    return {"id": sub.id, "ok": False, "error": "pending_adaptation"}
+
+
+def asyncio_run(coro):
+    import asyncio as _asyncio
+    try:
+        loop = _asyncio.get_running_loop()
+    except RuntimeError:
+        return _asyncio.run(coro)
+    import concurrent.futures as _cf
+    with _cf.ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(_asyncio.run, coro).result()
+
+
+class SubscriptionIn(BaseModel):
+    display_name: str
+    url: str = ""
+    rules_text: str = ""
+    auto_update: bool = True
+
+
+class SubscriptionPatch(BaseModel):
+    display_name: Optional[str] = None
+    enabled: Optional[bool] = None
+    auto_update: Optional[bool] = None
+
+
+@router.get("/subscriptions")
+def list_subscriptions(conn=Depends(get_db)):
+    out = []
+    for s in db.fetch_subscriptions(conn):
+        d = s.model_dump(mode="json")
+        cfg = {}
+        if s.config_json:
+            try:
+                cfg = __import__("json").loads(s.config_json)
+            except Exception:
+                pass
+        d["last_error"] = cfg.get("last_error")
+        out.append(d)
+    return out
+
+
+@router.post("/subscriptions")
+def create_subscription(body: SubscriptionIn, conn=Depends(get_db)):
+    from tt_calendar.models import Subscription
+
+    name = body.display_name.strip()
+    if not name:
+        raise HTTPException(400, "标题不能为空")
+    sub = Subscription(
+        id=str(uuid.uuid4()),
+        display_name=name,
+        source_key=f"custom:{uuid.uuid4().hex[:8]}",
+        url=body.url.strip() or None,
+        rules_text=body.rules_text.strip() or None,
+        auto_update=body.auto_update,
+        status="pending",
+    )
+    db.upsert_subscription(conn, sub)
+    conn.commit()
+    return sub.model_dump(mode="json")
+
+
+@router.patch("/subscriptions/{sub_id}")
+def patch_subscription(sub_id: str, body: SubscriptionPatch, conn=Depends(get_db)):
+    sub = db.get_subscription(conn, sub_id)
+    if not sub:
+        raise HTTPException(404, "订阅不存在")
+    if body.display_name is not None:
+        sub.display_name = body.display_name.strip() or sub.display_name
+    if body.enabled is not None:
+        sub.enabled = body.enabled
+    if body.auto_update is not None:
+        sub.auto_update = body.auto_update
+    db.upsert_subscription(conn, sub)
+    conn.commit()
+    return sub.model_dump(mode="json")
+
+
+@router.delete("/subscriptions/{sub_id}")
+def delete_subscription(sub_id: str, conn=Depends(get_db)):
+    if sub_id == "builtin:jisilu":
+        raise HTTPException(400, "内置订阅不可删除（可关闭）")
+    if not db.get_subscription(conn, sub_id):
+        raise HTTPException(404, "订阅不存在")
+    db.delete_subscription(conn, sub_id)
+    conn.commit()
+    return {"ok": True}
+
+
+@router.post("/subscriptions/{sub_id}/refresh")
+def refresh_subscription(sub_id: str, conn=Depends(get_db)):
+    sub = db.get_subscription(conn, sub_id)
+    if not sub:
+        raise HTTPException(404, "订阅不存在")
+    if sub.status == "pending":
+        raise HTTPException(400, "该订阅待 agent 适配，暂不能拉取（见 docs/SUBSCRIPTION_SPEC.md）")
+    return _refresh_one_subscription(conn, sub)
+
+
+@router.post("/subscriptions/refresh-due")
+def refresh_due_subscriptions(conn=Depends(get_db)):
+    """启动时批量刷新：enabled + auto_update + 今日未刷新过的订阅。"""
+    from datetime import datetime as _dt
+
+    today = _dt.now().strftime("%Y-%m-%d")
+    results = []
+    for sub in db.fetch_subscriptions(conn):
+        if not (sub.enabled and sub.auto_update and sub.status == "active"):
+            continue
+        if sub.last_synced_at and sub.last_synced_at[:10] >= today:
+            continue
+        results.append(_refresh_one_subscription(conn, sub))
+    return {"refreshed": results}
 
 
 # ---------------------------------------------------------------------------

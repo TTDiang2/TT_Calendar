@@ -144,11 +144,27 @@ CREATE TABLE IF NOT EXISTS countdown (
     category       TEXT NOT NULL DEFAULT '其他',
     base_date      TEXT NOT NULL,
     repeat_yearly  INTEGER DEFAULT 0,
+    repeat_type    TEXT DEFAULT 'solar',
     milestone_rule TEXT,
     never_expire   INTEGER DEFAULT 0,
     notes          TEXT,
     color          TEXT,
     sort_order     INTEGER DEFAULT 0,
+    created_at     TEXT DEFAULT (datetime('now','localtime')),
+    updated_at     TEXT DEFAULT (datetime('now','localtime'))
+);
+
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id             TEXT PRIMARY KEY,
+    display_name   TEXT NOT NULL,
+    source_key     TEXT NOT NULL,
+    url            TEXT,
+    rules_text     TEXT,
+    enabled        INTEGER DEFAULT 1,
+    auto_update    INTEGER DEFAULT 1,
+    status         TEXT DEFAULT 'pending',
+    last_synced_at TEXT,
+    config_json    TEXT,
     created_at     TEXT DEFAULT (datetime('now','localtime')),
     updated_at     TEXT DEFAULT (datetime('now','localtime'))
 );
@@ -197,6 +213,7 @@ def init_db(conn: sqlite3.Connection) -> None:
     with cursor(conn) as cur:
         cur.executescript(SCHEMA_SQL)
         _ensure_todo_columns(cur)
+        _ensure_countdown_columns(cur)
         _ensure_schedule_item_columns(cur)
         _ensure_layer_config_columns(cur)
         _drop_legacy_schedule_layer(cur)
@@ -242,6 +259,13 @@ def _ensure_todo_columns(cur: sqlite3.Cursor) -> None:
         cur.execute("ALTER TABLE todo ADD COLUMN tags TEXT")
     if "planned_date" not in cols:
         cur.execute("ALTER TABLE todo ADD COLUMN planned_date TEXT")
+
+
+def _ensure_countdown_columns(cur: sqlite3.Cursor) -> None:
+    """旧库升级：countdown 表缺 repeat_type 列时补上（农历重复倒数日）。"""
+    cols = {r["name"] for r in cur.execute("PRAGMA table_info(countdown)").fetchall()}
+    if "repeat_type" not in cols:
+        cur.execute("ALTER TABLE countdown ADD COLUMN repeat_type TEXT DEFAULT 'solar'")
 
 
 # ---------------------------------------------------------------------------
@@ -1350,12 +1374,14 @@ def delete_todo(conn: sqlite3.Connection, todo_id: str) -> None:
 def _row_to_countdown(row: sqlite3.Row):
     from .models import Countdown
 
+    keys = row.keys()
     return Countdown(
         id=row["id"],
         name=row["name"],
         category=row["category"],
         base_date=parse_date(row["base_date"]),
         repeat_yearly=bool(row["repeat_yearly"]),
+        repeat_type=row["repeat_type"] if "repeat_type" in keys else "solar",
         milestone_rule=row["milestone_rule"],
         never_expire=bool(row["never_expire"]),
         notes=row["notes"],
@@ -1377,24 +1403,26 @@ def upsert_countdown(conn: sqlite3.Connection, cd) -> None:
     with cursor(conn) as cur:
         if cd.id is None:
             cur.execute(
-                "INSERT INTO countdown(name, category, base_date, repeat_yearly, "
+                "INSERT INTO countdown(name, category, base_date, repeat_yearly, repeat_type, "
                 "milestone_rule, never_expire, notes, color, sort_order) "
-                "VALUES(?,?,?,?,?,?,?,?,?)",
+                "VALUES(?,?,?,?,?,?,?,?,?,?)",
                 (
                     cd.name, cd.category, cd.base_date.isoformat(),
-                    int(cd.repeat_yearly), cd.milestone_rule, int(cd.never_expire),
+                    int(cd.repeat_yearly), getattr(cd, "repeat_type", "solar"),
+                    cd.milestone_rule, int(cd.never_expire),
                     cd.notes, cd.color, cd.sort_order,
                 ),
             )
             cd.id = cur.lastrowid
         else:
             cur.execute(
-                "UPDATE countdown SET name=?, category=?, base_date=?, repeat_yearly=?, "
+                "UPDATE countdown SET name=?, category=?, base_date=?, repeat_yearly=?, repeat_type=?, "
                 "milestone_rule=?, never_expire=?, notes=?, color=?, sort_order=?, "
                 "updated_at=datetime('now','localtime') WHERE id=?",
                 (
                     cd.name, cd.category, cd.base_date.isoformat(),
-                    int(cd.repeat_yearly), cd.milestone_rule, int(cd.never_expire),
+                    int(cd.repeat_yearly), getattr(cd, "repeat_type", "solar"),
+                    cd.milestone_rule, int(cd.never_expire),
                     cd.notes, cd.color, cd.sort_order, cd.id,
                 ),
             )
@@ -1403,6 +1431,110 @@ def upsert_countdown(conn: sqlite3.Connection, cd) -> None:
 def delete_countdown(conn: sqlite3.Connection, cd_id: int) -> None:
     with cursor(conn) as cur:
         cur.execute("DELETE FROM countdown WHERE id = ?", (cd_id,))
+
+
+# ---------------------------------------------------------------------------
+# 订阅
+# ---------------------------------------------------------------------------
+
+
+def _row_to_subscription(row: sqlite3.Row):
+    from .models import Subscription
+
+    return Subscription(
+        id=row["id"],
+        display_name=row["display_name"],
+        source_key=row["source_key"],
+        url=row["url"],
+        rules_text=row["rules_text"],
+        enabled=bool(row["enabled"]),
+        auto_update=bool(row["auto_update"]),
+        status=row["status"],
+        last_synced_at=row["last_synced_at"],
+        config_json=row["config_json"],
+        created_at=datetime.fromisoformat(row["created_at"]) if row["created_at"] else None,
+        updated_at=datetime.fromisoformat(row["updated_at"]) if row["updated_at"] else None,
+    )
+
+
+def fetch_subscriptions(conn: sqlite3.Connection) -> list:
+    rows = conn.execute(
+        "SELECT * FROM subscriptions ORDER BY created_at, id"
+    ).fetchall()
+    return [_row_to_subscription(r) for r in rows]
+
+
+def get_subscription(conn: sqlite3.Connection, sub_id: str):
+    row = conn.execute(
+        "SELECT * FROM subscriptions WHERE id = ?", (sub_id,)
+    ).fetchone()
+    return _row_to_subscription(row) if row else None
+
+
+def upsert_subscription(conn: sqlite3.Connection, sub) -> None:
+    with cursor(conn) as cur:
+        cur.execute(
+            "INSERT INTO subscriptions(id, display_name, source_key, url, rules_text, "
+            "enabled, auto_update, status, last_synced_at, config_json) "
+            "VALUES(?,?,?,?,?,?,?,?,?,?) "
+            "ON CONFLICT(id) DO UPDATE SET display_name=excluded.display_name, "
+            "source_key=excluded.source_key, url=excluded.url, rules_text=excluded.rules_text, "
+            "enabled=excluded.enabled, auto_update=excluded.auto_update, status=excluded.status, "
+            "last_synced_at=excluded.last_synced_at, config_json=excluded.config_json, "
+            "updated_at=datetime('now','localtime')",
+            (
+                sub.id, sub.display_name, sub.source_key, sub.url, sub.rules_text,
+                int(sub.enabled), int(sub.auto_update), sub.status,
+                sub.last_synced_at, sub.config_json,
+            ),
+        )
+
+
+def delete_subscription(conn: sqlite3.Connection, sub_id: str) -> None:
+    with cursor(conn) as cur:
+        cur.execute("DELETE FROM subscriptions WHERE id = ?", (sub_id,))
+
+
+def touch_subscription_synced(conn: sqlite3.Connection, sub_id: str,
+                              status: str, error_note: str | None = None) -> None:
+    """记录一次拉取结果：更新 status/last_synced_at（error 时把错误摘要放 config_json）。"""
+    import json as _json
+
+    row = conn.execute(
+        "SELECT config_json FROM subscriptions WHERE id = ?", (sub_id,)
+    ).fetchone()
+    cfg = {}
+    if row and row["config_json"]:
+        try:
+            cfg = _json.loads(row["config_json"])
+        except Exception:
+            cfg = {}
+    if error_note:
+        cfg["last_error"] = error_note[:300]
+    else:
+        cfg.pop("last_error", None)
+    with cursor(conn) as cur:
+        cur.execute(
+            "UPDATE subscriptions SET status=?, last_synced_at=datetime('now','localtime'), "
+            "config_json=?, updated_at=datetime('now','localtime') WHERE id=?",
+            (status, _json.dumps(cfg, ensure_ascii=False), sub_id),
+        )
+
+
+def ensure_builtin_subscription(conn: sqlite3.Connection) -> None:
+    """内置集思录订阅（幂等）。"""
+    from .models import Subscription
+
+    if get_subscription(conn, "builtin:jisilu") is None:
+        upsert_subscription(conn, Subscription(
+            id="builtin:jisilu",
+            display_name="集思录",
+            source_key="jisilu",
+            enabled=True,
+            auto_update=True,
+            status="active",
+        ))
+        conn.commit()
 
 
 _CN_DIGITS = "零一二三四五六七八九"

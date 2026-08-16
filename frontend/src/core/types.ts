@@ -95,6 +95,7 @@ export interface CountdownRow {
   category: string
   base_date: string
   repeat_yearly: number | null
+  repeat_type: string | null
   milestone_rule: string | null
   never_expire: number | null
   notes: string | null
@@ -116,6 +117,21 @@ export interface MarkRow {
   sync_uid: string | null
 }
 
+export interface SubscriptionRow {
+  id: string
+  display_name: string
+  source_key: string
+  url: string | null
+  rules_text: string | null
+  enabled: number | null
+  auto_update: number | null
+  status: string | null
+  last_synced_at: string | null
+  config_json: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
 export type TableName =
   | 'todo_list'
   | 'todo'
@@ -127,6 +143,7 @@ export type TableName =
   | 'schedule_items'
   | 'countdown'
   | 'marks'
+  | 'subscriptions'
 
 export interface Snapshot {
   todo_list?: TodoListRow[]
@@ -139,6 +156,7 @@ export interface Snapshot {
   schedule_items?: ScheduleItemRow[]
   countdown?: CountdownRow[]
   marks?: MarkRow[]
+  subscriptions?: SubscriptionRow[]
 }
 
 export type RowKey = string

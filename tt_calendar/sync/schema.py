@@ -29,6 +29,7 @@ SYNC_TABLES: dict[str, tuple[str, str, bool]] = {
     "schedule_items": ("id", "sync_uid", True),
     "countdown":      ("id", "sync_uid", True),
     "marks":          ("id", "sync_uid", True),
+    "subscriptions":  ("id", "id", False),
 }
 
 # meta 表中同步凭据等本机私有键，永不导出、永不产生墓碑

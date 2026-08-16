@@ -12,7 +12,12 @@ import {
   upsertMark,
   deleteMark,
   searchEvents,
-  importJisilu,
+  getSubscriptions,
+  createSubscription,
+  patchSubscription,
+  deleteSubscription,
+  refreshSubscription,
+  type Subscription,
   getScheduleItems,
   createScheduleItem,
   updateScheduleItem,
@@ -407,70 +412,191 @@ export function SearchDialog({
 }
 
 // ===========================================================================
-// 集思录导入对话框
+// 订阅面板（外部日历数据源；适配流程见 docs/SUBSCRIPTION_SPEC.md）
 // ===========================================================================
 
-export function ImportDialog({
-  defaultStart,
-  defaultEnd,
-  onClose,
-}: {
-  defaultStart: string
-  defaultEnd: string
-  onClose: () => void
-}) {
+export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient()
-  const [start, setStart] = useState(defaultStart)
-  const [end, setEnd] = useState(defaultEnd)
-  const mut = useMutation({
-    mutationFn: () => importJisilu(start, end),
-    onSuccess: (res) => {
-      qc.invalidateQueries({ queryKey: ['view'] })
-      setResult(`导入 ${res.inserted} 条${res.error ? '；错误：' + res.error : ''}`)
+  const { data: subs = [], isLoading } = useQuery({
+    queryKey: ['subscriptions'],
+    queryFn: getSubscriptions,
+  })
+  const [adding, setAdding] = useState(false)
+  const [name, setName] = useState('')
+  const [url, setUrl] = useState('')
+  const [rules, setRules] = useState('')
+  const [msg, setMsg] = useState<string | null>(null)
+  const [refreshing, setRefreshing] = useState<string | null>(null)
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['subscriptions'] })
+    qc.invalidateQueries({ queryKey: ['view'] })
+  }
+
+  const createMut = useMutation({
+    mutationFn: () => createSubscription({
+      display_name: name, url, rules_text: rules, auto_update: true,
+    }),
+    onSuccess: () => {
+      setAdding(false); setName(''); setUrl(''); setRules('')
+      invalidate()
     },
   })
-  const [result, setResult] = useState<string | null>(null)
+
+  const toggleMut = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { enabled?: boolean; auto_update?: boolean } }) =>
+      patchSubscription(id, data),
+    onSuccess: invalidate,
+  })
+
+  const delMut = useMutation({
+    mutationFn: deleteSubscription,
+    onSuccess: invalidate,
+  })
+
+  const onRefresh = async (s: Subscription) => {
+    setRefreshing(s.id); setMsg(null)
+    try {
+      const r = await refreshSubscription(s.id)
+      setMsg(r.ok ? `「${s.display_name}」已更新（新增 ${r.inserted ?? 0} 条）` : `「${s.display_name}」更新失败：${r.error}`)
+      invalidate()
+    } catch (e) {
+      setMsg(`「${s.display_name}」更新失败：${e instanceof Error ? e.message : '未知错误'}`)
+    } finally { setRefreshing(null) }
+  }
+
+  const pending = subs.filter((s) => s.status === 'pending')
 
   return (
-    <Modal title="导入集思录数据" onClose={onClose} width={420}>
+    <Modal title="订阅" onClose={onClose} width={560}>
       <div className="flex flex-col gap-3">
-        <div className="flex gap-2">
-          <Field label="开始">
-            <input
-              type="date"
-              className="tt-input"
-              value={start}
-              onChange={(e) => setStart(e.target.value)}
-            />
-          </Field>
-          <Field label="结束">
-            <input
-              type="date"
-              className="tt-input"
-              value={end}
-              onChange={(e) => setEnd(e.target.value)}
-            />
-          </Field>
-        </div>
         <p className="text-xs text-gray-400">
-          从集思录抓取该区间的新股/可转债/分红/期权等数据。已禁用的图层会跳过。
+          订阅外部日历数据源，打开日历时自动保持最新。新增自定义订阅后需由你的 agent 完成适配（应用内会提示）。
         </p>
-        {result && <p className="text-sm text-green-600 bg-green-50 rounded-md px-3 py-2">{result}</p>}
-        <div className="flex justify-end gap-2 mt-1">
-          <button onClick={onClose} className="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg">
-            关闭
-          </button>
+
+        {pending.length > 0 && (
+          <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800">
+            <p className="font-medium mb-1">有 {pending.length} 个订阅待适配</p>
+            <p className="text-xs leading-relaxed">
+              请把 TT_Calendar 文件夹用您的 agent 软件打开，并提醒 agent 有新的订阅要做适配
+              （agent 将读取下方「待适配」卡片里的登记信息，按 docs/SUBSCRIPTION_SPEC.md 完成适配）。
+            </p>
+          </div>
+        )}
+
+        {isLoading ? (
+          <p className="text-sm text-gray-400 py-4 text-center">加载中…</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {subs.map((s) => (
+              <div key={s.id} className={`p-3 rounded-lg border ${s.status === 'pending' ? 'border-amber-200 bg-amber-50/40' : 'border-gray-200'}`}>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => toggleMut.mutate({ id: s.id, data: { enabled: !s.enabled } })}
+                    aria-pressed={s.enabled}
+                    className={clsx(
+                      'relative inline-flex items-center w-8 h-[18px] rounded-full transition-colors flex-shrink-0',
+                      s.enabled ? 'bg-blue-500' : 'bg-gray-300',
+                    )}
+                    title={s.enabled ? '关闭订阅' : '开启订阅'}
+                  >
+                    <span className={clsx(
+                      'inline-block w-3.5 h-3.5 rounded-full bg-white shadow transition-transform duration-200',
+                      s.enabled ? 'translate-x-[16px]' : 'translate-x-[2px]',
+                    )} />
+                  </button>
+                  <span className="text-sm text-gray-800 font-medium flex-1 truncate">{s.display_name}</span>
+                  {s.status === 'pending' && <Badge className="bg-amber-100 text-amber-700">待适配</Badge>}
+                  {s.status === 'error' && <Badge className="bg-red-100 text-red-600">出错</Badge>}
+                  {s.status === 'active' && s.last_synced_at && (
+                    <span className="text-[11px] text-gray-400">更新于 {s.last_synced_at.slice(5, 16)}</span>
+                  )}
+                </div>
+                {s.status === 'error' && s.last_error && (
+                  <p className="mt-1 text-[11px] text-red-400 truncate" title={s.last_error}>{s.last_error}</p>
+                )}
+                {s.status === 'pending' && (
+                  <div className="mt-2 text-[11px] text-gray-500 bg-white/60 rounded p-2 space-y-0.5">
+                    <p><span className="text-gray-400">网址：</span>{s.url ?? '（无）'}</p>
+                    <p className="whitespace-pre-wrap"><span className="text-gray-400">规则：</span>{s.rules_text ?? '（无）'}</p>
+                  </div>
+                )}
+                <div className="mt-2 flex items-center gap-3">
+                  <label className="flex items-center gap-1 text-[11px] text-gray-500 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={s.auto_update}
+                      onChange={(e) => toggleMut.mutate({ id: s.id, data: { auto_update: e.target.checked } })}
+                    />
+                    打开时自动更新
+                  </label>
+                  {s.status === 'active' && (
+                    <button
+                      onClick={() => onRefresh(s)}
+                      disabled={refreshing === s.id}
+                      className="text-[11px] text-blue-600 hover:text-blue-700 disabled:opacity-40"
+                    >
+                      {refreshing === s.id ? '更新中…' : '立即更新'}
+                    </button>
+                  )}
+                  {s.id !== 'builtin:jisilu' && (
+                    <button
+                      onClick={() => { if (confirm(`删除订阅「${s.display_name}」？（已抓取的事件数据保留）`)) delMut.mutate(s.id) }}
+                      className="text-[11px] text-gray-400 hover:text-red-500 ml-auto"
+                    >
+                      删除
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {msg && <p className="text-xs text-gray-600 bg-gray-50 rounded-md px-3 py-2">{msg}</p>}
+
+        {adding ? (
+          <div className="p-3 rounded-lg border border-blue-100 bg-blue-50/40 space-y-2">
+            <Field label="标题">
+              <input className="tt-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="如：高金讲座日历" />
+            </Field>
+            <Field label="网址">
+              <input className="tt-input" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" />
+            </Field>
+            <Field label="订阅规则（自然语言，给你的 agent 读）">
+              <textarea
+                className="tt-input min-h-[72px] text-sm"
+                value={rules}
+                onChange={(e) => setRules(e.target.value)}
+                placeholder="描述这个日历在哪、怎么抓、哪些字段、什么频率更新……"
+              />
+            </Field>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setAdding(false)} className="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg">取消</button>
+              <button
+                onClick={() => createMut.mutate()}
+                disabled={!name.trim() || createMut.isPending}
+                className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40"
+              >
+                {createMut.isPending ? '提交中…' : '确认订阅'}
+              </button>
+            </div>
+          </div>
+        ) : (
           <button
-            onClick={() => mut.mutate()}
-            disabled={mut.isPending}
-            className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40"
+            onClick={() => setAdding(true)}
+            className="flex items-center justify-center gap-1 px-3 py-2 text-sm text-gray-500 border border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:text-blue-600"
           >
-            {mut.isPending ? '导入中…' : '开始导入'}
+            <Plus size={14} /> 新增订阅
           </button>
-        </div>
+        )}
       </div>
     </Modal>
   )
+}
+
+function Badge({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${className ?? 'bg-gray-100 text-gray-500'}`}>{children}</span>
 }
 
 // ===========================================================================

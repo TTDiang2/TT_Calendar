@@ -35,6 +35,16 @@ async function del<T>(path: string): Promise<T> {
   return r.json()
 }
 
+async function patch<T>(path: string, body?: unknown): Promise<T> {
+  const r = await fetch(`${API_BASE}/api${path}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  if (!r.ok) throw new Error(`${r.status} ${path}`)
+  return r.json()
+}
+
 // 视图聚合
 export const getView = (mode: ViewMode, anchor: string) => {
   if (mode === 'countdown') throw new Error('countdown 视图不走 getView')
@@ -110,6 +120,7 @@ export interface CountdownInput {
   category?: string
   base_date: string
   repeat_yearly?: boolean
+  repeat_type?: 'solar' | 'lunar'
   milestone_rule?: string | null
   never_expire?: boolean
   notes?: string | null
@@ -199,6 +210,7 @@ export interface SyncConfig {
   repo: string
   branch: string
   auto_on_start: boolean
+  sync_on_close: boolean
   has_token: boolean
 }
 export interface SyncReport {
@@ -231,7 +243,32 @@ export interface SyncResult {
 
 export const getSyncStatus = () => get<SyncStatus>('/sync/status')
 export const getSyncConfig = () => get<SyncConfig>('/sync/config')
-export const saveSyncConfig = (cfg: { repo: string; branch: string; token?: string; auto_on_start: boolean }) =>
+
+// 订阅
+export interface Subscription {
+  id: string
+  display_name: string
+  source_key: string
+  url: string | null
+  rules_text: string | null
+  enabled: boolean
+  auto_update: boolean
+  status: 'active' | 'pending' | 'error'
+  last_synced_at: string | null
+  last_error?: string | null
+  created_at: string | null
+}
+export const getSubscriptions = () => get<Subscription[]>('/subscriptions')
+export const createSubscription = (data: { display_name: string; url?: string; rules_text?: string; auto_update?: boolean }) =>
+  post<Subscription>('/subscriptions', data)
+export const patchSubscription = (id: string, data: { display_name?: string; enabled?: boolean; auto_update?: boolean }) =>
+  patch<Subscription>(`/subscriptions/${id}`, data)
+export const deleteSubscription = (id: string) => del<{ ok: boolean }>(`/subscriptions/${id}`)
+export const refreshSubscription = (id: string) =>
+  post<{ id: string; ok: boolean; inserted?: number; error?: string }>(`/subscriptions/${id}/refresh`)
+export const refreshDueSubscriptions = () =>
+  post<{ refreshed: { id: string; ok: boolean; inserted?: number; error?: string }[] }>('/subscriptions/refresh-due')
+export const saveSyncConfig = (cfg: { repo: string; branch: string; token?: string; auto_on_start: boolean; sync_on_close?: boolean }) =>
   put<{ ok: boolean }>('/sync/config', cfg)
 export const testSync = () => post<{ ok: boolean; detail: string }>('/sync/test')
 

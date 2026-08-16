@@ -48,15 +48,18 @@ def get_sync_config(conn: sqlite3.Connection) -> dict:
         "branch": cfg.get("branch", "main"),
         "token_dpapi": cfg.get("token_dpapi", ""),
         "auto_on_start": cfg.get("auto_on_start", True),
+        "sync_on_close": cfg.get("sync_on_close", True),
     }
 
 
 def save_sync_config(conn: sqlite3.Connection, repo: str, branch: str,
-                     token: str | None, auto_on_start: bool) -> None:
+                     token: str | None, auto_on_start: bool,
+                     sync_on_close: bool = True) -> None:
     cfg = get_sync_config(conn)
     cfg.update({"provider": "github", "repo": repo.strip(),
                 "branch": (branch or "main").strip(),
-                "auto_on_start": auto_on_start})
+                "auto_on_start": auto_on_start,
+                "sync_on_close": sync_on_close})
     if token and token.strip():
         cfg["token_dpapi"] = secrets.protect(token.strip())
     with conn:

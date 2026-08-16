@@ -160,7 +160,12 @@ function CountdownCard({ item, selected, onSelect }: { item: CountdownItem; sele
         <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: catColor }} />
         <span className="text-[10px] text-gray-400 px-1.5 py-0.5 rounded bg-gray-50">{item.category}</span>
         <div className="ml-auto flex gap-1">
-          {item.repeat_yearly && <span title="每年重置"><Repeat size={12} className="text-gray-400" /></span>}
+            {item.repeat_yearly && (
+              <span title={item.repeat_type === 'lunar' ? '按农历每年重置' : '每年重置'}>
+                <Repeat size={12} className={item.repeat_type === 'lunar' ? 'text-red-400' : 'text-gray-400'} />
+              </span>
+            )}
+            {item.repeat_type === 'lunar' && <span title="农历重复" className="text-[10px] text-red-400">农历</span>}
           {item.milestone_rule && <span title="自动计算里程碑"><Sparkles size={12} className="text-amber-400" /></span>}
           {item.never_expire && <span title="永不过期"><InfinityIcon size={12} className="text-gray-400" /></span>}
         </div>
@@ -186,6 +191,7 @@ function CountdownDetailPanel({ item, onClose, onSave, onDelete }: {
     category: string
     base_date: string
     repeat_yearly: boolean
+    repeat_type: 'solar' | 'lunar'
     milestone_rule: string | null
     never_expire: boolean
     notes: string | null
@@ -197,6 +203,7 @@ function CountdownDetailPanel({ item, onClose, onSave, onDelete }: {
   const [customCategory, setCustomCategory] = useState(false)
   const [baseDate, setBaseDate] = useState('')
   const [repeatYearly, setRepeatYearly] = useState(false)
+  const [repeatType, setRepeatType] = useState<'solar' | 'lunar'>('solar')
   const [milestoneRule, setMilestoneRule] = useState('')
   const [neverExpire, setNeverExpire] = useState(false)
   const [notes, setNotes] = useState('')
@@ -208,6 +215,7 @@ function CountdownDetailPanel({ item, onClose, onSave, onDelete }: {
       setCustomCategory(!['生日', '纪念日', '节日', '重要事件'].includes(item.category))
       setBaseDate(item.base_date)
       setRepeatYearly(item.repeat_yearly)
+      setRepeatType(item.repeat_type === 'lunar' ? 'lunar' : 'solar')
       setMilestoneRule(item.milestone_rule ?? '')
       setNeverExpire(item.never_expire)
       setNotes(item.notes ?? '')
@@ -217,6 +225,7 @@ function CountdownDetailPanel({ item, onClose, onSave, onDelete }: {
       setCustomCategory(false)
       setBaseDate('')
       setRepeatYearly(false)
+      setRepeatType('solar')
       setMilestoneRule('')
       setNeverExpire(false)
       setNotes('')
@@ -294,6 +303,22 @@ function CountdownDetailPanel({ item, onClose, onSave, onDelete }: {
           <input type="checkbox" className="accent-blue-500" checked={repeatYearly} onChange={(e) => setRepeatYearly(e.target.checked)} />
         </label>
 
+        {repeatYearly && (
+          <label className="text-xs text-gray-500 block ml-1">
+            <span className="block mb-1">重复规则</span>
+            <div className="flex gap-3">
+              <label className="flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="repeat-type" className="accent-blue-500" checked={repeatType === 'solar'} onChange={() => setRepeatType('solar')} />
+                按公历（每年同月日）
+              </label>
+              <label className="flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="repeat-type" className="accent-blue-500" checked={repeatType === 'lunar'} onChange={() => setRepeatType('lunar')} />
+                按农历（春节/七夕等）
+              </label>
+            </div>
+          </label>
+        )}
+
         <label className="text-xs text-gray-500 block">
           <span className="block mb-1">自动计算纪念日（逗号分隔天数）</span>
           <input
@@ -337,6 +362,7 @@ function CountdownDetailPanel({ item, onClose, onSave, onDelete }: {
             category: category.trim() || '其他',
             base_date: baseDate,
             repeat_yearly: repeatYearly,
+            repeat_type: repeatType,
             milestone_rule: milestoneRule.trim() || null,
             never_expire: neverExpire,
             notes: notes.trim() || null,

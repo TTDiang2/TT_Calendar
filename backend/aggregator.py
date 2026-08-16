@@ -17,6 +17,7 @@ from tt_calendar import db
 from tt_calendar.config import LayerID
 from tt_calendar.models import Event, ScheduleEntry
 from tt_calendar.utils.date_utils import month_grid, month_range
+from tt_calendar.utils.lunar_utils import lunar_display
 
 
 _SUB_ACTION_RE = re.compile(r"^【(.+?)】")
@@ -240,6 +241,7 @@ def _build_day(
         "schedule_items": items,
         "coloring_level": coloring.get(d),
         "holiday": h,
+        "lunar": lunar_display(d),
         "gradient_bg": gradient.get(gkey),
         "todos": todos_json,
         "predict_level": predict_level,
@@ -304,7 +306,8 @@ def build_view(
     important = [e.date for e in events if e.layer_id == LayerID.IMPORTANT]
     # 倒数日挂钩重要日期染色：未来 countdown 的 next_date 当天也染目标色
     for cd in db.fetch_countdowns(conn):
-        nxt, _, passed = _next_occurrence(cd.base_date, cd.repeat_yearly, cd.milestone_rule, today)
+        nxt, _, passed = _next_occurrence(cd.base_date, cd.repeat_yearly, cd.milestone_rule, today,
+                                          getattr(cd, "repeat_type", "solar"))
         if not passed:
             important.append(nxt)
     m_start, m_end = month_range(view_year, view_month)
@@ -386,11 +389,13 @@ def _next_occurrence(
     repeat_yearly: bool,
     milestone_rule: str | None,
     today: date,
+    repeat_type: str = "solar",
 ) -> tuple[date, str, bool]:
     """计算倒数日的下一个发生日期。
 
     返回 (next_date, display_text, passed)：
-    - repeat_yearly=True：每年重置（生日/节日），下次 = 今年或明年的同月日
+    - repeat_yearly=True：每年重置（生日/节日），下次 = 今年或明年的同月日；
+      repeat_type='lunar' 时按农历月日重复（春节=正月初一，公历日期年年不同）
     - milestone_rule 非空：从 base 推算里程碑（如 100/365/520 天），取最近的下一个
     - 两者都配置：周年 + 里程碑都算，取距离今天最近的那个
     - 都没有：一次性事件，next=base（可能已过）
@@ -399,16 +404,22 @@ def _next_occurrence(
     candidates: list[tuple[date, str]] = []
 
     if repeat_yearly:
-        for offset in range(0, 40):
-            y = today.year + offset
-            try:
-                yearly = base.replace(year=y)
-            except ValueError:  # 2/29 → 平年 2/28
-                yearly = base.replace(year=y, day=28)
-            if yearly >= today:
-                n = (y - base.year)
-                candidates.append((yearly, f"{n} 周年" if n else "今年"))
-                break
+        if repeat_type == "lunar":
+            from tt_calendar.utils.lunar_utils import next_lunar_occurrence
+
+            yearly = next_lunar_occurrence(base, today)
+            candidates.append((yearly, "今年" if yearly.year == today.year else "农历周年"))
+        else:
+            for offset in range(0, 40):
+                y = today.year + offset
+                try:
+                    yearly = base.replace(year=y)
+                except ValueError:  # 2/29 → 平年 2/28
+                    yearly = base.replace(year=y, day=28)
+                if yearly >= today:
+                    n = (y - base.year)
+                    candidates.append((yearly, f"{n} 周年" if n else "今年"))
+                    break
 
     if milestone_rule:
         for raw in milestone_rule.split(","):
@@ -441,6 +452,7 @@ def build_countdown_list(conn) -> list[dict]:
     for cd in rows:
         next_date, label, passed = _next_occurrence(
             cd.base_date, cd.repeat_yearly, cd.milestone_rule, today,
+            getattr(cd, "repeat_type", "solar"),
         )
         days_left = (next_date - today).days
         # 只有纪念日类或配了里程碑的才在标题后缀「1 周年 / 400 天」；生日/节日/重要事件只显示名称
@@ -452,6 +464,7 @@ def build_countdown_list(conn) -> list[dict]:
             "category": cd.category,
             "base_date": cd.base_date.isoformat(),
             "repeat_yearly": cd.repeat_yearly,
+            "repeat_type": getattr(cd, "repeat_type", "solar"),
             "milestone_rule": cd.milestone_rule,
             "never_expire": cd.never_expire,
             "notes": cd.notes,

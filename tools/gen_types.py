@@ -32,7 +32,7 @@ TS_TYPES = {
 PASCAL = {"todo": "TodoRow", "todo_list": "TodoListRow", "layer_config": "LayerConfigRow",
           "meta": "MetaRow", "schedule": "ScheduleRow", "coloring": "ColoringRow",
           "events": "EventRow", "schedule_items": "ScheduleItemRow",
-          "countdown": "CountdownRow", "marks": "MarkRow"}
+          "countdown": "CountdownRow", "marks": "MarkRow", "subscriptions": "SubscriptionRow"}
 
 
 def sql_type_to_ts(decl: str) -> str:

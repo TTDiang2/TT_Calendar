@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useViewData, useCountdown } from './hooks/useApi'
-import { toggleLayer, moveDay, getTodoStats, getTodos, getSyncStatus, getSyncConfig, syncNow } from './api/client'
+import { toggleLayer, moveDay, getTodoStats, getTodos, getSyncStatus, getSyncConfig, syncNow, refreshDueSubscriptions } from './api/client'
 import { shiftMonthKey, shiftYearKey } from './data'
 import type { CalEvent, Layer, MonthData, TopTab, ViewMode, YearData } from './types'
 import { TopBar } from './components/TopBar'
@@ -18,7 +18,7 @@ import {
   ScheduleEditor,
   ColoringPicker,
   SearchDialog,
-  ImportDialog,
+  SubscriptionDialog,
   ContextMenu,
   DotEntryDialog,
   ColorEntryDialog,
@@ -32,7 +32,7 @@ type DialogState =
   | { kind: 'dot'; date: string }
   | { kind: 'color'; date: string }
   | { kind: 'search' }
-  | { kind: 'import' }
+  | { kind: 'subscription' }
   | { kind: 'settings' }
   | null
 
@@ -48,6 +48,7 @@ export default function App() {
   const [mode, setMode] = useState<ViewMode>('month')
   const [topTab, setTopTab] = useState<TopTab>('calendar')
   const [dialog, setDialog] = useState<DialogState>(null)
+  const [exitSync, setExitSync] = useState<{ state: 'syncing' } | { state: 'failed'; error: string } | null>(null)
   const [ctxMenu, setCtxMenu] = useState<CtxMenuState | null>(null)
   const dragSource = useRef<string | null>(null)
   const qc = useQueryClient()
@@ -84,9 +85,52 @@ export default function App() {
       } catch {
         /* 网络异常等，静默跳过 */
       }
+      // 订阅自动更新：enabled+auto_update+今日未刷的订阅静默拉取（如集思录）
+      try {
+        const r = await refreshDueSubscriptions()
+        if (r.refreshed.some((x) => x.ok && (x.inserted ?? 0) > 0)) {
+          qc.invalidateQueries({ queryKey: ['view'] })
+        }
+      } catch {
+        /* 拉取失败不打扰启动 */
+      }
     }, 2000)
     return () => clearTimeout(t)
   }, [qc])
+
+  // 关闭前自动同步（仅 Tauri 桌面版）：拦截窗口关闭 → 同步 → 自动退出；
+  // 失败时询问（重试/强制退出/取消）；「正在进行中」视为已有同步在跑，直接退出
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('__TAURI_INTERNALS__' in window)) return
+    let unlisten: (() => void) | null = null
+    let cancelled = false
+    import('@tauri-apps/api/window').then(async ({ getCurrentWindow }) => {
+      const w = getCurrentWindow()
+      unlisten = await w.onCloseRequested(async (event) => {
+        try {
+          const [st, cfg] = await Promise.all([getSyncStatus(), getSyncConfig()])
+          if (!st.configured || !cfg.sync_on_close) return
+          event.preventDefault()
+          setExitSync({ state: 'syncing' })
+          try {
+            await syncNow()
+            await w.destroy()
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e)
+            if (msg.includes('正在进行')) {
+              await w.destroy()
+              return
+            }
+            setExitSync({ state: 'failed', error: msg })
+          }
+        } catch {
+          /* 配置读取失败（后端已死等）→ 不拦截，正常关闭 */
+        }
+      })
+      if (cancelled) unlisten?.()
+    })
+    return () => { cancelled = true; unlisten?.() }
+  }, [])
 
   const layers = monthData?.layers ?? []
 
@@ -224,6 +268,55 @@ export default function App() {
 
   return (
     <div className="h-full flex flex-col bg-gray-50">
+      {exitSync && (
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-xl px-8 py-6 w-[360px] text-center">
+            {exitSync.state === 'syncing' ? (
+              <>
+                <div className="mx-auto mb-3 w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-sm text-gray-700">正在同步，同步完成后会自动退出……</p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-red-600 font-medium mb-1">关闭前同步失败</p>
+                <p className="text-xs text-gray-500 mb-4 break-all max-h-24 overflow-y-auto">{exitSync.error}</p>
+                <div className="flex justify-center gap-2">
+                  <button
+                    onClick={async () => {
+                      setExitSync({ state: 'syncing' })
+                      try {
+                        await syncNow()
+                        const { getCurrentWindow } = await import('@tauri-apps/api/window')
+                        await getCurrentWindow().destroy()
+                      } catch (e) {
+                        setExitSync({ state: 'failed', error: e instanceof Error ? e.message : String(e) })
+                      }
+                    }}
+                    className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                  >
+                    重试同步
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const { getCurrentWindow } = await import('@tauri-apps/api/window')
+                      await getCurrentWindow().destroy()
+                    }}
+                    className="px-4 py-1.5 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200"
+                  >
+                    强制退出
+                  </button>
+                  <button
+                    onClick={() => setExitSync(null)}
+                    className="px-4 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg"
+                  >
+                    取消关闭
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
       <TopBar
         title={isLoading ? '加载中…' : title}
         topTab={topTab}
@@ -236,7 +329,7 @@ export default function App() {
         canPrev={true}
         canNext={true}
         onOpenSearch={() => setDialog({ kind: 'search' })}
-        onOpenImport={() => setDialog({ kind: 'import' })}
+        onOpenSubscription={() => setDialog({ kind: 'subscription' })}
         onOpenSettings={() => setDialog({ kind: 'settings' })}
       />
       <div className="flex-1 flex overflow-hidden">
@@ -375,12 +468,8 @@ export default function App() {
       {dialog?.kind === 'search' && (
         <SearchDialog onClose={() => setDialog(null)} onJump={jumpToEvent} />
       )}
-      {dialog?.kind === 'import' && (
-        <ImportDialog
-          defaultStart={importStart}
-          defaultEnd={importEnd}
-          onClose={() => setDialog(null)}
-        />
+      {dialog?.kind === 'subscription' && (
+        <SubscriptionDialog onClose={() => setDialog(null)} />
       )}
       {dialog?.kind === 'settings' && (
         <SettingsDialog

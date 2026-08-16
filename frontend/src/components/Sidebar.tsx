@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import clsx from 'clsx'
 import { ChevronDown, ChevronRight, Plus } from 'lucide-react'
 import type { Layer } from '../types'
-import { createLayer } from '../api/client'
+import { createLayer, getSubscriptions } from '../api/client'
 import { COLOR_PRESETS, GRADED_PALETTES } from '../data'
 import { Modal, Field } from './ui/Modal'
 
@@ -49,6 +49,10 @@ export function Sidebar({ layers, onToggle, countdown }: Props) {
     return byKind
   }, [layers])
 
+  // 订阅超级组：组名与订阅 display_name 相同的图层组（集思录等）挂在「订阅」下
+  const { data: subs = [] } = useQuery({ queryKey: ['subscriptions'], queryFn: getSubscriptions })
+  const subNames = useMemo(() => new Set(subs.map((s) => s.display_name)), [subs])
+
   const kindMeta: Record<string, { title: string }> = {
     color: { title: '涂色' },
     dot: { title: '点点' },
@@ -81,25 +85,66 @@ export function Sidebar({ layers, onToggle, countdown }: Props) {
               </button>
               {!collapsed[kindId] && (
                 <div className="flex flex-col gap-1 ml-1">
-                  {groupKeys.sort().map((grp) => {
+          {(() => {
+            const sorted = [...groupKeys].sort()
+            const normalGroups = sorted.filter((g) => !subNames.has(g))
+            const subGroupKeys = sorted.filter((g) => subNames.has(g))
+            return (
+              <>
+          {normalGroups.map((grp) => {
+            const members = groups[grp]
+            const hasGroup = grp !== ''
+            const grpId = `group:${kind}:${grp}`
+            const grpTitle = hasGroup ? grp : '其他'
+            return (
+              <div key={grp}>
+                {hasGroup && (
+                  <button
+                    onClick={() => toggleGroup(grpId)}
+                    className="w-full flex items-center gap-1 px-1 py-0.5 text-[11px] text-gray-400 hover:text-gray-600"
+                  >
+                    {collapsed[grpId] ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
+                    {grpTitle}
+                    <span className="text-[10px] text-gray-300">{members.length}</span>
+                  </button>
+                )}
+                {(!hasGroup || !collapsed[grpId]) && (
+                  <div className={`flex flex-col gap-0.5 ${hasGroup ? 'ml-2' : ''}`}>
+                    {members.map((l) => (
+                      <LayerRow key={l.layer_id} layer={l} onToggle={onToggle} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+          {subGroupKeys.length > 0 && (
+            <div>
+              <button
+                onClick={() => toggleGroup(`subs:${kind}`)}
+                className="w-full flex items-center gap-1 px-1 py-0.5 text-[11px] text-gray-400 hover:text-gray-600"
+              >
+                {collapsed[`subs:${kind}`] ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
+                订阅
+                <span className="text-[10px] text-gray-300">{subGroupKeys.reduce((n, g) => n + groups[g].length, 0)}</span>
+              </button>
+              {!collapsed[`subs:${kind}`] && (
+                <div className="ml-1">
+                  {subGroupKeys.sort().map((grp) => {
                     const members = groups[grp]
-                    const hasGroup = grp !== ''
                     const grpId = `group:${kind}:${grp}`
-                    const grpTitle = hasGroup ? grp : '其他'
                     return (
-                      <div key={grp}>
-                        {hasGroup && (
-                          <button
-                            onClick={() => toggleGroup(grpId)}
-                            className="w-full flex items-center gap-1 px-1 py-0.5 text-[11px] text-gray-400 hover:text-gray-600"
-                          >
-                            {collapsed[grpId] ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
-                            {grpTitle}
-                            <span className="text-[10px] text-gray-300">{members.length}</span>
-                          </button>
-                        )}
-                        {(!hasGroup || !collapsed[grpId]) && (
-                          <div className={`flex flex-col gap-0.5 ${hasGroup ? 'ml-2' : ''}`}>
+                      <div key={grp} className="mb-0.5">
+                        <button
+                          onClick={() => toggleGroup(grpId)}
+                          className="w-full flex items-center gap-1 py-0.5 text-[11px] text-gray-400 hover:text-gray-600 ml-1"
+                        >
+                          {collapsed[grpId] ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
+                          {grp}
+                          <span className="text-[10px] text-gray-300">{members.length}</span>
+                        </button>
+                        {!collapsed[grpId] && (
+                          <div className="flex flex-col gap-0.5 ml-3">
                             {members.map((l) => (
                               <LayerRow key={l.layer_id} layer={l} onToggle={onToggle} />
                             ))}
@@ -108,6 +153,13 @@ export function Sidebar({ layers, onToggle, countdown }: Props) {
                       </div>
                     )
                   })}
+                 </div>
+               )}
+             </div>
+           )}
+              </>
+            )
+          })()}
                 </div>
               )}
             </div>

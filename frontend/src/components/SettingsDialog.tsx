@@ -253,6 +253,7 @@ function SyncConfigSection() {
   const [branch, setBranch] = useState('main')
   const [token, setToken] = useState('')
   const [auto, setAuto] = useState(true)
+  const [closeSync, setCloseSync] = useState(true)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const [busy, setBusy] = useState<'save' | 'test' | 'sync' | null>(null)
   const [decision, setDecision] = useState<number | null>(null)
@@ -264,11 +265,12 @@ function SyncConfigSection() {
       setRepo(cfg.repo)
       setBranch(cfg.branch)
       setAuto(cfg.auto_on_start)
+      setCloseSync(cfg.sync_on_close)
     }
   }, [cfg])
 
   const persist = () => saveSyncConfig({
-    repo, branch, token: token || undefined, auto_on_start: auto,
+    repo, branch, token: token || undefined, auto_on_start: auto, sync_on_close: closeSync,
   })
 
   const onSave = async () => {
@@ -362,6 +364,10 @@ function SyncConfigSection() {
         <label className="flex items-center gap-2 text-sm text-gray-700 select-none">
           <input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} />
           启动时自动同步一次
+        </label>
+        <label className="flex items-center gap-2 text-sm text-gray-700 select-none">
+          <input type="checkbox" checked={closeSync} onChange={(e) => setCloseSync(e.target.checked)} />
+          关闭前自动同步（点窗口 ✕ 时先同步再退出）
         </label>
         <div className="flex items-center gap-2">
           <button onClick={onSave} disabled={busy !== null || !repo}

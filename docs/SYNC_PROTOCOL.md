@@ -36,6 +36,7 @@ data/tombstones.json              {"table|key": "deleted_at"}
 | schedule_items | id (INTEGER 自增) | sync_uid | 8 | |
 | countdown | id (INTEGER 自增) | sync_uid | 9 | |
 | marks | id (INTEGER 自增) | sync_uid | 10 | |
+| subscriptions | id (TEXT) | id | 11 | 订阅源配置（含内置 builtin:*）；last_synced_at 等运行时字段参与同步 |
 
 约束：
 - **导入顺序 = 上表顺序**（被引用表在前；当前唯一外键依赖是 todo→todo_list）

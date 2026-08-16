@@ -1,4 +1,4 @@
-import { Calendar, CheckSquare, ChevronLeft, ChevronRight, Download, ListTodo, Search, Settings } from 'lucide-react'
+import { Calendar, CheckSquare, ChevronLeft, ChevronRight, ListTodo, Rss, Search, Settings } from 'lucide-react'
 import clsx from 'clsx'
 import type { TopTab, ViewMode } from '../types'
 
@@ -14,7 +14,7 @@ interface Props {
   canPrev: boolean
   canNext: boolean
   onOpenSearch: () => void
-  onOpenImport: () => void
+  onOpenSubscription: () => void
   onOpenSettings: () => void
 }
 
@@ -26,7 +26,7 @@ const MODES: { key: ViewMode; label: string }[] = [
   { key: 'countdown', label: '倒数日' },
 ]
 
-export function TopBar({ title, topTab, mode, onTopTabChange, onModeChange, onPrev, onNext, onToday, canPrev, canNext, onOpenSearch, onOpenImport, onOpenSettings }: Props) {
+export function TopBar({ title, topTab, mode, onTopTabChange, onModeChange, onPrev, onNext, onToday, canPrev, canNext, onOpenSearch, onOpenSubscription, onOpenSettings }: Props) {
   return (
     <header className="h-14 flex items-center justify-between px-4 bg-white border-b border-gray-200">
       <div className="flex items-center gap-1">
@@ -123,8 +123,8 @@ export function TopBar({ title, topTab, mode, onTopTabChange, onModeChange, onPr
             搜索事件…
           </button>
         )}
-        <button onClick={onOpenImport} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition" title="导入">
-          <Download size={18} />
+        <button onClick={onOpenSubscription} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition" title="订阅">
+          <Rss size={18} />
         </button>
         <button onClick={onOpenSettings} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition" title="设置">
           <Settings size={18} />
