@@ -171,3 +171,43 @@ end   优先级：completed → completed_at
 - **修复**：`tt_calendar/db.py` `fetch_todos` 在 `status_filter == "completed"` 时
   强制 `completed_at DESC`（最新完成排最前），忽略传入 sort（注释说明原因，
   避免未来被当作 bug「修掉」重新引入截断问题）。
+
+## 7. v2.2.0 打磨记录·第二轮（2026-08-17）
+
+### 7.1 矩阵：象限命名「有空做」
+
+- 「不重要 × 不紧急」象限 action 由「考虑丢」改为「有空做」（icon Hourglass），
+  文案「不占用最佳精力，有空再说」——不暗示丢弃，只表达低优先级。
+
+### 7.2 看板卡片信息增强
+
+- `TodoMiniCard` 信息密度提升：状态圆点（未开始灰/进行中蓝/等待紫/延后琥珀）、
+  重要性（high 红 / 其余灰）、复杂度（困难红/中等琥珀/简单绿）、
+  截止/计划/开始日期行（逾期红、今天角标）、标签 chips（#tag）、备注单行预览。
+- 已完成卡片隐藏元信息行，标题划线——完成态只留「标题 + 完成于 MM-DD」。
+
+### 7.3 看板：计划日期色阶 + 标签配色
+
+- **按计划日期**：同色系蓝色阶，计划越远越浅——今天及逾期 `blue-200/60`、
+  ≤2 天 `blue-100/80`、≤7 天 `blue-50`、更远 `blue-50/50`；未计划灰列。
+  今天列头显示「今天 · MM-DD」。
+- **按标签**：10 色调色板（rose/orange/amber/lime/emerald/teal/sky/indigo/violet/fuchsia），
+  按标签名 hash（`tagHash` = charCode*31 累加）确定性分配，同名标签跨会话颜色稳定。
+
+### 7.4 看板：已完成列平滑折叠
+
+- 已完成列改为真正的折叠列：折叠 = 窄条 w-11（绿色，竖排「已完成」+ 计数 + ChevronLeft），
+  点击展开 = w-60 整列（ChevronRight），`transition-all duration-300` 宽度动画。
+- `COMPLETED_RENDER_LIMIT=50` 限量渲染 + 页脚「已显示最近 50 / 共 N 条」，
+  避免 1200+ 条完成数据拖垮渲染。
+
+### 7.5 量筒：emoji 石块 + 沙纹质感
+
+- 岩石/卵石改用 SVG `<text>` 🪨 emoji（font-size 与占位行高 0.62 比例校准，
+  容量不变量保持：2 岩/行、4 卵/行、行高 70/28 不变），确定性旋转（岩石 ±12°、卵石 ±8°）、
+  模糊椭圆落影（feGaussianBlur filter）、选中蓝环 / 高重要红环。
+- 沙子：`feTurbulence(fractalNoise 0.85)` + feColorMatrix 暖沙色颗粒滤镜直接打在
+  沙 path 上，散落颗粒点缀；玻璃体加横向渐变、双高光条、杯嘴唇边、筒底反光、刻度。
+- 完成带改祖母绿渐变（done-sediment）+ 上缘亮线 +「✓ ×N」。
+- 验证：Windows Segoe UI Emoji 含 🪨 字形（`document.fonts.check` = true），
+  岩石/卵石/沙纹/颗粒/落影全部渲染正常。
