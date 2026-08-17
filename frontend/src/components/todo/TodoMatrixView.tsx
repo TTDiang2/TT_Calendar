@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import clsx from 'clsx'
-import { AlertTriangle, CalendarClock, Coffee, Trash2 } from 'lucide-react'
+import { AlertTriangle, CalendarClock, Coffee, Hourglass } from 'lucide-react'
 import type { Todo, TodoList } from '../../types'
 import { dueInDays, isImportant, urgencyOf } from '../../utils/todoLogic'
 import { TodoMiniCard } from './TodoMiniCard'
@@ -44,11 +44,11 @@ const QUADRANTS = [
   {
     key: 'nn' as const,
     title: '不重要 × 不紧急',
-    action: '考虑丢',
-    icon: Trash2,
+    action: '有空做',
+    icon: Hourglass,
     tone: 'border-gray-200 bg-gray-50/60',
     head: 'text-gray-600',
-    desc: '真的值得做吗？',
+    desc: '不占用最佳精力，有空再说',
   },
 ]
 

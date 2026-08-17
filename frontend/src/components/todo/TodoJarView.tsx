@@ -26,6 +26,9 @@ const SAND_UNIT_H = 40
 const DONE_UNIT_H = 8
 const DONE_MAX = 64
 
+// 系统彩色 emoji 字体链：WebView2/Chromium 会用第一个含该字形的字体渲染 🪨
+const EMOJI_FONT = "'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji', sans-serif"
+
 function hashStr(s: string): number {
   let h = 2166136261
   for (let i = 0; i < s.length; i += 1) {
@@ -35,42 +38,19 @@ function hashStr(s: string): number {
   return h >>> 0
 }
 
-interface RockShape {
-  w: number
-  h: number
-  rx: number
-  rot: number
-  fill: string
-  stroke: string
-}
-
-const ROCK_VARIANTS: RockShape[] = [
-  { w: 64, h: 56, rx: 19, rot: -4, fill: '#64748b', stroke: '#475569' },
-  { w: 58, h: 60, rx: 16, rot: 5, fill: '#5d6b81', stroke: '#3f4c61' },
-  { w: 68, h: 52, rx: 21, rot: -2, fill: '#718096', stroke: '#526071' },
-  { w: 60, h: 58, rx: 17, rot: 6, fill: '#67758c', stroke: '#48556b' },
-]
-
-const PEBBLE_VARIANTS = [
-  { fill: '#94a3b8', hi: '#c3d0e0' },
-  { fill: '#8997ab', hi: '#b7c3d3' },
-  { fill: '#a0adbd', hi: '#cfd9e4' },
-]
-
 interface Placed {
   todo: Todo
   x: number
   y: number
   w: number
   h: number
-  rx: number
-  ry: number
+  font: number
   rot: number
-  fill: string
-  stroke: string
-  highlight: string | null
   pebble: boolean
 }
+
+// 岩石占位高度档位：决定行高（保持原 58-68 档 → 行高 70 不变，容量校准不动）
+const ROCK_FOOTPRINT = [64, 58, 68, 60]
 
 function packRocks(items: Todo[], bottomY: number): { placed: Placed[]; topY: number } {
   const placed: Placed[] = []
@@ -79,12 +59,17 @@ function packRocks(items: Todo[], bottomY: number): { placed: Placed[]; topY: nu
   while (i < items.length) {
     const row = items.slice(i, i + 2)
     i += row.length
-    const rowH = Math.max(...row.map((t) => ROCK_VARIANTS[hashStr(t.id) % ROCK_VARIANTS.length].h)) + 4
+    const rowH = Math.max(...row.map((t) => ROCK_FOOTPRINT[hashStr(t.id) % ROCK_FOOTPRINT.length])) + 4
     row.forEach((t, j) => {
-      const v = ROCK_VARIANTS[hashStr(t.id) % ROCK_VARIANTS.length]
+      const h = ROCK_FOOTPRINT[hashStr(t.id) % ROCK_FOOTPRINT.length]
+      // emoji 字号≈占位高 0.62：字形留出呼吸感又不显稀疏
+      const font = Math.round(h * 0.62)
       const slot = INNER_W / 2
-      const x = INNER_X0 + slot * j + (slot - v.w) / 2
-      placed.push({ todo: t, x: x + v.w / 2, y: shelf - v.h / 2, w: v.w, h: v.h, rx: v.rx, ry: 0, rot: v.rot, fill: v.fill, stroke: v.stroke, highlight: null, pebble: false })
+      const x = INNER_X0 + slot * j + slot / 2
+      placed.push({
+        todo: t, x, y: shelf - h / 2, w: font + 8, h,
+        font, rot: (hashStr(t.id) % 25) - 12, pebble: false,
+      })
     })
     shelf -= rowH
   }
@@ -101,20 +86,21 @@ function packPebbles(items: Todo[], bottomY: number): { placed: Placed[]; topY: 
     i += row.length
     row.forEach((t, j) => {
       const h = hashStr(t.id)
-      const v = PEBBLE_VARIANTS[h % PEBBLE_VARIANTS.length]
-      const rx = 13 + (h % 3)
-      const ry = 10 + ((h >> 3) % 3)
+      const font = 14 + (h % 4)
       const slot = INNER_W / 4
       const off = (rowIdx % 2) * (slot / 2)
-      const x = INNER_X0 + off + slot * j + (slot - rx * 2) / 2
-      placed.push({ todo: t, x: x + rx, y: shelf - ry, w: rx * 2, h: ry * 2, rx, ry, rot: ((h >> 9) % 9) - 4, fill: v.fill, stroke: '#5f6f82', highlight: v.hi, pebble: true })
+      const x = INNER_X0 + off + slot * j + slot / 2
+      placed.push({
+        todo: t, x, y: shelf - font / 2, w: font + 4, h: font,
+        font, rot: ((h >> 9) % 17) - 8, pebble: true,
+      })
     })
     shelf -= PEBBLE_ROW_H
     rowIdx += 1
   }
-  // 同行卵石 ry 各异（8/9/10），顶部 y=shelf-ry 各不相同；cy=y+ry=shelf 才是行不变量
-  const minCy = placed.length ? Math.min(...placed.map((p) => p.y + p.ry)) : 0
-  return { placed, topY: shelf, topRow: placed.filter((p) => p.y + p.ry === minCy).map((p) => ({ x: p.x })) }
+  // 同行字号各异时顶部 y 不同；y+h/2=shelf 才是行不变量（沙面波纹依赖此判定）
+  const minCy = placed.length ? Math.min(...placed.map((p) => p.y + p.h / 2)) : 0
+  return { placed, topY: shelf, topRow: placed.filter((p) => p.y + p.h / 2 === minCy).map((p) => ({ x: p.x })) }
 }
 
 function sandPath(topY: number, bottomY: number, topRow: { x: number }[]): string {
@@ -134,19 +120,31 @@ function sandPath(topY: number, bottomY: number, topRow: { x: number }[]): strin
   return d
 }
 
-function trickleDots(topRow: { x: number }[], bottomY: number, h: number): { x: number; y: number; r: number }[] {
-  if (topRow.length < 2) return []
-  const sorted = [...topRow].sort((a, b) => a.x - b.x)
-  const dots: { x: number; y: number; r: number }[] = []
-  for (let i = 0; i < sorted.length - 1; i += 1) {
-    const mid = (sorted[i].x + sorted[i + 1].x) / 2
-    const base = bottomY + 8 + (h % 3) * 2
-    dots.push({ x: mid - 4, y: base + 3, r: 2.4 })
-    dots.push({ x: mid + 3, y: base + 8, r: 2 })
-    dots.push({ x: mid + 1, y: base + 14, r: 1.6 })
+// 沙面上的散落颗粒：波谷上方几粒松动沙子，让沙层边界不那么「几何」
+function looseGrains(sandTop: number, seed: number): { x: number; y: number; r: number; o: number }[] {
+  const grains: { x: number; y: number; r: number; o: number }[] = []
+  for (let i = 0; i < 4; i += 1) {
+    const h = hashStr(`${seed}-${i}`)
+    grains.push({
+      x: INNER_X0 + 10 + (h % (INNER_W - 20)),
+      y: sandTop - 3 - ((h >> 4) % 7),
+      r: 1.2 + ((h >> 8) % 2),
+      o: 0.5 + ((h >> 12) % 4) / 10,
+    })
   }
-  return dots
+  return grains
 }
+
+const JAR_OUTLINE = `
+  M ${WALL_X0 + 12} ${TOP_Y - 12}
+  L ${WALL_X0} ${TOP_Y + 14}
+  L ${WALL_X0} ${BOTTOM_Y - 16}
+  Q ${WALL_X0} ${BOTTOM_Y} ${WALL_X0 + 16} ${BOTTOM_Y}
+  L ${WALL_X1 - 16} ${BOTTOM_Y}
+  Q ${WALL_X1} ${BOTTOM_Y} ${WALL_X1} ${BOTTOM_Y - 16}
+  L ${WALL_X1} ${TOP_Y + 14}
+  L ${WALL_X1 - 12} ${TOP_Y - 12}
+`
 
 export function TodoJarView({ todos, selectedTodoId, onSelect }: Props) {
   const today = todayStr()
@@ -173,7 +171,7 @@ export function TodoJarView({ todos, selectedTodoId, onSelect }: Props) {
   const sandTop = sandBottom - sand.length * SAND_UNIT_H
   const sandRow = pebbles.length ? pebblePack.topRow : []
   const sandPathD = sand.length ? sandPath(sandTop, sandBottom, sandRow) : ''
-  const trickles = sand.length ? trickleDots(sandRow, sandBottom, hashStr(sand[0].id)) : []
+  const grains = sand.length ? looseGrains(sandTop, hashStr(sand[0].id)) : []
   const overflow = sand.length > 0 ? sandTop < TOP_Y + 6 : packedTop < TOP_Y + 6
 
   const total = todayOpen.length
@@ -183,9 +181,9 @@ export function TodoJarView({ todos, selectedTodoId, onSelect }: Props) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3 text-gray-300">
         <svg width="72" height="96" viewBox="0 0 72 96" aria-hidden="true">
-          <path d="M22 4 L50 4 L45 16 L45 78 Q45 88 36 88 Q27 88 27 78 L27 16 Z" fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="2.5" strokeLinejoin="round" />
-          <path d="M17 13 L55 13 L51 21 L21 21 Z" fill="#eef2f7" stroke="#cbd5e1" strokeWidth="2.5" strokeLinejoin="round" />
-          <path d="M34 40 Q34 66 44 72" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" fill="none" opacity="0.7" />
+          <path d="M22 4 L50 4 L45 16 L45 78 Q45 88 36 88 Q27 88 27 78 L27 16 Z" fill="#e8eef5" stroke="#b9c6d4" strokeWidth="2.5" strokeLinejoin="round" />
+          <path d="M17 13 L55 13 L51 21 L21 21 Z" fill="#f2f6fa" stroke="#b9c6d4" strokeWidth="2.5" strokeLinejoin="round" />
+          <path d="M34 40 Q34 66 44 72" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" fill="none" opacity="0.75" />
         </svg>
         <p className="text-sm">今天还没有安排</p>
         <p className="text-xs">先放一块大石头进去吧（截止/计划日设为今天）</p>
@@ -198,140 +196,167 @@ export function TodoJarView({ todos, selectedTodoId, onSelect }: Props) {
       <div className="flex-shrink-0 flex items-end justify-center" style={{ width: W }}>
         <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="今日任务量筒">
           <defs>
-            <pattern id="sand-dots" width="9" height="9" patternUnits="userSpaceOnUse">
-              <rect width="9" height="9" fill="#f0e6c8" />
-              <circle cx="2.5" cy="3.5" r="1.4" fill="#cfbc8a" />
-              <circle cx="6.5" cy="7" r="1.1" fill="#c2ad7d" />
-            </pattern>
-            <linearGradient id="glass-shine" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.5" />
-              <stop offset="16%" stopColor="#ffffff" stopOpacity="0.04" />
-              <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+            {/* 沙粒质感：分形噪声→暖沙色矩阵，RGBA 各通道重映射产生颗粒明暗 */}
+            <filter id="sand-grain" x="-5%" y="-5%" width="110%" height="110%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="11" result="n" />
+              <feColorMatrix
+                in="n"
+                type="matrix"
+                values="0 0 0 0 0.895  0 0 0 0 0.802  0 0 0 0 0.578  0.85 0.35 0 0 0.5"
+              />
+            </filter>
+            {/* 石块落影：高斯模糊椭圆，给 emoji 石头一个「放在那儿」的重量感 */}
+            <filter id="stone-shadow" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="2.6" />
+            </filter>
+            {/* 玻璃体：横向渐变模拟圆筒曲率（两侧折射强、中间透） */}
+            <linearGradient id="glass-body" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#dde6f0" stopOpacity="0.5" />
+              <stop offset="12%" stopColor="#f4f8fc" stopOpacity="0.3" />
+              <stop offset="38%" stopColor="#e6edf4" stopOpacity="0.1" />
+              <stop offset="80%" stopColor="#d3dde8" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="#c6d3e0" stopOpacity="0.45" />
+            </linearGradient>
+            {/* 高光条：左内侧长条镜面反光 */}
+            <linearGradient id="glass-shine" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.75" />
+              <stop offset="55%" stopColor="#ffffff" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.1" />
+            </linearGradient>
+            {/* 沉底完成带：从上浅到下深的祖母绿渐变，像沉积物 */}
+            <linearGradient id="done-sediment" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#6ee7b7" stopOpacity="0.75" />
+              <stop offset="100%" stopColor="#059669" stopOpacity="0.85" />
             </linearGradient>
             <clipPath id="jar-clip">
-              <path d={`
-                M ${WALL_X0 + 12} ${TOP_Y - 12}
-                L ${WALL_X0} ${TOP_Y + 14}
-                L ${WALL_X0} ${BOTTOM_Y - 16}
-                Q ${WALL_X0} ${BOTTOM_Y} ${WALL_X0 + 16} ${BOTTOM_Y}
-                L ${WALL_X1 - 16} ${BOTTOM_Y}
-                Q ${WALL_X1} ${BOTTOM_Y} ${WALL_X1} ${BOTTOM_Y - 16}
-                L ${WALL_X1} ${TOP_Y + 14}
-                L ${WALL_X1 - 12} ${TOP_Y - 12}
-              `} />
+              <path d={JAR_OUTLINE} />
             </clipPath>
           </defs>
+
+          {/* 玻璃底色：先铺一层体感，再装内容 */}
+          <path d={JAR_OUTLINE} fill="url(#glass-body)" />
 
           <g clipPath="url(#jar-clip)">
             {doneH > 0 && (
               <g>
-                <rect x={WALL_X0} y={BOTTOM_Y - doneH} width={WALL_X1 - WALL_X0} height={doneH} fill="#d7dee8" opacity="0.65" />
-                <text x={(WALL_X0 + WALL_X1) / 2} y={BOTTOM_Y - 10} textAnchor="middle" fontSize="10" fill="#64748b" fontWeight="600">
+                <rect x={WALL_X0} y={BOTTOM_Y - doneH} width={WALL_X1 - WALL_X0} height={doneH} fill="url(#done-sediment)" />
+                {/* 沉积层上缘：略深的界线强化「沉底」层次 */}
+                <line x1={WALL_X0} y1={BOTTOM_Y - doneH} x2={WALL_X1} y2={BOTTOM_Y - doneH} stroke="#34d399" strokeWidth="2" opacity="0.9" />
+                <text x={(WALL_X0 + WALL_X1) / 2} y={BOTTOM_Y - Math.max(doneH / 2, 12)} textAnchor="middle" fontSize="11" fill="#ffffff" fontWeight="700">
                   ✓ ×{todayDone.length}
                 </text>
               </g>
             )}
-            {sand.length > 0 && <path d={sandPathD} fill="url(#sand-dots)" />}
-            {rockPack.placed.map((p) => (
-              <g
-                key={p.todo.id}
-                transform={`rotate(${p.rot} ${p.x} ${p.y})`}
-                className="cursor-pointer"
-                onClick={() => onSelect(p.todo.id)}
-              >
-                <rect
-                  x={p.x - p.w / 2}
-                  y={p.y - p.h / 2}
-                  width={p.w}
-                  height={p.h}
-                  rx={p.rx}
-                  fill={p.fill}
-                  stroke={p.todo.importance === 'high' ? '#ef4444' : p.stroke}
-                  strokeWidth={p.todo.importance === 'high' ? 2.5 : 1}
-                >
-                  <title>{p.todo.title}（岩石 · {COMPLEXITY_LABELS[p.todo.complexity]}）</title>
-                </rect>
-                <rect
-                  x={p.x - p.w / 2 + 6}
-                  y={p.y - p.h / 2 + 5}
-                  width={p.w - 12}
-                  height={p.h * 0.32}
-                  rx={p.rx * 0.7}
-                  fill="#ffffff"
-                  opacity="0.14"
-                />
+
+            {sand.length > 0 && (
+              <g>
+                {/* 沙层基底：纯色打底保证全覆盖，噪声层只做颗粒 */}
+                <path d={sandPathD} fill="#e9d8ab" />
+                <path d={sandPathD} fill="#d9c188" opacity="0.35" transform={`translate(0 1.5)`} />
+                {/* 噪声颗粒层：与沙形状同 d，直接把 filter 打在 path 上 */}
+                <path d={sandPathD} filter="url(#sand-grain)" opacity="0.8" />
+                {grains.map((g, i) => (
+                  <circle key={`gr-${i}`} cx={g.x} cy={g.y} r={g.r} fill="#cbb37f" opacity={g.o} />
+                ))}
               </g>
-            ))}
-            {pebblePack.placed.map((p) => (
-              <g
-                key={p.todo.id}
-                transform={`rotate(${p.rot} ${p.x} ${p.y})`}
-                className="cursor-pointer"
-                onClick={() => onSelect(p.todo.id)}
-              >
-                <ellipse
-                  cx={p.x}
-                  cy={p.y}
-                  rx={p.rx}
-                  ry={p.h / 2}
-                  fill={p.fill}
-                  stroke={p.todo.importance === 'high' ? '#ef4444' : p.stroke}
-                  strokeWidth={p.todo.importance === 'high' ? 2 : 0.8}
+            )}
+
+            {rockPack.placed.map((p) => {
+              const sel = selectedTodoId === p.todo.id
+              const high = p.todo.importance === 'high'
+              return (
+                <g
+                  key={p.todo.id}
+                  transform={`rotate(${p.rot} ${p.x} ${p.y})`}
+                  className="cursor-pointer"
+                  onClick={() => onSelect(p.todo.id)}
                 >
-                  <title>{p.todo.title}（卵石 · {COMPLEXITY_LABELS[p.todo.complexity]}）</title>
-                </ellipse>
-                {p.highlight && (
-                  <ellipse
-                    cx={p.x}
-                    cy={p.y - p.h * 0.18}
-                    rx={p.rx * 0.62}
-                    ry={p.h * 0.2}
-                    fill={p.highlight}
-                    opacity="0.5"
-                  />
-                )}
-              </g>
-            ))}
-            {trickles.map((d, i) => (
-              <circle key={`tk-${i}`} cx={d.x} cy={d.y} r={d.r} fill="#c2ad7d" />
-            ))}
+                  <ellipse cx={p.x} cy={p.y + p.font * 0.46} rx={p.font * 0.34} ry="4" fill="#8fa0b3" opacity="0.4" filter="url(#stone-shadow)" />
+                  {sel && (
+                    <rect x={p.x - p.w / 2 - 3} y={p.y - p.w / 2 - 3} width={p.w + 6} height={p.w + 6} rx="14"
+                      fill="none" stroke="#3b82f6" strokeWidth="2.5" />
+                  )}
+                  {high && (
+                    <rect x={p.x - p.w / 2} y={p.y - p.w / 2} width={p.w} height={p.w} rx="12"
+                      fill="none" stroke="#ef4444" strokeWidth="2" />
+                  )}
+                  <text
+                    x={p.x}
+                    y={p.y}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={p.font}
+                    fontFamily={EMOJI_FONT}
+                  >
+                    🪨
+                    <title>{p.todo.title}（岩石 · {COMPLEXITY_LABELS[p.todo.complexity]}）</title>
+                  </text>
+                </g>
+              )
+            })}
+
+            {pebblePack.placed.map((p) => {
+              const sel = selectedTodoId === p.todo.id
+              const high = p.todo.importance === 'high'
+              const r = p.font * 0.62
+              return (
+                <g
+                  key={p.todo.id}
+                  transform={`rotate(${p.rot} ${p.x} ${p.y})`}
+                  className="cursor-pointer"
+                  onClick={() => onSelect(p.todo.id)}
+                >
+                  <ellipse cx={p.x} cy={p.y + p.font * 0.48} rx={r * 0.8} ry="2.2" fill="#8fa0b3" opacity="0.35" filter="url(#stone-shadow)" />
+                  {sel && <circle cx={p.x} cy={p.y} r={r + 3} fill="none" stroke="#3b82f6" strokeWidth="2" />}
+                  {high && <circle cx={p.x} cy={p.y} r={r} fill="none" stroke="#ef4444" strokeWidth="1.6" />}
+                  <text
+                    x={p.x}
+                    y={p.y}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={p.font}
+                    fontFamily={EMOJI_FONT}
+                  >
+                    🪨
+                    <title>{p.todo.title}（卵石 · {COMPLEXITY_LABELS[p.todo.complexity]}）</title>
+                  </text>
+                </g>
+              )
+            })}
           </g>
 
+          {/* 玻璃轮廓 + 嘴沿 + 高光 + 刻度（画在内容之上，形成「隔着玻璃看」） */}
+          <path d={JAR_OUTLINE} fill="url(#glass-shine)" stroke="#93a5ba" strokeWidth="2.5" strokeLinejoin="round" opacity="0.9" />
+          {/* 杯嘴：上口一圈加厚的唇边 */}
           <path
-            d={`
-              M ${WALL_X0 + 12} ${TOP_Y - 12}
-              L ${WALL_X0} ${TOP_Y + 14}
-              L ${WALL_X0} ${BOTTOM_Y - 16}
-              Q ${WALL_X0} ${BOTTOM_Y} ${WALL_X0 + 16} ${BOTTOM_Y}
-              L ${WALL_X1 - 16} ${BOTTOM_Y}
-              Q ${WALL_X1} ${BOTTOM_Y} ${WALL_X1} ${BOTTOM_Y - 16}
-              L ${WALL_X1} ${TOP_Y + 14}
-              L ${WALL_X1 - 12} ${TOP_Y - 12}
-            `}
-            fill="url(#glass-shine)"
-            stroke="#9aa7b8"
+            d={`M ${WALL_X0 - 4} ${TOP_Y + 12} L ${WALL_X0 + 10} ${TOP_Y - 14} L ${WALL_X1 - 10} ${TOP_Y - 14} L ${WALL_X1 + 4} ${TOP_Y + 12} Z`}
+            fill="#edf2f8"
+            stroke="#93a5ba"
             strokeWidth="2.5"
             strokeLinejoin="round"
           />
-          <line x1={WALL_X0 + 5} y1={TOP_Y + 32} x2={WALL_X0 + 5} y2={BOTTOM_Y - 32} stroke="#ffffff" strokeWidth="4" opacity="0.5" strokeLinecap="round" />
-          {[0.25, 0.5, 0.75].map((f) => (
-            <line
-              key={f}
-              x1={WALL_X1 - 9}
-              y1={TOP_Y + (BOTTOM_Y - TOP_Y) * f}
-              x2={WALL_X1 - 2}
-              y2={TOP_Y + (BOTTOM_Y - TOP_Y) * f}
-              stroke="#c3ccd9"
-              strokeWidth="2"
-            />
-          ))}
+          {/* 左内侧镜面高光条 */}
+          <line x1={WALL_X0 + 7} y1={TOP_Y + 34} x2={WALL_X0 + 7} y2={BOTTOM_Y - 34} stroke="#ffffff" strokeWidth="4.5" opacity="0.55" strokeLinecap="round" />
+          <line x1={WALL_X1 - 8} y1={TOP_Y + 44} x2={WALL_X1 - 8} y2={BOTTOM_Y - 52} stroke="#ffffff" strokeWidth="2.5" opacity="0.3" strokeLinecap="round" />
+          {/* 筒底内椭圆：一点反光暗示玻璃底 */}
+          <ellipse cx={(WALL_X0 + WALL_X1) / 2} cy={BOTTOM_Y - 5} rx={(WALL_X1 - WALL_X0) / 2 - 12} ry="6" fill="#ffffff" opacity="0.14" />
+
+          {/* 量筒刻度：25/50/75/100%，主刻度（50/100）更长 */}
+          {[0.25, 0.5, 0.75, 1].map((f) => {
+            const y = BOTTOM_Y - (BOTTOM_Y - TOP_Y) * f
+            const major = f === 0.5 || f === 1
+            return (
+              <g key={f}>
+                <line x1={WALL_X1 - (major ? 10 : 7)} y1={y} x2={WALL_X1 - 2} y2={y} stroke="#9fb0c4" strokeWidth={major ? 2 : 1.5} />
+                <text x={WALL_X1 + 4} y={y + 3} fontSize="8" fill="#8296ad">{f * 100}</text>
+              </g>
+            )
+          })}
 
           {overflow && (
             <g>
-              <circle cx={(WALL_X0 + WALL_X1) / 2} cy={TOP_Y - 26} r="7" fill="#ef4444" />
-              <text x={(WALL_X0 + WALL_X1) / 2 + 14} y={TOP_Y - 22} fontSize="11" fill="#ef4444" fontWeight="600">
-                今天的量已经溢出
-              </text>
+              <rect x="8" y="2" width="118" height="20" rx="10" fill="#fef3c7" stroke="#f59e0b" strokeWidth="1.2" />
+              <text x="67" y="16" textAnchor="middle" fontSize="11" fill="#b45309" fontWeight="600">⚠ 今天的量已经溢出</text>
             </g>
           )}
         </svg>
@@ -339,9 +364,9 @@ export function TodoJarView({ todos, selectedTodoId, onSelect }: Props) {
 
       <div className="flex-1 flex flex-col min-w-0 min-h-0 gap-3">
         <div className="flex items-center gap-4 text-xs text-gray-500 flex-wrap flex-shrink-0">
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-[#64748b] border border-[#475569] inline-block" /> 岩石（困难）×{rocks.length}</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#94a3b8] inline-block" /> 卵石（中等）×{pebbles.length}</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-[#e3d3a4] border border-[#cfbc8a] inline-block" /> 沙子（简单）×{sand.length}</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-[#78848f] border border-[#5d6a76] inline-block" /> 岩石（困难）×{rocks.length}</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#aab4c0] inline-block" /> 卵石（中等）×{pebbles.length}</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-[#e9d8ab] border border-[#cfbc8a] inline-block" /> 沙子（简单）×{sand.length}</span>
           <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded border-2 border-red-500 inline-block" /> 红框 = 高重要</span>
           <span className="flex items-center gap-1 text-emerald-600"><Check size={12} /> 今日完成 {todayDone.length}（{ratio}%）</span>
         </div>
