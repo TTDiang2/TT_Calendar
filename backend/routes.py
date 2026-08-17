@@ -833,8 +833,12 @@ def list_todos(
     status: str = Query("notStarted"),
     sort: str = Query("due_importance"),
     limit: Optional[int] = Query(None),
+    completed_on: Optional[str] = Query(None),
     conn=Depends(get_db),
 ):
+    if completed_on:
+        d = parse_date(completed_on)
+        return [t.model_dump(mode="json") for t in db.fetch_todos_completed_on(conn, d)]
     return [t.model_dump(mode="json") for t in db.fetch_todos(conn, list_id, status, sort, limit)]
 
 

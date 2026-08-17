@@ -1,13 +1,15 @@
 import { Calendar, CheckSquare, ChevronLeft, ChevronRight, ListTodo, Rss, Search, Settings } from 'lucide-react'
 import clsx from 'clsx'
-import type { TopTab, ViewMode } from '../types'
+import type { TopTab, TodoViewMode, ViewMode } from '../types'
 
 interface Props {
   title: string
   topTab: TopTab
   mode: ViewMode
+  todoView: TodoViewMode
   onTopTabChange: (t: TopTab) => void
   onModeChange: (m: ViewMode) => void
+  onTodoViewChange: (v: TodoViewMode) => void
   onPrev: () => void
   onNext: () => void
   onToday: () => void
@@ -26,7 +28,15 @@ const MODES: { key: ViewMode; label: string }[] = [
   { key: 'countdown', label: '倒数日' },
 ]
 
-export function TopBar({ title, topTab, mode, onTopTabChange, onModeChange, onPrev, onNext, onToday, canPrev, canNext, onOpenSearch, onOpenSubscription, onOpenSettings }: Props) {
+const TODO_MODES: { key: TodoViewMode; label: string }[] = [
+  { key: 'list', label: '列表' },
+  { key: 'matrix', label: '矩阵' },
+  { key: 'kanban', label: '看板' },
+  { key: 'gantt', label: '甘特' },
+  { key: 'jar', label: '量筒' },
+]
+
+export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeChange, onTodoViewChange, onPrev, onNext, onToday, canPrev, canNext, onOpenSearch, onOpenSubscription, onOpenSettings }: Props) {
   return (
     <header className="h-14 flex items-center justify-between px-4 bg-white border-b border-gray-200">
       <div className="flex items-center gap-1">
@@ -110,7 +120,25 @@ export function TopBar({ title, topTab, mode, onTopTabChange, onModeChange, onPr
           </>
         )}
 
-        {topTab === 'todo' && <h1 className="text-lg font-semibold text-gray-800 flex items-center gap-1.5"><ListTodo size={18} /> 待办</h1>}
+        {topTab === 'todo' && (
+          <>
+            <h1 className="text-lg font-semibold text-gray-800 flex items-center gap-1.5"><ListTodo size={18} /> 待办</h1>
+            <div className="ml-4 inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-50">
+              {TODO_MODES.map((m) => (
+                <button
+                  key={m.key}
+                  onClick={() => onTodoViewChange(m.key)}
+                  className={clsx(
+                    'px-3 py-1 text-sm rounded-md transition',
+                    todoView === m.key ? 'bg-white text-gray-900 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700',
+                  )}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="flex items-center gap-2">

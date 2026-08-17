@@ -155,3 +155,4 @@ export interface StatsSummary {
 export type TodoSort = 'manual' | 'due_importance' | 'due_planned_importance' | 'due' | 'planned' | 'importance' | 'created'
 export type TodoStatusFilter = 'notStarted' | 'all' | 'completed'
 export type TopTab = 'calendar' | 'todo' | 'stats'
+export type TodoViewMode = 'list' | 'matrix' | 'kanban' | 'gantt' | 'jar'

@@ -3,8 +3,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, ChevronDown, ChevronUp, Inbox, ListPlus, Plus, Star, Trash2, Upload } from 'lucide-react'
 import clsx from 'clsx'
 import { getTodoLists, getTodos, getTodoStats, createTodo, updateTodo, deleteTodo, createTodoList, deleteTodoList, importTodosCsv, reorderTodoLists, reorderTodos } from '../api/client'
-import type { Todo, TodoList, TodoSort } from '../types'
+import { todayStr } from '../utils/todoLogic'
+import type { Todo, TodoList, TodoSort, TodoViewMode } from '../types'
 import { TodoDetailPanel } from './TodoDetailPanel'
+import { TodoMatrixView } from './todo/TodoMatrixView'
+import { TodoKanbanView } from './todo/TodoKanbanView'
+import { TodoGanttView } from './todo/TodoGanttView'
+import { TodoJarView } from './todo/TodoJarView'
 
 const SORT_OPTIONS: { key: TodoSort; label: string }[] = [
   { key: 'manual', label: '手动排序' },
@@ -55,7 +60,7 @@ const COMPLEXITY_TAG_CLS: Record<string, string> = {
 
 const DEFAULT_LIST_KEY = 'tt_default_todo_list'
 
-export function TodoView() {
+export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
   const qc = useQueryClient()
   const [selectedList, setSelectedList] = useState<string | null>(() => localStorage.getItem(DEFAULT_LIST_KEY))
   const [sort, setSort] = useState<TodoSort>('due_planned_importance')
@@ -93,12 +98,26 @@ export function TodoView() {
 
   const incomplete = rawIncomplete
 
-  // 已完成：默认折叠时不拉；展开才拉（限制 500 条，避免首屏卡顿）
+  // 已完成：列表展开 / 看板（按状态维度）时拉，限制 500 条
   const { data: completed = [], isLoading: loadingCompleted } = useQuery({
     queryKey: ['todos', selectedList, 'completed', sort],
     queryFn: () => getTodos({ list_id: selectedList ?? undefined, status: 'completed', sort, limit: 500 }),
-    enabled: showCompleted,
+    enabled: showCompleted || viewMode === 'kanban',
   })
+
+  // 量筒：今日完成（completed_on 精确过滤，避免全量 completed 截断丢今日）
+  const today = todayStr()
+  const { data: todayDone = [] } = useQuery({
+    queryKey: ['todos', 'doneOn', today],
+    queryFn: () => getTodos({ status: 'completed', completed_on: today }),
+    enabled: viewMode === 'jar',
+  })
+
+  // 看板全集：未完成 + 已完成（tag 筛选统一在此应用）
+  const kanbanTodos = useMemo(() => {
+    const merged = [...incomplete, ...completed]
+    return tagFilter ? merged.filter((t) => (t.tags ?? []).includes(tagFilter)) : merged
+  }, [incomplete, completed, tagFilter])
 
   const selectedTodo = useMemo(
     () => {
@@ -186,6 +205,8 @@ export function TodoView() {
     }
     return base
   }, [incomplete, tagFilter, manualOrder])
+
+  const jarTodos = useMemo(() => [...filteredIncomplete, ...todayDone], [filteredIncomplete, todayDone])
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
@@ -336,8 +357,22 @@ export function TodoView() {
 
         {csvResult && <div className="mb-2 text-sm text-gray-500 bg-gray-50 px-3 py-1.5 rounded">{csvResult}</div>}
 
-        <div className="flex-1 overflow-y-auto">
-          {filteredIncomplete.length === 0 && completedCount === undefined ? (
+        <div className={viewMode === 'list' ? 'flex-1 overflow-y-auto' : 'flex-1 min-h-0'}>
+          {viewMode === 'matrix' ? (
+            <TodoMatrixView todos={filteredIncomplete} lists={lists} selectedTodoId={selectedTodoId} onSelect={setSelectedTodoId} />
+          ) : viewMode === 'kanban' ? (
+            <TodoKanbanView
+              todos={kanbanTodos}
+              lists={lists}
+              selectedTodoId={selectedTodoId}
+              onSelect={setSelectedTodoId}
+              onUpdate={(id, data) => updateMut.mutate({ id, data })}
+            />
+          ) : viewMode === 'gantt' ? (
+            <TodoGanttView todos={filteredIncomplete} lists={lists} selectedTodoId={selectedTodoId} onSelect={setSelectedTodoId} />
+          ) : viewMode === 'jar' ? (
+            <TodoJarView todos={jarTodos} selectedTodoId={selectedTodoId} onSelect={setSelectedTodoId} />
+          ) : filteredIncomplete.length === 0 && completedCount === undefined ? (
             <div className="h-full flex items-center justify-center text-gray-300 text-sm">
               {tagFilter ? `没有「${tagFilter}」标签的待办` : '暂无待办，点「新建待办」开始'}
             </div>

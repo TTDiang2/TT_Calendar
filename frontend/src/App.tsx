@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useViewData, useCountdown } from './hooks/useApi'
 import { toggleLayer, moveDay, getTodoStats, getTodos, getSyncStatus, getSyncConfig, syncNow, refreshDueSubscriptions } from './api/client'
 import { shiftMonthKey, shiftYearKey } from './data'
-import type { CalEvent, Layer, MonthData, TopTab, ViewMode, YearData } from './types'
+import type { CalEvent, Layer, MonthData, TopTab, TodoViewMode, ViewMode, YearData } from './types'
 import { TopBar } from './components/TopBar'
 import { Sidebar } from './components/Sidebar'
 import { MonthGrid } from './components/MonthGrid'
@@ -47,6 +47,14 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [mode, setMode] = useState<ViewMode>('month')
   const [topTab, setTopTab] = useState<TopTab>('calendar')
+  const [todoView, setTodoViewState] = useState<TodoViewMode>(() => {
+    const v = localStorage.getItem('todo-view')
+    return v === 'matrix' || v === 'kanban' || v === 'gantt' || v === 'jar' ? v : 'list'
+  })
+  const setTodoView = (v: TodoViewMode) => {
+    localStorage.setItem('todo-view', v)
+    setTodoViewState(v)
+  }
   const [dialog, setDialog] = useState<DialogState>(null)
   const [exitSync, setExitSync] = useState<{ state: 'syncing' } | { state: 'failed'; error: string } | null>(null)
   const [ctxMenu, setCtxMenu] = useState<CtxMenuState | null>(null)
@@ -321,8 +329,10 @@ export default function App() {
         title={isLoading ? '加载中…' : title}
         topTab={topTab}
         mode={mode}
+        todoView={todoView}
         onTopTabChange={setTopTab}
         onModeChange={setMode}
+        onTodoViewChange={setTodoView}
         onPrev={() => navigate(-1)}
         onNext={() => navigate(1)}
         onToday={goToday}
@@ -334,7 +344,7 @@ export default function App() {
       />
       <div className="flex-1 flex overflow-hidden">
         {topTab === 'todo' ? (
-          <TodoView />
+          <TodoView viewMode={todoView} />
         ) : mode === 'countdown' ? (
           <CountdownView />
         ) : (

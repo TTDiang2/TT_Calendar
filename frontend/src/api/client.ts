@@ -169,12 +169,13 @@ export const reorderTodos = (ordered_ids: string[]) =>
   put<{ ok: boolean }>('/todo/reorder', { ordered_ids })
 
 // Todo 任务
-export const getTodos = (params: { list_id?: string; status?: TodoStatusFilter; sort?: TodoSort; limit?: number } = {}) => {
+export const getTodos = (params: { list_id?: string; status?: TodoStatusFilter; sort?: TodoSort; limit?: number; completed_on?: string } = {}) => {
   const qs = new URLSearchParams()
   if (params.list_id) qs.set('list_id', params.list_id)
   if (params.status) qs.set('status', params.status)
   if (params.sort) qs.set('sort', params.sort)
   if (params.limit) qs.set('limit', String(params.limit))
+  if (params.completed_on) qs.set('completed_on', params.completed_on)
   const suffix = qs.toString() ? `?${qs}` : ''
   return get<Todo[]>(`/todo${suffix}`)
 }
