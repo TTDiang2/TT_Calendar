@@ -10,6 +10,7 @@ interface Props {
   lists: TodoList[]
   selectedTodoId: string | null
   onSelect: (id: string) => void
+  onToggle: (todo: Todo, done: boolean) => void
 }
 
 const QUADRANTS = [
@@ -65,7 +66,7 @@ function subText(t: Todo, lists: TodoList[]): string {
   return parts.join(' · ')
 }
 
-export function TodoMatrixView({ todos, lists, selectedTodoId, onSelect }: Props) {
+export function TodoMatrixView({ todos, lists, selectedTodoId, onSelect, onToggle }: Props) {
   const active = useMemo(() => todos.filter((t) => t.status !== 'completed'), [todos])
 
   const buckets = useMemo(() => {
@@ -115,6 +116,7 @@ export function TodoMatrixView({ todos, lists, selectedTodoId, onSelect }: Props
                     selected={selectedTodoId === t.id}
                     sub={subText(t, lists)}
                     onClick={() => onSelect(t.id)}
+                    onToggle={(done) => onToggle(t, done)}
                   />
                 ))
               )}

@@ -13,13 +13,18 @@ interface Props {
 
 const W = 260
 const H = 470
-const WALL_X0 = 52
-const WALL_X1 = 212
-const INNER_X0 = 60
-const INNER_X1 = 204
+const WALL_X0 = 56
+const WALL_X1 = 208
+const INNER_X0 = 62
+const INNER_X1 = 202
 const INNER_W = INNER_X1 - INNER_X0
 const TOP_Y = 34
 const BOTTOM_Y = 404
+const ROCK_ROW_H = 70
+const PEBBLE_ROW_H = 28
+const SAND_UNIT_H = 40
+const DONE_UNIT_H = 8
+const DONE_MAX = 64
 
 function hashStr(s: string): number {
   let h = 2166136261
@@ -36,16 +41,21 @@ interface RockShape {
   rx: number
   rot: number
   fill: string
+  stroke: string
 }
 
 const ROCK_VARIANTS: RockShape[] = [
-  { w: 56, h: 46, rx: 17, rot: -5, fill: '#94a3b8' },
-  { w: 50, h: 52, rx: 14, rot: 4, fill: '#8b98a8' },
-  { w: 60, h: 42, rx: 19, rot: -2, fill: '#a3aebc' },
-  { w: 54, h: 48, rx: 15, rot: 7, fill: '#97a4b4' },
+  { w: 64, h: 56, rx: 19, rot: -4, fill: '#64748b', stroke: '#475569' },
+  { w: 58, h: 60, rx: 16, rot: 5, fill: '#5d6b81', stroke: '#3f4c61' },
+  { w: 68, h: 52, rx: 21, rot: -2, fill: '#718096', stroke: '#526071' },
+  { w: 60, h: 58, rx: 17, rot: 6, fill: '#67758c', stroke: '#48556b' },
 ]
 
-const PEBBLE_FILLS = ['#c3cbd8', '#b8c2d0', '#ccd4df']
+const PEBBLE_VARIANTS = [
+  { fill: '#94a3b8', hi: '#c3d0e0' },
+  { fill: '#8997ab', hi: '#b7c3d3' },
+  { fill: '#a0adbd', hi: '#cfd9e4' },
+]
 
 interface Placed {
   todo: Todo
@@ -54,48 +64,88 @@ interface Placed {
   w: number
   h: number
   rx: number
+  ry: number
   rot: number
   fill: string
+  stroke: string
+  highlight: string | null
   pebble: boolean
 }
 
-function placeRocks(items: Todo[], bottomY: number): { placed: Placed[]; topY: number } {
+function packRocks(items: Todo[], bottomY: number): { placed: Placed[]; topY: number } {
   const placed: Placed[] = []
-  let y = bottomY
+  let shelf = bottomY
   let i = 0
   while (i < items.length) {
-    const rowH = Math.max(...items.slice(i, i + 2).map((t) => ROCK_VARIANTS[hashStr(t.id) % ROCK_VARIANTS.length].h)) + 6
-    y -= rowH
-    const perRow = 2
-    for (let j = 0; j < perRow && i < items.length; j += 1, i += 1) {
-      const t = items[i]
+    const row = items.slice(i, i + 2)
+    i += row.length
+    const rowH = Math.max(...row.map((t) => ROCK_VARIANTS[hashStr(t.id) % ROCK_VARIANTS.length].h)) + 4
+    row.forEach((t, j) => {
       const v = ROCK_VARIANTS[hashStr(t.id) % ROCK_VARIANTS.length]
-      const jitter = ((hashStr(t.id) >> 5) % 14) - 7
-      const x = INNER_X0 + 8 + j * (INNER_W / 2) + jitter + (INNER_W / 2 - v.w - 8) / 2
-      placed.push({ todo: t, x: x + v.w / 2, y: y + v.h / 2, w: v.w, h: v.h, rx: v.rx, rot: v.rot, fill: v.fill, pebble: false })
-    }
+      const slot = INNER_W / 2
+      const x = INNER_X0 + slot * j + (slot - v.w) / 2
+      placed.push({ todo: t, x: x + v.w / 2, y: shelf - v.h / 2, w: v.w, h: v.h, rx: v.rx, ry: 0, rot: v.rot, fill: v.fill, stroke: v.stroke, highlight: null, pebble: false })
+    })
+    shelf -= rowH
   }
-  return { placed, topY: y }
+  return { placed, topY: shelf }
 }
 
-function placePebbles(items: Todo[], bottomY: number): { placed: Placed[]; topY: number } {
+function packPebbles(items: Todo[], bottomY: number): { placed: Placed[]; topY: number; topRow: { x: number }[] } {
   const placed: Placed[] = []
-  let y = bottomY
+  let shelf = bottomY
   let i = 0
+  let rowIdx = 0
   while (i < items.length) {
-    y -= 26
-    const perRow = 4
-    for (let j = 0; j < perRow && i < items.length; j += 1, i += 1) {
-      const t = items[i]
+    const row = items.slice(i, i + 4)
+    i += row.length
+    row.forEach((t, j) => {
       const h = hashStr(t.id)
-      const rx = 15 + (h % 4)
-      const ry = 11 + ((h >> 3) % 3)
-      const jitter = ((h >> 6) % 12) - 6
-      const x = INNER_X0 + 10 + j * (INNER_W / 4) + jitter + (INNER_W / 4 - rx * 2) / 2
-      placed.push({ todo: t, x: x + rx, y: y + ry, w: rx * 2, h: ry * 2, rx, rot: ((h >> 9) % 14) - 7, fill: PEBBLE_FILLS[h % PEBBLE_FILLS.length], pebble: true })
+      const v = PEBBLE_VARIANTS[h % PEBBLE_VARIANTS.length]
+      const rx = 13 + (h % 3)
+      const ry = 10 + ((h >> 3) % 3)
+      const slot = INNER_W / 4
+      const off = (rowIdx % 2) * (slot / 2)
+      const x = INNER_X0 + off + slot * j + (slot - rx * 2) / 2
+      placed.push({ todo: t, x: x + rx, y: shelf - ry, w: rx * 2, h: ry * 2, rx, ry, rot: ((h >> 9) % 9) - 4, fill: v.fill, stroke: '#5f6f82', highlight: v.hi, pebble: true })
+    })
+    shelf -= PEBBLE_ROW_H
+    rowIdx += 1
+  }
+  // 同行卵石 ry 各异（8/9/10），顶部 y=shelf-ry 各不相同；cy=y+ry=shelf 才是行不变量
+  const minCy = placed.length ? Math.min(...placed.map((p) => p.y + p.ry)) : 0
+  return { placed, topY: shelf, topRow: placed.filter((p) => p.y + p.ry === minCy).map((p) => ({ x: p.x })) }
+}
+
+function sandPath(topY: number, bottomY: number, topRow: { x: number }[]): string {
+  if (topRow.length < 2) {
+    return `M ${WALL_X0 + 4} ${topY} L ${WALL_X1 - 4} ${topY} L ${WALL_X1 - 4} ${bottomY} L ${WALL_X0 + 4} ${bottomY} Z`
+  }
+  const sorted = [...topRow].sort((a, b) => a.x - b.x)
+  let d = `M ${WALL_X0 + 4} ${topY} L ${WALL_X1 - 4} ${topY} L ${WALL_X1 - 4} ${bottomY + 8}`
+  for (let i = sorted.length - 1; i >= 0; i -= 1) {
+    d += ` L ${Math.max(sorted[i].x, WALL_X0 + 10)} ${bottomY + 2}`
+    if (i > 0) {
+      const mid = (sorted[i].x + sorted[i - 1].x) / 2
+      d += ` L ${mid} ${bottomY + 10}`
     }
   }
-  return { placed, topY: y }
+  d += ` L ${WALL_X0 + 4} ${bottomY + 8} Z`
+  return d
+}
+
+function trickleDots(topRow: { x: number }[], bottomY: number, h: number): { x: number; y: number; r: number }[] {
+  if (topRow.length < 2) return []
+  const sorted = [...topRow].sort((a, b) => a.x - b.x)
+  const dots: { x: number; y: number; r: number }[] = []
+  for (let i = 0; i < sorted.length - 1; i += 1) {
+    const mid = (sorted[i].x + sorted[i + 1].x) / 2
+    const base = bottomY + 8 + (h % 3) * 2
+    dots.push({ x: mid - 4, y: base + 3, r: 2.4 })
+    dots.push({ x: mid + 3, y: base + 8, r: 2 })
+    dots.push({ x: mid + 1, y: base + 14, r: 1.6 })
+  }
+  return dots
 }
 
 export function TodoJarView({ todos, selectedTodoId, onSelect }: Props) {
@@ -112,22 +162,31 @@ export function TodoJarView({ todos, selectedTodoId, onSelect }: Props) {
   const pebbles = useMemo(() => todayOpen.filter((t) => t.complexity === 'medium'), [todayOpen])
   const sand = useMemo(() => todayOpen.filter((t) => t.complexity === 'simple'), [todayOpen])
 
-  const doneH = Math.min(todayDone.length * 7, 64)
-  const { placed: rockPlaced, topY: rockTop } = useMemo(
-    () => placeRocks(rocks, BOTTOM_Y - doneH), [rocks, doneH])
-  const { placed: pebblePlaced, topY: pebbleTop } = useMemo(
-    () => placePebbles(pebbles, rockTop), [pebbles, rockTop])
-  const sandH = Math.min(sand.length * 5, 70)
-  const sandTop = pebbleTop - sandH
-  const overflow = sandTop < TOP_Y + 8
+  const doneH = Math.min(todayDone.length * DONE_UNIT_H, DONE_MAX)
+  const bottomY = BOTTOM_Y - doneH
+
+  const rockPack = useMemo(() => packRocks(rocks, bottomY), [rocks, bottomY])
+  const pebblePack = useMemo(() => packPebbles(pebbles, rockPack.topY), [pebbles, rockPack.topY])
+
+  const packedTop = pebbles.length ? pebblePack.topY : rockPack.topY
+  const sandBottom = packedTop + 4
+  const sandTop = sandBottom - sand.length * SAND_UNIT_H
+  const sandRow = pebbles.length ? pebblePack.topRow : []
+  const sandPathD = sand.length ? sandPath(sandTop, sandBottom, sandRow) : ''
+  const trickles = sand.length ? trickleDots(sandRow, sandBottom, hashStr(sand[0].id)) : []
+  const overflow = sand.length > 0 ? sandTop < TOP_Y + 6 : packedTop < TOP_Y + 6
 
   const total = todayOpen.length
   const ratio = total ? Math.round((todayDone.length / (total + todayDone.length)) * 100) : 0
 
   if (total === 0 && todayDone.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-2 text-gray-300">
-        <div className="text-4xl">🫙</div>
+      <div className="h-full flex flex-col items-center justify-center gap-3 text-gray-300">
+        <svg width="72" height="96" viewBox="0 0 72 96" aria-hidden="true">
+          <path d="M22 4 L50 4 L45 16 L45 78 Q45 88 36 88 Q27 88 27 78 L27 16 Z" fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="2.5" strokeLinejoin="round" />
+          <path d="M17 13 L55 13 L51 21 L21 21 Z" fill="#eef2f7" stroke="#cbd5e1" strokeWidth="2.5" strokeLinejoin="round" />
+          <path d="M34 40 Q34 66 44 72" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" fill="none" opacity="0.7" />
+        </svg>
         <p className="text-sm">今天还没有安排</p>
         <p className="text-xs">先放一块大石头进去吧（截止/计划日设为今天）</p>
       </div>
@@ -137,16 +196,16 @@ export function TodoJarView({ todos, selectedTodoId, onSelect }: Props) {
   return (
     <div className="h-full flex gap-6 min-h-0 pb-4">
       <div className="flex-shrink-0 flex items-end justify-center" style={{ width: W }}>
-        <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+        <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="今日任务量筒">
           <defs>
-            <pattern id="sand-dots" width="8" height="8" patternUnits="userSpaceOnUse">
-              <rect width="8" height="8" fill="#e8dcbf" />
-              <circle cx="2" cy="3" r="1.1" fill="#cdbd94" />
-              <circle cx="6" cy="6.5" r="0.9" fill="#d8c9a4" />
+            <pattern id="sand-dots" width="9" height="9" patternUnits="userSpaceOnUse">
+              <rect width="9" height="9" fill="#f0e6c8" />
+              <circle cx="2.5" cy="3.5" r="1.4" fill="#cfbc8a" />
+              <circle cx="6.5" cy="7" r="1.1" fill="#c2ad7d" />
             </pattern>
             <linearGradient id="glass-shine" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.55" />
-              <stop offset="18%" stopColor="#ffffff" stopOpacity="0.05" />
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.5" />
+              <stop offset="16%" stopColor="#ffffff" stopOpacity="0.04" />
               <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
             </linearGradient>
             <clipPath id="jar-clip">
@@ -166,54 +225,75 @@ export function TodoJarView({ todos, selectedTodoId, onSelect }: Props) {
           <g clipPath="url(#jar-clip)">
             {doneH > 0 && (
               <g>
-                <rect x={WALL_X0} y={BOTTOM_Y - doneH} width={WALL_X1 - WALL_X0} height={doneH} fill="#cbd5e1" opacity="0.55" />
-                <text x={(WALL_X0 + WALL_X1) / 2} y={BOTTOM_Y - 10} textAnchor="middle" fontSize="10" fill="#64748b">
+                <rect x={WALL_X0} y={BOTTOM_Y - doneH} width={WALL_X1 - WALL_X0} height={doneH} fill="#d7dee8" opacity="0.65" />
+                <text x={(WALL_X0 + WALL_X1) / 2} y={BOTTOM_Y - 10} textAnchor="middle" fontSize="10" fill="#64748b" fontWeight="600">
                   ✓ ×{todayDone.length}
                 </text>
               </g>
             )}
-            {sandH > 0 && (
-              <g>
-                <rect x={WALL_X0} y={BOTTOM_Y - doneH - sandH} width={WALL_X1 - WALL_X0} height={sandH} fill="url(#sand-dots)" />
-                <text x={(WALL_X0 + WALL_X1) / 2} y={BOTTOM_Y - doneH - sandH / 2 + 3} textAnchor="middle" fontSize="9" fill="#a16207">
-                  沙子 ×{sand.length}
-                </text>
+            {sand.length > 0 && <path d={sandPathD} fill="url(#sand-dots)" />}
+            {rockPack.placed.map((p) => (
+              <g
+                key={p.todo.id}
+                transform={`rotate(${p.rot} ${p.x} ${p.y})`}
+                className="cursor-pointer"
+                onClick={() => onSelect(p.todo.id)}
+              >
+                <rect
+                  x={p.x - p.w / 2}
+                  y={p.y - p.h / 2}
+                  width={p.w}
+                  height={p.h}
+                  rx={p.rx}
+                  fill={p.fill}
+                  stroke={p.todo.importance === 'high' ? '#ef4444' : p.stroke}
+                  strokeWidth={p.todo.importance === 'high' ? 2.5 : 1}
+                >
+                  <title>{p.todo.title}（岩石 · {COMPLEXITY_LABELS[p.todo.complexity]}）</title>
+                </rect>
+                <rect
+                  x={p.x - p.w / 2 + 6}
+                  y={p.y - p.h / 2 + 5}
+                  width={p.w - 12}
+                  height={p.h * 0.32}
+                  rx={p.rx * 0.7}
+                  fill="#ffffff"
+                  opacity="0.14"
+                />
               </g>
-            )}
-            {pebblePlaced.map((p) => (
-              <ellipse
-                key={p.todo.id}
-                cx={p.x}
-                cy={p.y}
-                rx={p.rx}
-                ry={p.h / 2}
-                transform={`rotate(${p.rot} ${p.x} ${p.y})`}
-                fill={p.fill}
-                stroke={p.todo.importance === 'high' ? '#ef4444' : 'none'}
-                strokeWidth={p.todo.importance === 'high' ? 2 : 0}
-                className="cursor-pointer"
-                onClick={() => onSelect(p.todo.id)}
-              >
-                <title>{p.todo.title}（卵石 · {COMPLEXITY_LABELS[p.todo.complexity]}）</title>
-              </ellipse>
             ))}
-            {rockPlaced.map((p) => (
-              <rect
+            {pebblePack.placed.map((p) => (
+              <g
                 key={p.todo.id}
-                x={p.x - p.w / 2}
-                y={p.y - p.h / 2}
-                width={p.w}
-                height={p.h}
-                rx={p.rx}
                 transform={`rotate(${p.rot} ${p.x} ${p.y})`}
-                fill={p.fill}
-                stroke={p.todo.importance === 'high' ? '#ef4444' : '#7d8b9d'}
-                strokeWidth={p.todo.importance === 'high' ? 2.5 : 1}
                 className="cursor-pointer"
                 onClick={() => onSelect(p.todo.id)}
               >
-                <title>{p.todo.title}（岩石 · {COMPLEXITY_LABELS[p.todo.complexity]}）</title>
-              </rect>
+                <ellipse
+                  cx={p.x}
+                  cy={p.y}
+                  rx={p.rx}
+                  ry={p.h / 2}
+                  fill={p.fill}
+                  stroke={p.todo.importance === 'high' ? '#ef4444' : p.stroke}
+                  strokeWidth={p.todo.importance === 'high' ? 2 : 0.8}
+                >
+                  <title>{p.todo.title}（卵石 · {COMPLEXITY_LABELS[p.todo.complexity]}）</title>
+                </ellipse>
+                {p.highlight && (
+                  <ellipse
+                    cx={p.x}
+                    cy={p.y - p.h * 0.18}
+                    rx={p.rx * 0.62}
+                    ry={p.h * 0.2}
+                    fill={p.highlight}
+                    opacity="0.5"
+                  />
+                )}
+              </g>
+            ))}
+            {trickles.map((d, i) => (
+              <circle key={`tk-${i}`} cx={d.x} cy={d.y} r={d.r} fill="#c2ad7d" />
             ))}
           </g>
 
@@ -229,19 +309,19 @@ export function TodoJarView({ todos, selectedTodoId, onSelect }: Props) {
               L ${WALL_X1 - 12} ${TOP_Y - 12}
             `}
             fill="url(#glass-shine)"
-            stroke="#9ca3af"
+            stroke="#9aa7b8"
             strokeWidth="2.5"
             strokeLinejoin="round"
           />
-          <line x1={WALL_X0 + 4} y1={TOP_Y + 30} x2={WALL_X0 + 4} y2={BOTTOM_Y - 30} stroke="#ffffff" strokeWidth="4" opacity="0.5" strokeLinecap="round" />
+          <line x1={WALL_X0 + 5} y1={TOP_Y + 32} x2={WALL_X0 + 5} y2={BOTTOM_Y - 32} stroke="#ffffff" strokeWidth="4" opacity="0.5" strokeLinecap="round" />
           {[0.25, 0.5, 0.75].map((f) => (
             <line
               key={f}
-              x1={WALL_X1 - 8}
+              x1={WALL_X1 - 9}
               y1={TOP_Y + (BOTTOM_Y - TOP_Y) * f}
-              x2={WALL_X1 - 1}
+              x2={WALL_X1 - 2}
               y2={TOP_Y + (BOTTOM_Y - TOP_Y) * f}
-              stroke="#cbd5e1"
+              stroke="#c3ccd9"
               strokeWidth="2"
             />
           ))}
@@ -259,9 +339,9 @@ export function TodoJarView({ todos, selectedTodoId, onSelect }: Props) {
 
       <div className="flex-1 flex flex-col min-w-0 min-h-0 gap-3">
         <div className="flex items-center gap-4 text-xs text-gray-500 flex-wrap flex-shrink-0">
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-slate-400 inline-block" /> 岩石（困难）×{rocks.length}</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block" /> 卵石（中等）×{pebbles.length}</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-[#e8dcbf] border border-[#cdbd94] inline-block" /> 沙子（简单）×{sand.length}</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-[#64748b] border border-[#475569] inline-block" /> 岩石（困难）×{rocks.length}</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#94a3b8] inline-block" /> 卵石（中等）×{pebbles.length}</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-[#e3d3a4] border border-[#cfbc8a] inline-block" /> 沙子（简单）×{sand.length}</span>
           <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded border-2 border-red-500 inline-block" /> 红框 = 高重要</span>
           <span className="flex items-center gap-1 text-emerald-600"><Check size={12} /> 今日完成 {todayDone.length}（{ratio}%）</span>
         </div>

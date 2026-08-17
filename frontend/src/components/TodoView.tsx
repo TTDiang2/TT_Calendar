@@ -113,11 +113,10 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
     enabled: viewMode === 'jar',
   })
 
-  // 看板全集：未完成 + 已完成（tag 筛选统一在此应用）
-  const kanbanTodos = useMemo(() => {
-    const merged = [...incomplete, ...completed]
-    return tagFilter ? merged.filter((t) => (t.tags ?? []).includes(tagFilter)) : merged
-  }, [incomplete, completed, tagFilter])
+  // 看板已完成：tag 筛选后用于展开列（计数直接用 stats）
+  const filteredCompleted = useMemo(() => {
+    return tagFilter ? completed.filter((t) => (t.tags ?? []).includes(tagFilter)) : completed
+  }, [completed, tagFilter])
 
   const selectedTodo = useMemo(
     () => {
@@ -359,13 +358,16 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
 
         <div className={viewMode === 'list' ? 'flex-1 overflow-y-auto' : 'flex-1 min-h-0'}>
           {viewMode === 'matrix' ? (
-            <TodoMatrixView todos={filteredIncomplete} lists={lists} selectedTodoId={selectedTodoId} onSelect={setSelectedTodoId} />
+            <TodoMatrixView todos={filteredIncomplete} lists={lists} selectedTodoId={selectedTodoId} onSelect={setSelectedTodoId} onToggle={handleToggle} />
           ) : viewMode === 'kanban' ? (
             <TodoKanbanView
-              todos={kanbanTodos}
+              openTodos={filteredIncomplete}
+              completedTodos={filteredCompleted}
+              completedCount={stats?.completed ?? completed.length}
               lists={lists}
               selectedTodoId={selectedTodoId}
               onSelect={setSelectedTodoId}
+              onToggle={handleToggle}
               onUpdate={(id, data) => updateMut.mutate({ id, data })}
             />
           ) : viewMode === 'gantt' ? (

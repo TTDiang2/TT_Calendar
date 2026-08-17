@@ -128,3 +128,46 @@ end   优先级：completed → completed_at
   - `frontend/src/components/todo/TodoKanbanView.tsx`
   - `frontend/src/components/todo/TodoGanttView.tsx`
   - `frontend/src/components/todo/TodoJarView.tsx`
+
+## 6. v2.2.0 打磨记录（2026-08-17）
+
+### 6.1 卡片勾选（跨视图同步）
+
+- `TodoMiniCard` 新增圆形勾选按钮（左缘，`aria-label=标记为已完成/未完成`）：
+  点击 → `onToggle(!done)` → TodoView 的 toggle 变更（PUT completed/notStarted），
+  矩阵/看板所有视图即时重排，侧栏计数同步。逾期角标在已完成时隐藏。
+- 矩阵/看板通过 `onToggle` prop 接线；列表视图沿用原有 checkbox。
+
+### 6.2 看板五维 + 已完成折叠列
+
+- 维度切换器：按状态 / 按计划日期 / 按重要性 / 按复杂度 / 按标签（激活态白底阴影）。
+- 各维度列染色：状态列用 STATUS_TONE（灰/蓝/紫/琥珀），重要性 high/normal/low 红/琥珀/绿，
+  复杂度困难/中等/简单红/琥珀/绿；列头「标题+计数」。
+- **按计划日期**：`planned_date < today` 的任务跳过（只列今天及以后）；今天标题显示「今天」；
+  未计划归 `__none__` 列排最后。
+- **已完成列**（仅状态维）：独立绿色列头按钮「已完成 {count}」（默认折叠，计数来自
+  `/api/todo/stats` 的 stats.completed——列表 limit=500 会截断，不可用 completed.length）；
+  展开后显示已完成卡片，可一键勾回未完成。
+- 拖拽仅状态维可用（dragId/overCol + drop 调 update status），其余维度禁拖避免误改结构数据。
+
+### 6.3 甘特：默认一个月 + 自动滚到今天
+
+- `VISIBLE_DAYS=30`：`dayW = (viewW - LABEL_W) / 30`（最小 3px），默认恰好可见一个月。
+- 首次挂载自动 `scrollLeft = todayX - 30`（clamp 到 [0, max]），只滚一次（didInitScroll ref）。
+
+### 6.4 量筒：扁平风重绘 + 物理堆叠
+
+- 纯 SVG 玻璃罐（260×470）：石板灰岩石（每行 2 个，沉底贴 shelf）、灰蓝卵石
+  （每行 4 个，砖纹交错）、沙子（#f0e6c8 底 + pattern 点，画在石头之上）。
+- **沙子波状底边**：sandPath 在两两相邻顶行卵石之间下探 +10、卵石处凸起 +2（行不变量
+  用 `cy = y + ry`，同行卵石 ry 各异，不能按 y 取顶行）；波谷下再画 trickleDots 渗漏点簇。
+- 沉底已完成带（半透明 +「✓ ×N」）；溢出判定 `sandTop < TOP_Y + 6`。
+- 容量校准：典型日（2 岩 + 8 卵 + 3 沙）≈ 75% 满，5 沙 ≈ 96%+ 触发溢出提示。
+
+### 6.5 后端修复：completed 排序
+
+- **问题**：completed 场景排序键（due/planned）无意义，1153 条已完成按旧序排，
+  刚勾选的任务沉底被 `limit=500` 截断 → 看板展开列/列表已完成区看不到刚完成的任务。
+- **修复**：`tt_calendar/db.py` `fetch_todos` 在 `status_filter == "completed"` 时
+  强制 `completed_at DESC`（最新完成排最前），忽略传入 sort（注释说明原因，
+  避免未来被当作 bug「修掉」重新引入截断问题）。

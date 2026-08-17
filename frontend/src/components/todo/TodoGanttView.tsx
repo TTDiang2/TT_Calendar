@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import clsx from 'clsx'
 import { CheckCircle2 } from 'lucide-react'
 import type { Todo, TodoList } from '../../types'
@@ -16,6 +16,7 @@ const LABEL_W = 210
 const ROW_H = 34
 const BAR_H = 18
 const HEAD_H = 40
+const VISIBLE_DAYS = 30
 
 function dayIndex(d: string): number {
   return Math.floor(new Date(d + 'T00:00:00').getTime() / DAY)
@@ -31,6 +32,20 @@ const BAR_STYLE: Record<string, string> = {
 
 export function TodoGanttView({ todos, lists, selectedTodoId, onSelect }: Props) {
   const today = new Date().toISOString().slice(0, 10)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [viewW, setViewW] = useState(0)
+  const didInitScroll = useRef(false)
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width
+      if (w) setViewW(w)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   const rows = useMemo(() => {
     return todos
@@ -47,7 +62,7 @@ export function TodoGanttView({ todos, lists, selectedTodoId, onSelect }: Props)
     const min = Math.min(...starts)
     const max = Math.max(...ends, dayIndex(today)) + 2
     const span = max - min
-    const w = span <= 35 ? 24 : span <= 90 ? 12 : span <= 200 ? 6 : 3
+    const w = viewW > LABEL_W + 40 ? Math.max((viewW - LABEL_W) / VISIBLE_DAYS, 3) : 24
     const months: { start: number; label: string }[] = []
     const weekendCols: number[] = []
     for (let i = 0; i <= span; i += 1) {
@@ -56,10 +71,18 @@ export function TodoGanttView({ todos, lists, selectedTodoId, onSelect }: Props)
       if (d.getDay() === 0 || d.getDay() === 6) weekendCols.push(i)
     }
     return { t0: min, totalDays: span + 1, dayW: w, months, weekendCols }
-  }, [rows, today])
+  }, [rows, today, viewW])
 
   const laneW = geo.totalDays * geo.dayW
   const todayX = (dayIndex(today) - geo.t0) * geo.dayW
+
+  useEffect(() => {
+    if (didInitScroll.current || viewW === 0) return
+    const el = scrollRef.current
+    if (!el) return
+    didInitScroll.current = true
+    el.scrollLeft = Math.min(Math.max(todayX - 30, 0), Math.max(LABEL_W + laneW - viewW, 0))
+  }, [viewW, todayX, laneW])
 
   const listName = useMemo(() => {
     const m = new Map(lists.map((l) => [l.id, l.display_name]))
@@ -73,7 +96,7 @@ export function TodoGanttView({ todos, lists, selectedTodoId, onSelect }: Props)
   const showDayNums = geo.dayW >= 12
 
   return (
-    <div className="h-full overflow-auto pb-4">
+    <div ref={scrollRef} className="h-full overflow-auto pb-4">
       <div className="relative min-w-max" style={{ width: LABEL_W + laneW }}>
         <div className="sticky top-0 z-20 bg-white border-b border-gray-200 flex" style={{ height: HEAD_H }}>
           <div className="sticky left-0 z-30 bg-white border-r border-gray-100 flex-shrink-0" style={{ width: LABEL_W }} />

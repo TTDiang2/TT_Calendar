@@ -1258,6 +1258,11 @@ def fetch_todos(
         clauses.append("status = 'completed'")
     where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
     order_sql = _TODO_SORT_SQL.get(sort, _TODO_SORT_SQL["due_importance"])
+    # completed 列表：一律按完成时间倒序（最新完成在前）。
+    # 原因：已完成任务关注的是完成时刻；若沿用 due/planned 排序，刚勾选完成的任务
+    # 会沉到末尾，被前端 limit=500 截断，看板展开列/列表已完成区看不到最新完成。
+    if status_filter == "completed":
+        order_sql = "completed_at DESC"
     # manual 排序本身就是 sort_order，不需要再追加次级排序键
     if sort == "manual":
         sql = f"SELECT * FROM todo{where} ORDER BY {order_sql}"
