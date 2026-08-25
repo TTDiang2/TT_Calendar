@@ -6,7 +6,12 @@ a = Analysis(
     pathex=['.'],
     binaries=[],
     datas=[('frontend/dist', 'frontend/dist')],
-    hiddenimports=['uvicorn.logging', 'uvicorn.protocols.http.auto', 'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan.on'],
+    hiddenimports=[
+        'uvicorn.logging', 'uvicorn.protocols.http.auto', 'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan.on',
+        # borax is imported statically (tt_calendar/utils/lunar_utils.py) but force-bundle it
+        # so a rebuild can never silently omit it again.
+        'borax', 'borax.calendars', 'borax.calendars.lunardate',
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
