@@ -112,8 +112,39 @@ export function TodoDetailPanel({ todo, lists, onClose, onSave, onDelete }: Prop
 
   const tags = tagsText.split(/[,，]/).map((t) => t.trim()).filter(Boolean)
 
+  // 构造完整保存数据（与 useEffect 自动保存的字段一一对应）
+  const buildData = (): Todo => ({
+    ...todo!,
+    title: title.trim(),
+    body: body.trim() || null,
+    importance,
+    due_date: dueDate || null,
+    planned_date: plannedDate || null,
+    start_date: startDate || null,
+    complexity,
+    tags: tags.length ? tags : null,
+    list_id: listId,
+    status,
+  })
+
+  // 显式保存：保存并关闭面板（切走时仍有自动保存兜底）
+  const save = () => {
+    if (!title.trim() || !listId) return
+    onSave(buildData())
+    onClose()
+  }
+
   return (
-    <aside className="w-72 bg-white border-l border-gray-200 flex flex-col overflow-hidden">
+    <aside
+      className="w-72 bg-white border-l border-gray-200 flex flex-col overflow-hidden"
+      onKeyDown={(e) => {
+        // Ctrl/Cmd + Enter 直接保存（新建待办时同样生效）
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault()
+          if (title.trim() && listId) save()
+        }
+      }}
+    >
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
         <p className="text-xs text-gray-400 uppercase tracking-wide">待办详情</p>
         <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600" title="关闭">
@@ -221,7 +252,16 @@ export function TodoDetailPanel({ todo, lists, onClose, onSave, onDelete }: Prop
         >
           <Trash2 size={14} /> 删除
         </button>
-        <span className="text-xs text-gray-400">切换自动保存</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-400">切换页面自动保存 · Ctrl+Enter</span>
+          <button
+            onClick={save}
+            disabled={!title.trim() || !listId}
+            className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40"
+          >
+            保存
+          </button>
+        </div>
       </div>
     </aside>
   )
