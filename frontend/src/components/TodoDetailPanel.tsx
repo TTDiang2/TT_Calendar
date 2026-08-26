@@ -243,25 +243,27 @@ export function TodoDetailPanel({ todo, lists, onClose, onSave, onDelete }: Prop
         </label>
       </div>
 
-      <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-        <button
-          onClick={() => {
-            if (confirm(`删除待办「${todo.title}」？`)) onDelete(todo.id)
-          }}
-          className="flex items-center gap-1 text-sm text-red-500 hover:text-red-600"
-        >
-          <Trash2 size={14} /> 删除
-        </button>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-400">切换页面自动保存 · Ctrl+Enter</span>
+      <div className="px-4 py-3 border-t border-gray-100 space-y-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <button
+            onClick={() => {
+              if (confirm(`删除待办「${todo.title}」？`)) onDelete(todo.id)
+            }}
+            className="flex items-center gap-1 text-sm text-red-500 hover:text-red-600 whitespace-nowrap"
+          >
+            <Trash2 size={14} /> 删除
+          </button>
           <button
             onClick={save}
             disabled={!title.trim() || !listId}
-            className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40"
+            className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40 whitespace-nowrap"
           >
             保存
           </button>
         </div>
+        <p className="text-[11px] text-gray-400 text-right leading-none whitespace-nowrap">
+          切换页面自动保存 · <span className="font-medium text-gray-500">Ctrl+Enter</span> 直接保存
+        </p>
       </div>
     </aside>
   )
