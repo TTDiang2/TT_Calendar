@@ -29,6 +29,21 @@ def _sub_action_of(title: str) -> str | None:
     return m.group(1) if m else None
 
 
+def apply_subscription_switch(conn, layers: list) -> tuple[list, set]:
+    """订阅级开关：关闭订阅 → 其名下图层整组退出聚合与导航。
+
+    约定（同 Sidebar）：订阅 display_name 与其图层的 group 名一致。
+    返回 (过滤后的图层列表, 被剔除的 layer_id 集合)。
+    """
+    disabled_names = {s.display_name for s in db.fetch_subscriptions(conn) if not s.enabled}
+    if not disabled_names:
+        return layers, set()
+    removed_ids = {l.layer_id for l in layers if l.group and l.group in disabled_names}
+    if not removed_ids:
+        return layers, removed_ids
+    return [l for l in layers if l.layer_id not in removed_ids], removed_ids
+
+
 def _event_passes_layer_filter(
     ev: Event,
     layer_cfg: dict | None,
@@ -280,6 +295,7 @@ def build_view(
         schedule_items_by_date[item.date].append(item)
 
     layers = db.fetch_layer_configs(conn)
+    layers, removed_sub_layer_ids = apply_subscription_switch(conn, layers)
     layer_cfg_by_id = {l.layer_id: l.config or {} for l in layers}
     layer_names = {l.layer_id: l.display_name for l in layers}
     # 涂色图层：custom_* + built-in coloring（mark 渲染需要 lookup color/palette）
@@ -299,6 +315,8 @@ def build_view(
 
     events_by_date: dict = defaultdict(lambda: defaultdict(list))
     for ev in events:
+        if ev.layer_id in removed_sub_layer_ids:
+            continue
         if not _event_passes_layer_filter(ev, layer_cfg_by_id.get(ev.layer_id)):
             continue
         events_by_date[ev.date][ev.layer_id].append(ev)
@@ -362,6 +380,7 @@ def build_year_view(conn, year: int) -> dict:
         months.append({"month": m, "days": view["days"]})
 
     layers = db.fetch_layer_configs(conn)
+    layers, _ = apply_subscription_switch(conn, layers)
     return {
         "year": year,
         "layers": [l.model_dump(mode="json") for l in layers],
