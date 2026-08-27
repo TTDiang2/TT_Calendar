@@ -211,3 +211,20 @@ end   优先级：completed → completed_at
 - 完成带改祖母绿渐变（done-sediment）+ 上缘亮线 +「✓ ×N」。
 - 验证：Windows Segoe UI Emoji 含 🪨 字形（`document.fonts.check` = true），
   岩石/卵石/沙纹/颗粒/落影全部渲染正常。
+
+
+## 8. 每日提醒（2026-08-27）
+
+> 决策背景：调研了 Windows toast / tauri-plugin-notification / schtasks 三条路径，用户裁定只做 V1 应用内轻推——纯视觉静默、不碰系统、未来提醒（remind_at）本轮不做。哲学依据：应用目前是纯拉模型，提醒是唯一的「推」，必须保持克制（默认关、当日仅一次、无声）。
+
+### 行为
+
+- 到达设定时间（默认 16:00，本地时间）后，若 `planned_date == 今天` 且未完成的待办数 > 0，TopBar 下方出现一条琥珀色安静横幅：`今日还有 N 条计划任务未完成` + 「查看」+ 关闭 ×
+- 「查看」跳转待办 tab；关闭 = 当日不再出现（localStorage `tt_reminder_dismissed_<date>`），次日自动重置
+- 应用重启后只要仍在当日内且条件满足会再次提示（补递语义）；无声音、无系统通知、无系统足迹
+
+### 实现
+
+- 配置存 meta KV 表 `todo_reminder_config_v1`（`{enabled: false, time: "16:00"}`，默认关），GET/PUT `/api/settings/todo-reminder`，读取时校验归一化时间格式
+- 前端 `ReminderBanner.tsx`：60s interval 触发检查 + react-query（`['todoReminderConfig']` 与 500 条 incomplete 待办查询），App.tsx 在 TopBar 与内容区之间渲染
+- 设置对话框「每日提醒」节：复选框即时保存 + time input 失焦保存
