@@ -228,3 +228,33 @@ end   优先级：completed → completed_at
 - 配置存 meta KV 表 `todo_reminder_config_v1`（`{enabled: false, time: "16:00"}`，默认关），GET/PUT `/api/settings/todo-reminder`，读取时校验归一化时间格式
 - 前端 `ReminderBanner.tsx`：60s interval 触发检查 + react-query（`['todoReminderConfig']` 与 500 条 incomplete 待办查询），App.tsx 在 TopBar 与内容区之间渲染
 - 设置对话框「每日提醒」节：复选框即时保存 + time input 失焦保存
+
+
+## 9. 备注双击放大编辑（2026-08-27）
+
+### 行为
+
+待办详情面板里的「备注」textarea 现在支持**双击放大**——弹出一个独立模态（与设置对话框同一 Modal 组件，宽 680px、min-h 320px），可专心写长备注。关闭方式：× 按钮 / ESC / 点击空白处。关闭即自动写回面板原 textarea（不再需要额外保存按钮——保留与详情面板现有自动保存链路一致）。
+
+> 留意：当前详情面板对所有字段都是「Ctrl+Enter 或切页面时显式保存」，双击放大后的修改**不触发立即持久化**，要等用户切走/关闭面板/按 Ctrl+Enter 才落库——和内联编辑同一套机制。
+
+### 进阶项评估：WYSIWYG Markdown 编辑器（已调研、不采纳）
+
+调研了 6 款主流 React WYSIWYG 编辑器（2026-08 数据）：
+
+| 库 | 体积（gz） | 维护 | Markdown 双向 | 中文 IME | 评估 |
+|---|---|---|---|---|---|
+| TipTap v3 + tiptap-markdown | ~180-220KB | 活跃 v3.30.5 (08/24) | ✓ 社区扩展 v3 兼容 | Safari 已知 heading IME 重复 (#7271)，Win WebView2 无关 | 灵活 / headless / Tailwind 友好 |
+| Milkdown v7 | ~140-170KB | 活跃 7.22.1 (08/12) | ✓ 内置 listener 插件 | 良好 | Markdown 原生最克制，bundle 最小 |
+| BlockNote v0.54 | ~180-230KB | 活跃 (08/13) | ✓ 内置 | ✓ 2025-26 多次修 IME | Notion 风格 / 块结构偏长文 |
+| Cherry Markdown | ~150-200KB | 活跃 (08/24) | ✓ 原生 | ✓ 中文优秀 | 自带主题，Tailwind 集成成本 |
+| Vditor | ~90-120KB | 活跃 3.11.3 (08/11) | ✓ 三模式 | ✓ 中文原生 | 强 WYSIWYG + 重样式 |
+| @uiw/react-md-editor | 编辑器小, 预览动态 | 活跃 v4.1.2 | ✓ | ✓ | **非 WYSIWYG**（分屏编辑+预览） |
+
+**结论：暂不采纳。** 理由：
+1. **场景不匹配**：备注通常是 1-3 句话的轻量记录，强 WYSIWYG 工具栏是过度设计
+2. **体积成本**：当前前端总包 ~104KB gz，引入任意 WYSIWYG 至少 +50%，且仅服务单字段
+3. **哲学约束**：PHILOSOPHY.md 强调 Agent-First + 打磨而非加法；为单字段引新依赖 = 加法
+4. **撤换成本**：NotesEditor 抽象了「onClose(next) → 父组件 setState」，未来若真要做，Milkdown 是最小代价的后路，drop-in 替换
+
+如果将来发现「备注里写多行 Markdown 已经成为日常」，届时再单独评估迁移（NotesEditor 组件接口不变，仅替换内部实现）。
