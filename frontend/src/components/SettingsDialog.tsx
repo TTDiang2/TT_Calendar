@@ -6,6 +6,7 @@ import { Modal, Field } from './ui/Modal'
 import {
   toggleLayer, importJisilu, getLayerSubActions, updateLayerConfig, deleteLayer,
   getTodoBusyConfig, setTodoBusyConfig, recomputeTodoBusy, type TodoBusyConfig,
+  getTodoReminderConfig, setTodoReminderConfig, type TodoReminderConfig,
   getSyncConfig, getSyncStatus, saveSyncConfig, testSync, syncNow, resolveSync,
   type SyncResult,
 } from '../api/client'
@@ -99,6 +100,7 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
         </section>
 
         <BusyConfigSection />
+        <ReminderConfigSection />
         <SyncConfigSection />
       </div>
       <p className="mt-5 pt-3 border-t border-gray-100 text-center text-[11px] text-gray-400 select-none">
@@ -243,6 +245,69 @@ function BusyConfigSection() {
 
 function reportText(r: SyncResult): string {
   return `拉取 ${r.pulled ?? 0} · 推送 ${r.pushed ?? 0} · 冲突 ${r.conflicts ?? 0} · 删除 ${r.deleted ?? 0}` + (r.warning ? `（${r.warning}）` : '')
+}
+
+function ReminderConfigSection() {
+  const qc = useQueryClient()
+  const { data: cfg } = useQuery({
+    queryKey: ['todoReminderConfig'],
+    queryFn: getTodoReminderConfig,
+    staleTime: 60_000,
+  })
+  const [local, setLocal] = useState<TodoReminderConfig | null>(null)
+  useEffect(() => { if (cfg && !local) setLocal(cfg) }, [cfg, local])
+
+  const saveMut = useMutation({
+    mutationFn: async (next: TodoReminderConfig) => {
+      const saved = await setTodoReminderConfig(next)
+      setLocal(saved)
+      qc.invalidateQueries({ queryKey: ['todoReminderConfig'] })
+      qc.invalidateQueries({ queryKey: ['reminderBanner'] })
+      return saved
+    },
+  })
+
+  if (!local) {
+    return (
+      <section>
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">每日提醒</h3>
+        <p className="text-sm text-gray-400">加载中…</p>
+      </section>
+    )
+  }
+
+  return (
+    <section>
+      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">每日提醒</h3>
+      <p className="text-xs text-gray-400 mb-2">
+        到了设定时间，若今日仍有计划未完成的待办，应用顶部会出现一条安静横幅。默认关。
+      </p>
+      <div className="flex items-center gap-3">
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={local.enabled}
+            onChange={(e) => saveMut.mutate({ ...local, enabled: e.target.checked })}
+            disabled={saveMut.isPending}
+            className="rounded border-gray-300 text-blue-500 focus:ring-blue-400"
+          />
+          <span className="text-sm text-gray-700">启用每日提醒</span>
+        </label>
+        <Field label="提醒时间">
+          <input
+            type="time"
+            value={local.time}
+            onChange={(e) => setLocal({ ...local, time: e.target.value })}
+            onBlur={() => {
+              if (local.time !== cfg?.time) saveMut.mutate(local)
+            }}
+            disabled={!local.enabled || saveMut.isPending}
+            className="tt-input"
+          />
+        </Field>
+      </div>
+    </section>
+  )
 }
 
 function SyncConfigSection() {

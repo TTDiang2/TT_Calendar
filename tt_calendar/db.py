@@ -322,6 +322,42 @@ def set_todo_busy_config(conn, cfg: dict) -> None:
     set_meta(conn, TODO_BUSY_CONFIG_KEY, json.dumps(cfg, ensure_ascii=False))
 
 
+# 每日提醒配置：应用内轻推（过了设定时间且今日计划未完成为正时，横幅提示一次）
+TODO_REMINDER_CONFIG_KEY = "todo_reminder_config_v1"
+
+DEFAULT_TODO_REMINDER_CONFIG: dict = {
+    "enabled": False,
+    "time": "16:00",    # HH:MM，本地时间
+}
+
+
+def get_todo_reminder_config(conn) -> dict:
+    """读取每日提醒配置；不存在或损坏则返回默认值。"""
+    raw = get_meta(conn, TODO_REMINDER_CONFIG_KEY)
+    if not raw:
+        return dict(DEFAULT_TODO_REMINDER_CONFIG)
+    try:
+        cfg = json.loads(raw)
+        if not isinstance(cfg, dict):
+            return dict(DEFAULT_TODO_REMINDER_CONFIG)
+        enabled = bool(cfg.get("enabled", False))
+        time_str = str(cfg.get("time") or DEFAULT_TODO_REMINDER_CONFIG["time"])
+        try:
+            hh, mm = time_str.split(":")
+            if not (0 <= int(hh) <= 23 and 0 <= int(mm) <= 59):
+                time_str = DEFAULT_TODO_REMINDER_CONFIG["time"]
+        except ValueError:
+            time_str = DEFAULT_TODO_REMINDER_CONFIG["time"]
+        return {"enabled": enabled, "time": time_str}
+    except Exception:
+        return dict(DEFAULT_TODO_REMINDER_CONFIG)
+
+
+def set_todo_reminder_config(conn, cfg: dict) -> None:
+    """写入每日提醒配置（JSON 字符串）。"""
+    set_meta(conn, TODO_REMINDER_CONFIG_KEY, json.dumps(cfg, ensure_ascii=False))
+
+
 def upsert_day_busy(conn, date_: date_t, predict_level: int | None, done_level: int | None) -> None:
     """写入某日的双层忙度快照。level=None 表示该层无数据。"""
     with cursor(conn) as cur:

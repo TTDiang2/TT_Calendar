@@ -439,6 +439,28 @@ def recompute_day_busy_all(conn=Depends(get_db)):
     return {"days_written": _recompute_day_busy(conn)}
 
 
+# ---------------------------------------------------------------------------
+# 设置：每日提醒配置
+# ---------------------------------------------------------------------------
+
+
+@router.get("/settings/todo-reminder")
+def get_todo_reminder_config(conn=Depends(get_db)):
+    return db.get_todo_reminder_config(conn)
+
+
+@router.put("/settings/todo-reminder")
+def put_todo_reminder_config(body: dict, conn=Depends(get_db)):
+    cfg = db.get_todo_reminder_config(conn)
+    if "enabled" in body:
+        cfg["enabled"] = bool(body["enabled"])
+    if "time" in body and isinstance(body["time"], str):
+        cfg["time"] = body["time"]
+    db.set_todo_reminder_config(conn, cfg)
+    conn.commit()
+    return db.get_todo_reminder_config(conn)
+
+
 def _recompute_day_busy(conn) -> int:
     cfg = db.get_todo_busy_config(conn)
     rows = conn.execute(

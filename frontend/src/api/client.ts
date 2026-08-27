@@ -156,6 +156,16 @@ export const setTodoBusyConfig = (cfg: Partial<TodoBusyConfig>) =>
 export const recomputeTodoBusy = () =>
   post<{ days_written: number }>('/settings/todo-busy/recompute')
 
+// 每日提醒配置
+export interface TodoReminderConfig {
+  enabled: boolean
+  time: string
+}
+export const getTodoReminderConfig = () =>
+  get<TodoReminderConfig>('/settings/todo-reminder')
+export const setTodoReminderConfig = (cfg: Partial<TodoReminderConfig>) =>
+  put<TodoReminderConfig>('/settings/todo-reminder', cfg)
+
 // Todo 列表
 export const getTodoLists = () => get<TodoList[]>('/todo/lists')
 export const createTodoList = (display_name: string) =>

@@ -24,6 +24,7 @@ import {
   ColorEntryDialog,
 } from './components/dialogs'
 import { SettingsDialog } from './components/SettingsDialog'
+import { ReminderBanner } from './components/ReminderBanner'
 
 type DialogState =
   | { kind: 'event'; date: string; event?: CalEvent | null }
@@ -342,6 +343,7 @@ export default function App() {
         onOpenSubscription={() => setDialog({ kind: 'subscription' })}
         onOpenSettings={() => setDialog({ kind: 'settings' })}
       />
+      <ReminderBanner onJumpToTodo={() => setTopTab('todo')} />
       <div className="flex-1 flex overflow-hidden">
         {topTab === 'todo' ? (
           <TodoView viewMode={todoView} />
