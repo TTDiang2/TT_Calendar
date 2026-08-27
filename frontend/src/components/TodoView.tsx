@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, ChevronDown, ChevronUp, Inbox, ListPlus, Plus, Star, Trash2, Upload } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, Inbox, ListPlus, Pencil, Plus, Star, Trash2, Upload } from 'lucide-react'
 import clsx from 'clsx'
-import { getTodoLists, getTodos, getTodoStats, createTodo, updateTodo, deleteTodo, createTodoList, deleteTodoList, importTodosCsv, reorderTodoLists, reorderTodos } from '../api/client'
+import { getTodoLists, getTodos, getTodoStats, createTodo, updateTodo, deleteTodo, createTodoList, updateTodoList, deleteTodoList, importTodosCsv, reorderTodoLists, reorderTodos } from '../api/client'
 import { todayStr } from '../utils/todoLogic'
 import type { Todo, TodoList, TodoSort, TodoViewMode } from '../types'
 import { TodoDetailPanel } from './TodoDetailPanel'
@@ -77,6 +77,8 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
   const [dragOverId, setDragOverId] = useState<string | null>(null)
   const leavingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dragListId = useRef<string | null>(null)
+  const [renamingListId, setRenamingListId] = useState<string | null>(null)
+  const [renameDraft, setRenameDraft] = useState('')
   const dragTodoId = useRef<string | null>(null)
 
   const { data: lists = [] } = useQuery({
@@ -140,6 +142,19 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
   })
   const deleteMut = useMutation({ mutationFn: deleteTodo, onSuccess: invalidate })
   const createListMut = useMutation({ mutationFn: (name: string) => createTodoList(name), onSuccess: invalidate })
+  const renameListMut = useMutation({
+    mutationFn: ({ id, display_name }: { id: string; display_name: string }) => updateTodoList(id, display_name),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['todoLists'] })
+      setRenamingListId(null)
+    },
+  })
+  const cancelRename = () => { setRenamingListId(null); setRenameDraft('') }
+  const commitRename = (id: string) => {
+    const trimmed = renameDraft.trim()
+    if (!trimmed) { cancelRename(); return }
+    renameListMut.mutate({ id, display_name: trimmed })
+  }
   const deleteListMut = useMutation({
     mutationFn: deleteTodoList,
     onSuccess: () => { invalidate(); setSelectedTodoId(null) },
@@ -263,7 +278,23 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
             >
               <span className="truncate flex-1 flex items-center gap-1">
                 <span className="opacity-30 group-hover:opacity-60 text-[10px] select-none">⋮⋮</span>
-                {l.display_name}
+                {renamingListId === l.id ? (
+                  <input
+                    autoFocus
+                    value={renameDraft}
+                    onChange={(e) => setRenameDraft(e.target.value)}
+                    onBlur={() => commitRename(l.id)}
+                    onKeyDown={(e) => {
+                      e.stopPropagation()
+                      if (e.key === 'Enter') { e.preventDefault(); commitRename(l.id) }
+                      else if (e.key === 'Escape') { e.preventDefault(); cancelRename() }
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex-1 min-w-0 bg-white border border-blue-300 rounded px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  />
+                ) : (
+                  l.display_name
+                )}
               </span>
               <span className="flex items-center gap-1">
                 {counts.get(l.id) ? <span className="text-xs text-gray-400">{counts.get(l.id)}</span> : null}
@@ -273,6 +304,13 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
                   title={isDefault ? '取消默认' : '设为默认列表'}
                 >
                   <Star size={12} fill={isDefault ? 'currentColor' : 'none'} />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setRenamingListId(l.id); setRenameDraft(l.display_name) }}
+                  className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-blue-500"
+                  title="重命名"
+                >
+                  <Pencil size={12} />
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); if (confirm(`删除列表「${l.display_name}」及其所有待办？`)) deleteListMut.mutate(l.id) }}

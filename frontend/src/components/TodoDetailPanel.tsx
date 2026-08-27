@@ -272,7 +272,7 @@ export function TodoDetailPanel({ todo, lists, onClose, onSave, onDelete }: Prop
       <NotesEditorModal
         open={notesModalOpen}
         initialValue={body}
-        title={title ? `编辑备注 · ${title}` : '编辑备注'}
+        title={title || '备注'}
         onClose={(next) => {
           setBody(next)
           setNotesModalOpen(false)

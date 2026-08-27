@@ -11,7 +11,7 @@ export interface NotesEditorModalProps {
 
 export function NotesEditorModal({
   open,
-  title = '编辑备注',
+  title = '备注',
   initialValue,
   placeholder = '备注（可选）',
   onClose,
