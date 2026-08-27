@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Trash2, X } from 'lucide-react'
 import clsx from 'clsx'
 import type { Todo, TodoList } from '../types'
+import { NotesEditorModal } from './NotesEditorModal'
 
 interface Props {
   todo: Todo | null
@@ -40,6 +41,7 @@ export function TodoDetailPanel({ todo, lists, onClose, onSave, onDelete }: Prop
   const [startDate, setStartDate] = useState('')
   const [complexity, setComplexity] = useState('medium')
   const [tagsText, setTagsText] = useState('')
+  const [notesModalOpen, setNotesModalOpen] = useState(false)
   const [listId, setListId] = useState('')
   const [status, setStatus] = useState('notStarted')
   const [dueExpanded, setDueExpanded] = useState(false)
@@ -163,9 +165,11 @@ export function TodoDetailPanel({ todo, lists, onClose, onSave, onDelete }: Prop
         />
 
         <textarea
-          className="w-full text-sm border border-gray-200 rounded-md p-2 min-h-[80px] focus:border-blue-400 focus:outline-none resize-y"
+          className="w-full text-sm border border-gray-200 rounded-md p-2 min-h-[80px] focus:border-blue-400 focus:outline-none resize-y cursor-text"
           value={body}
           onChange={(e) => setBody(e.target.value)}
+          onDoubleClick={() => setNotesModalOpen(true)}
+          title="双击放大编辑"
           placeholder="备注（可选）"
         />
 
@@ -265,6 +269,15 @@ export function TodoDetailPanel({ todo, lists, onClose, onSave, onDelete }: Prop
           切换页面自动保存 · <span className="font-medium text-gray-500">Ctrl+Enter</span> 直接保存
         </p>
       </div>
+      <NotesEditorModal
+        open={notesModalOpen}
+        initialValue={body}
+        title={title ? `编辑备注 · ${title}` : '编辑备注'}
+        onClose={(next) => {
+          setBody(next)
+          setNotesModalOpen(false)
+        }}
+      />
     </aside>
   )
 }
