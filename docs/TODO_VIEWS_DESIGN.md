@@ -258,3 +258,9 @@ end   优先级：completed → completed_at
 4. **撤换成本**：NotesEditor 抽象了「onClose(next) → 父组件 setState」，未来若真要做，Milkdown 是最小代价的后路，drop-in 替换
 
 如果将来发现「备注里写多行 Markdown 已经成为日常」，届时再单独评估迁移（NotesEditor 组件接口不变，仅替换内部实现）。
+
+### 9.1 后续小调整（2026-08-27）
+
+- **模态标题简化**：去掉「编辑备注 · 」前缀，只显示待办标题（无标题时回退「备注」）。理由：模态弹出来了当然知道是编辑，前缀冗余。
+- **列表重命名**：侧栏每个列表右侧的悬停操作新增 Pencil 按钮（在 Star 和 Trash 之间），点击切换为行内输入框；Enter 保存、Esc 取消、失焦保存。后端复用既有 PUT /api/todo/lists/{id}（前端 updateTodoList 此前已有但未挂 UI）。解决「先删后建」的反向工作流。
+- **sticker 备忘录模块**：经评估暂搁置。路线 A（新模块）哲学成本高；路线 B（双击卡片）只是绕过痛点；路线 C（memo aside 智能简化）作为后续候选——先观察现有「双击 textarea 打开备注模态」是否已足够覆盖场景。
