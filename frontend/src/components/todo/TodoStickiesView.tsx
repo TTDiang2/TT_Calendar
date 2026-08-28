@@ -80,7 +80,7 @@ export function TodoStickiesView({ todos, selectedTodoId, onSelect, onOpenNotes 
             />
             <p className="text-[15px] font-medium text-stone-800 leading-snug line-clamp-2 break-words">{todo.title}</p>
             {todo.body && (
-              <p className="mt-2 text-[12.5px] text-stone-600/90 leading-relaxed line-clamp-6 break-words whitespace-pre-wrap">
+              <p className="mt-2 text-[12.5px] text-stone-600/90 leading-relaxed break-words whitespace-pre-wrap">
                 {todo.body}
               </p>
             )}
