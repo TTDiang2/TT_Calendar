@@ -264,3 +264,13 @@ end   优先级：completed → completed_at
 - **模态标题简化**：去掉「编辑备注 · 」前缀，只显示待办标题（无标题时回退「备注」）。理由：模态弹出来了当然知道是编辑，前缀冗余。
 - **列表重命名**：侧栏每个列表右侧的悬停操作新增 Pencil 按钮（在 Star 和 Trash 之间），点击切换为行内输入框；Enter 保存、Esc 取消、失焦保存。后端复用既有 PUT /api/todo/lists/{id}（前端 updateTodoList 此前已有但未挂 UI）。解决「先删后建」的反向工作流。
 - **sticker 备忘录模块**：经评估暂搁置。路线 A（新模块）哲学成本高；路线 B（双击卡片）只是绕过痛点；路线 C（memo aside 智能简化）作为后续候选——先观察现有「双击 textarea 打开备注模态」是否已足够覆盖场景。
+
+### 9.2 量筒隐藏 + 便签墙（2026-08-28）
+
+- **量筒视图下架**：TopBar 按钮移除，TodoJarView 组件与 jarTodos 查询保留在代码库（enabled: viewMode === 'jar' 永假），localStorage 存了 jar 的用户自动降级 list。将来想恢复 = TopBar TODO_MODES 加回一行。
+- **便签墙视图（stickies）**：所有未完成待办以便利贴形式贴在墙上，只显示标题 + 备注。
+  - 6 色粉彩（黄/粉/蓝/绿/橙/淡紫）按 todo.id 哈希确定性分配；便签旋转 -3°~+3°、胶带旋转 -4°~+4°（同一哈希源，重渲染不跳动）
+  - 米色点阵墙背景（radial-gradient 22px 网格）、CSS columns 瀑布流（sm/lg/2xl 响应式 2/3/4 列）、break-inside-avoid
+  - hover：回正 + 上浮 + 阴影加深（"揭下来"的隐喻）；选中 = 蓝色 ring
+  - 交互与列表视图对齐：单击开侧栏、双击开备注模态（复用 detailRef.openNotes）
+  - 标题 line-clamp-2、备注 line-clamp-6 保留换行
