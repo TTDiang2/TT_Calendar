@@ -50,7 +50,7 @@ export default function App() {
   const [topTab, setTopTab] = useState<TopTab>('calendar')
   const [todoView, setTodoViewState] = useState<TodoViewMode>(() => {
     const v = localStorage.getItem('todo-view')
-    return v === 'matrix' || v === 'kanban' || v === 'gantt' || v === 'jar' ? v : 'list'
+    return v === 'matrix' || v === 'kanban' || v === 'gantt' || v === 'stickies' ? v : 'list'
   })
   const setTodoView = (v: TodoViewMode) => {
     localStorage.setItem('todo-view', v)

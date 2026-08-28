@@ -10,6 +10,7 @@ import { TodoMatrixView } from './todo/TodoMatrixView'
 import { TodoKanbanView } from './todo/TodoKanbanView'
 import { TodoGanttView } from './todo/TodoGanttView'
 import { TodoJarView } from './todo/TodoJarView'
+import { TodoStickiesView } from './todo/TodoStickiesView'
 
 const SORT_OPTIONS: { key: TodoSort; label: string }[] = [
   { key: 'manual', label: '手动排序' },
@@ -411,6 +412,13 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
             />
           ) : viewMode === 'gantt' ? (
             <TodoGanttView todos={filteredIncomplete} lists={lists} selectedTodoId={selectedTodoId} onSelect={setSelectedTodoId} />
+          ) : viewMode === 'stickies' ? (
+            <TodoStickiesView
+              todos={filteredIncomplete}
+              selectedTodoId={selectedTodoId}
+              onSelect={setSelectedTodoId}
+              onOpenNotes={(id) => { setSelectedTodoId(id); detailRef.current?.openNotes() }}
+            />
           ) : viewMode === 'jar' ? (
             <TodoJarView todos={jarTodos} selectedTodoId={selectedTodoId} onSelect={setSelectedTodoId} />
           ) : filteredIncomplete.length === 0 && completedCount === undefined ? (
