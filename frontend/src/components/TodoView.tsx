@@ -5,7 +5,7 @@ import clsx from 'clsx'
 import { getTodoLists, getTodos, getTodoStats, createTodo, updateTodo, deleteTodo, createTodoList, updateTodoList, deleteTodoList, importTodosCsv, reorderTodoLists, reorderTodos } from '../api/client'
 import { todayStr } from '../utils/todoLogic'
 import type { Todo, TodoList, TodoSort, TodoViewMode } from '../types'
-import { TodoDetailPanel } from './TodoDetailPanel'
+import { TodoDetailPanel, type TodoDetailPanelRef } from './TodoDetailPanel'
 import { TodoMatrixView } from './todo/TodoMatrixView'
 import { TodoKanbanView } from './todo/TodoKanbanView'
 import { TodoGanttView } from './todo/TodoGanttView'
@@ -80,6 +80,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
   const [renamingListId, setRenamingListId] = useState<string | null>(null)
   const [renameDraft, setRenameDraft] = useState('')
   const dragTodoId = useRef<string | null>(null)
+  const detailRef = useRef<TodoDetailPanelRef>(null)
 
   const { data: lists = [] } = useQuery({
     queryKey: ['todoLists'],
@@ -466,6 +467,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
                       leaving={leavingIds.has(t.id)}
                       onSelect={() => setSelectedTodoId(t.id)}
                       onToggle={() => handleToggle(t, true)}
+                      onOpenNotes={() => { setSelectedTodoId(t.id); detailRef.current?.openNotes() }}
                     />
                   </div>
                 )
@@ -496,6 +498,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
                             leaving={leavingIds.has(t.id)}
                             onSelect={() => setSelectedTodoId(t.id)}
                             onToggle={() => handleToggle(t, false)}
+                            onOpenNotes={() => { setSelectedTodoId(t.id); detailRef.current?.openNotes() }}
                           />
                         )
                       })}
@@ -510,6 +513,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
 
       {/* 右详情栏 — w-72 对齐日历 DetailPanel */}
       <TodoDetailPanel
+        ref={detailRef}
         todo={selectedTodoId === '__NEW__'
           ? { id: '' as string, list_id: selectedList ?? lists[0]?.id ?? '', title: '', body: null, importance: 'normal', due_date: null, planned_date: null, start_date: null, complexity: 'medium', tags: null, status: 'notStarted', created_at: null, completed_at: null, sort_order: 0 }
           : selectedTodo}
@@ -609,7 +613,7 @@ function FilterSelect({ label, value, options, onChange }: {
   )
 }
 
-function TodoRow({ todo, listName, isDone, overdue, selected, leaving, onSelect, onToggle }: {
+function TodoRow({ todo, listName, isDone, overdue, selected, leaving, onSelect, onToggle, onOpenNotes }: {
   todo: Todo
   listName?: string
   isDone: boolean
@@ -618,6 +622,7 @@ function TodoRow({ todo, listName, isDone, overdue, selected, leaving, onSelect,
   leaving?: boolean
   onSelect: () => void
   onToggle: () => void
+  onOpenNotes?: () => void
 }) {
   const dueState = useMemo(() => {
     if (!todo.due_date) return null
@@ -638,6 +643,7 @@ function TodoRow({ todo, listName, isDone, overdue, selected, leaving, onSelect,
   return (
     <div
       onClick={onSelect}
+      onDoubleClick={onOpenNotes}
       className={clsx(
         'group flex items-start gap-2 px-3 py-2 rounded-lg cursor-pointer border transition-all duration-200 tt-row-enter',
         selected ? 'bg-blue-50 border-blue-200' : 'border-transparent hover:bg-gray-100 hover:border-gray-200 active:scale-[0.99]',

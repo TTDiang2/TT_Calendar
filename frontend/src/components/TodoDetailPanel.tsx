@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { Trash2, X } from 'lucide-react'
 import clsx from 'clsx'
 import type { Todo, TodoList } from '../types'
@@ -10,6 +10,10 @@ interface Props {
   onClose: () => void
   onSave: (data: Todo) => void
   onDelete: (id: string) => void
+}
+
+export interface TodoDetailPanelRef {
+  openNotes: () => void
 }
 
 const IMPORTANCE_OPTIONS: { key: string; label: string }[] = [
@@ -32,7 +36,10 @@ const COMPLEXITY_OPTIONS: { key: string; label: string }[] = [
   { key: 'hard', label: '复杂' },
 ]
 
-export function TodoDetailPanel({ todo, lists, onClose, onSave, onDelete }: Props) {
+export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function TodoDetailPanel(
+  { todo, lists, onClose, onSave, onDelete },
+  ref,
+) {
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [importance, setImportance] = useState('normal')
@@ -45,6 +52,10 @@ export function TodoDetailPanel({ todo, lists, onClose, onSave, onDelete }: Prop
   const [listId, setListId] = useState('')
   const [status, setStatus] = useState('notStarted')
   const [dueExpanded, setDueExpanded] = useState(false)
+
+  useImperativeHandle(ref, () => ({
+    openNotes: () => setNotesModalOpen(true),
+  }))
   const [plannedExpanded, setPlannedExpanded] = useState(false)
 
   const formRef = useRef({ title, body, importance, dueDate, plannedDate, startDate, complexity, tagsText, listId, status })
@@ -280,7 +291,7 @@ export function TodoDetailPanel({ todo, lists, onClose, onSave, onDelete }: Prop
       />
     </aside>
   )
-}
+})
 
 function fmtDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
