@@ -286,3 +286,7 @@ end   优先级：completed → completed_at
   - 交互与列表/便签对齐：单击开侧栏、双击开备注模态
   - 入口恢复：TopBar 量筒按钮回归（6 个视图并存），localStorage 'jar' 重新合法
 - **便签墙备注完整显示**（bd8e75c）：移除 body 的 line-clamp-6，whitespace-pre-wrap 保留换行，长备注完整铺开（瀑布流自动适应高度）；标题仍 line-clamp-2。
+
+### 9.4 量筒最终裁决（2026-08-28）
+
+三版迭代（emoji 石头 → 岩芯地层 → 暖色玻璃罐拾贝）后用户裁定：v3「有进步但未达审美线」。处置：**TopBar 移除量筒入口**，TodoJarView 组件与数据链路全部保留归档（localStorage 'jar' 降级 list）。复行条件：将来某个设计真正过关时，TopBar TODO_MODES 加回一行即可。判决记录 commit daca2be。
