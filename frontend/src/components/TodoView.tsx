@@ -420,7 +420,12 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
               onOpenNotes={(id) => { setSelectedTodoId(id); detailRef.current?.openNotes() }}
             />
           ) : viewMode === 'jar' ? (
-            <TodoJarView todos={jarTodos} selectedTodoId={selectedTodoId} onSelect={setSelectedTodoId} />
+            <TodoJarView
+              todos={jarTodos}
+              selectedTodoId={selectedTodoId}
+              onSelect={setSelectedTodoId}
+              onOpenNotes={(id) => { setSelectedTodoId(id); detailRef.current?.openNotes() }}
+            />
           ) : filteredIncomplete.length === 0 && completedCount === undefined ? (
             <div className="h-full flex items-center justify-center text-gray-300 text-sm">
               {tagFilter ? `没有「${tagFilter}」标签的待办` : '暂无待办，点「新建待办」开始'}

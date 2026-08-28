@@ -33,6 +33,7 @@ const TODO_MODES: { key: TodoViewMode; label: string }[] = [
   { key: 'matrix', label: '矩阵' },
   { key: 'kanban', label: '看板' },
   { key: 'gantt', label: '甘特' },
+  { key: 'jar', label: '量筒' },
   { key: 'stickies', label: '便签' },
 ]
 
