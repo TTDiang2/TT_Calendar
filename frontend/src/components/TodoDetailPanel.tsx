@@ -60,6 +60,9 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
 
   const formRef = useRef({ title, body, importance, dueDate, plannedDate, startDate, complexity, tagsText, listId, status })
   formRef.current = { title, body, importance, dueDate, plannedDate, startDate, complexity, tagsText, listId, status }
+
+  const savingRef = useRef(false)
+  const [saving, setSaving] = useState(false)
   const prevTodoRef = useRef<Todo | null>(null)
   const onSaveRef = useRef(onSave)
   onSaveRef.current = onSave
@@ -67,8 +70,13 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
   useEffect(() => {
     const prev = prevTodoRef.current
     prevTodoRef.current = todo
+    setSaving(false)
+    savingRef.current = false
 
-    if (prev && prev.id !== (todo?.id ?? null)) {
+    const prevId = prev?.id ?? null
+    const curId = todo?.id ?? null
+    const prevIsReal = prev != null && prev.id != null && prev.id !== '__NEW__'
+    if (prevIsReal && prevId !== curId) {
       const f = formRef.current
       const tags = f.tagsText.split(/[,，]/).map((t) => t.trim()).filter(Boolean)
       const changed =
@@ -142,7 +150,10 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
 
   // 显式保存：保存并关闭面板（切走时仍有自动保存兜底）
   const save = () => {
+    if (savingRef.current) return
     if (!title.trim() || !listId) return
+    savingRef.current = true
+    setSaving(true)
     onSave(buildData())
     onClose()
   }
@@ -154,7 +165,7 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
         // Ctrl/Cmd + Enter 直接保存（新建待办时同样生效）
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
           e.preventDefault()
-          if (title.trim() && listId) save()
+          if (title.trim() && listId && !savingRef.current) save()
         }
       }}
     >
@@ -270,10 +281,10 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
           </button>
           <button
             onClick={save}
-            disabled={!title.trim() || !listId}
+            disabled={!title.trim() || !listId || saving}
             className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40 whitespace-nowrap"
           >
-            保存
+            {saving ? '保存中…' : '保存'}
           </button>
         </div>
         <p className="text-[11px] text-gray-400 text-right leading-none whitespace-nowrap">
