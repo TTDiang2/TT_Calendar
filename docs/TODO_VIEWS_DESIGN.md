@@ -290,3 +290,13 @@ end   优先级：completed → completed_at
 ### 9.4 量筒最终裁决（2026-08-28）
 
 三版迭代（emoji 石头 → 岩芯地层 → 暖色玻璃罐拾贝）后用户裁定：v3「有进步但未达审美线」。处置：**TopBar 移除量筒入口**，TodoJarView 组件与数据链路全部保留归档（localStorage 'jar' 降级 list）。复行条件：将来某个设计真正过关时，TopBar TODO_MODES 加回一行即可。判决记录 commit daca2be。
+
+### 9.5 新建待办双重提交 bug（2026-09-01）
+
+两个并发原因导致「有时会新增两个」：
+1. **Save 按钮无 in-flight 保护**：disabled 只检查 title/listId，连点两次各发一次 POST。
+2. **自动保存副作用错触发**：`useEffect` 依赖 `[todo?.id]`，从 `__NEW__` 切到 `null`（点 Save 后关闭面板）时也满足触发条件，自动保存又调一次 `onSave` → 第二条记录。
+
+修复（commit 1a17188）：
+- `savingRef` + `saving` state：save() 进入即占位，in-flight 期间 button 显示「保存中」」且 onClick 早返；Ctrl+Enter 共用同一守卫
+- useEffect 跳过 prev 为 `__NEW__` 或 null 的场景（没有真实旧 todo 要 flush）；saving 状态在 todo 变化时重置
