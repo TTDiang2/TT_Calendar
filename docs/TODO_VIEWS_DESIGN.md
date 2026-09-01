@@ -323,3 +323,122 @@ commit 13c9abb，prod 已部署。三个场景应同时正确：
 1. 点别处 → 1 条（自动创建）
 2. 点保存 → 1 条（显式保存，effect 跳过）
 3. Ctrl+Enter → 1 条（同上）
+
+### 9.8 新建待办丢失输入 —— 修复 v4·终版（2026-09-01）
+
+> 四版折腾的终点。这一节的教训比代码本身更值钱，见 9.9。
+
+#### 现象
+
+v3 部署后实测：
+- 输入标题 → **点别处 → 完全没有创建，输入丢失**
+- 输入标题 → 点保存 → 1 条 ✅
+- 输入标题 → Ctrl+Enter → 1 条 ✅
+
+#### 证据先于推理
+
+`backend.stdout.log` 是铁证（比读代码可靠）：整段测试只有 **2 次 `POST /api/todo`**，正好对应「点保存」和「Ctrl+Enter」；「点别处」路径 **一次 POST 都没发出**。
+
+所以不是"创建了两条"、"创建了空的"、"后端拒了"，而是 **前端压根没调用 onSave**。这条结论直接把排查范围从后端/网络/竞态收缩到一个 `if` 条件上。
+
+#### 根因：两条退出路径漏网
+
+v3 的幻影分支判定是：
+
+```ts
+if (closeReason === 'user' && prevIsPhantom && curId === null) { ... create ... }
+```
+
+`curId === null` 意味着**只有「切到无选中」才会落盘**。而用户能触发"离开编辑态"的路径有四条：
+
+| # | 退出路径 | `todo?.id` 变化 | v3 是否落盘 |
+|---|---------|----------------|-----------|
+| 1 | 点 X 关闭 | `''` → `undefined` | ✅ 落盘 |
+| 2 | 点侧栏「全部」/其它列表 | `''` → `undefined` | ✅ 落盘 |
+| 3 | **点另一个待办** | `''` → `'real-2'` | ❌ **丢失** |
+| 4 | **切到日历 tab（面板卸载）** | 组件 unmount，effect 不执行 | ❌ **丢失** |
+
+所以用户那句"点别处"，实际是路径 3 或 4。
+
+**更本质的毛病是判定不对称**：真实任务分支用 `prevId !== curId`（任何切换都算），幻影分支却用 `curId === null`（只有置空才算）。同一语义写了两套条件，必然漏。而上一轮只 self-trace 了"切到 null"这一条路径，恰好是两条里能通的那条，于是"看起来对"。
+
+顺带说明：路径 4 漏得最彻底 —— `App.tsx` 是 `topTab === 'todo' ? <TodoView/> : ...`，切 tab 会整体卸载面板，**`useEffect` 的 body 在卸载时根本不执行**，写在 body 里的自动保存等于不存在。
+
+#### 修复：把落盘搬进 effect cleanup
+
+放弃"区分谁关的"这条思路（`closeReasonRef` 是个跨渲染的隐式状态机，每多一条退出路径就要同步维护一次，漏一条就错）。改成：**所有离开路径共用一个出口**。
+
+```ts
+useEffect(() => {
+  prevTodoRef.current = todo
+  if (todo) {
+    formRef.current = { /* 从 todo 装载的表单快照 */ }   // ①
+    setTitle(todo.title); /* ...其余字段... */
+  }
+  skipFlushRef.current = false
+
+  return () => {                                        // ②
+    if (skipFlushRef.current) { skipFlushRef.current = false; return }
+    const leaving = prevTodoRef.current                 // ③
+    if (leaving) flushSave(leaving)
+  }
+}, [todo?.id])
+```
+
+三个关键点：
+
+**② 为什么放 cleanup 而不是 body**
+cleanup 在 React 提交新渲染之后、下一个 effect body 之前执行，此时 `formRef.current` 仍是用户刚输入的值；而**组件卸载时 React 同样会执行 cleanup**。于是这一条路径同时覆盖了上表全部 1–4。写在 body 里则天然覆盖不到卸载。
+
+**③ 为什么读 ref 而不是闭包捕获 `prev`**
+捕获到的是「body 执行那一刻」的上一个 todo。A→B→C 连续切换时，B 那次 cleanup 拿到的是 null（A 那次 body 里 prevTodoRef 还是 null），会漏存。必须读 ref 的当前值。
+
+**① 为什么同步写 formRef**
+StrictMode 开发模式下 React 会「body → cleanup → body」模拟一次卸载。若 ref 还停在初始空值，那次模拟 cleanup 会拿空表单去 flush，可能误发一次 PUT。同步写入后，模拟 cleanup 的 `changed` 判定恒为 false，直接静默。同时它也保证了"打开后没改动就关闭"不发请求。
+
+`flushSave` 本身承担全部守卫：
+
+- 空标题 / 无归属列表 → 直接放弃（不建空任务、不建 `list_id` 为空的脏数据）
+- 真实任务 → 比对 `changed`，无改动不发 PUT
+- 幻影（id `''` / `'__NEW__'`）→ 标题非空就 POST
+
+显式保存与删除改用**消费型标记** `skipFlushRef`：`save()` / 删除按钮自己提交后把它置 true，紧随其后的那一次 cleanup 消费掉并不再落盘，从而保证 case 2/3 只 POST 一次，也避免把刚删掉的记录又 flush 回来。
+
+#### 回归测试
+
+新增 `frontend/src/components/__tests__/TodoDetailPanel.flush.test.tsx`（vitest + jsdom + testing-library），11 条断言覆盖：点 X / 点侧栏 / **点另一个待办** / **卸载** / 点保存 / Ctrl+Enter / 点删除 / 未改动关闭 / 改后切走 / 空标题切走 / A→B→C 连续切换。
+
+**验证过测试不是空转**：把组件回退到 v3 后重跑，用例 3、4 立刻变红（0 次保存），其余 9 条保持通过 —— 与用户"case 2/3 正常、case 1 丢失"的现象完全吻合；恢复修复后 11 条全绿。
+
+`vitest.config.ts` 随之调整：加 `@vitejs/plugin-react`（JSX 转换）、`environment` 改为 `jsdom`、`include` 补上 `.tsx`。原有 `core/merge.golden.test.ts` 不受影响。
+
+commit `TBD`，`dist/assets/index-CUN0TNKe.js` 已构建（生产后端直接 serve `frontend/dist`，重启即生效）。
+
+### 9.9 经验教训：这个 bug 为什么修了四版
+
+同一个 bug 改了四版（9.5 → 9.6 → 9.7 → 9.8），每一版都"修好了上一版"，每一版又引入新问题。值得单独沉淀：
+
+**1. 日志 > 推理**
+上一轮靠 code self-trace 得出结论，而 self-trace 只会顺着脑子里那条路径走。这次先数 `backend.stdout.log` 里的 `POST /api/todo` 次数，五秒就把范围从"后端/竞态/双重提交"收敛到"某个 if 条件没进"。**有可观测证据时，永远先看证据。**
+
+**2. 不要造"来源追踪"式的隐式状态机**
+v3 的 `closeReasonRef`（区分 `'saved'` / `'user'`）是典型的坏味道：它把"要不要落盘"寄托在"谁触发了关闭"上，于是每新增一条退出路径就要同步维护一次状态，漏一条就静默出错。
+正确的方向是反过来 —— 把落盘做成**所有路径的统一出口**，只有"不该走这个出口"的情况（显式保存、删除）才打一个消费型标记跳过去。这样新增退出路径时默认就是对的。
+
+**3. 「离开某状态时的副作用」就该放 cleanup**
+这是个通用模式：`useEffect` 的 **body 只在"新值到来"时执行，卸载时完全不执行；cleanup 则同时覆盖"依赖变化"和"卸载"**。凡是"离开时收尾"的语义（落盘、取消订阅、释放资源），放 cleanup 才是默认正确的写法。v1–v3 都栽在把收尾逻辑写进 body。
+
+**4. 同类语义只写一套条件**
+真实任务用 `prevId !== curId`，幻影却用 `curId === null` —— 两条规则描述同一件事，就注定会漏。抽成一个函数、一套判定，是消除这类 bug 最省力的办法（这次的 `flushSave`）。
+
+**5. 改完必须能验证，而且要反向验证测试本身**
+前几版交付时都写着"请再试一次"，把验证成本推给用户。这次补齐了组件级测试。**关键一步是回退旧代码确认测试会变红** —— 否则你无法区分"测试通过了"和"测试根本没跑到那段逻辑"。写测试的人很容易写出永远为真的断言。
+
+**6. 测试踩坑：从测试代码触发 setState 必须包 `act()`**
+`fireEvent` 自带 act 包装，但直接从测试里调用 host 暴露的 `setTodo(...)` 没有。React 18 只调度不提交，effect cleanup 压根不执行，断言会假红（第一版跑出来 5 条失败，全是这个原因）。凡是非 DOM 事件触发的状态变更，一律 `act(() => ...)`。
+
+**7. StrictMode 会模拟卸载**
+开发模式下 React 会「body → cleanup → body」跑一遍。任何写在 cleanup 里的副作用都会因此被多执行一次。所以 cleanup 中的逻辑必须**幂等或自带守卫**（这次靠"表单快照同步进 formRef"让模拟那次的 `changed` 恒为 false）。写 cleanup 副作用时先问一句：它被执行两次会怎样？
+
+**8. 工程小坑：别把临时备份写进 `/tmp`**
+沙箱环境与宿主环境的 `/tmp` 不互通，备份文件消失了，害我重新做了一遍修改。要放工作区内的路径。

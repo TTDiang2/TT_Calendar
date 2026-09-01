@@ -63,74 +63,76 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
 
   const savingRef = useRef(false)
   const [saving, setSaving] = useState(false)
-  // 区分本次关闭的来源：save() 设 'saved' 阻止 effect 自动保存；用户点 X/空白关闭为 'user'
-  // 触发「切走时自动保存兜底」语义
-  const closeReasonRef = useRef<'user' | 'saved'>('user')
+  // 当前正在编辑的对象（可能是真实 todo，也可能是「新建待办」的幻影 id=''）
+  // cleanup 必须读 ref 的当前值，不能闭包捕获 —— 详见下方 effect 说明
   const prevTodoRef = useRef<Todo | null>(null)
   const onSaveRef = useRef(onSave)
   onSaveRef.current = onSave
+  // 消费型标记：显式保存 / 删除已自行落盘，紧随其后的那一次 cleanup 不得重复提交
+  const skipFlushRef = useRef(false)
+
+  /**
+   * 把当前表单内容落盘 —— 所有「离开编辑态」路径的唯一出口。
+   * - 真实任务：有改动才 PUT，无改动静默跳过（避免每次开合都打一次接口）
+   * - 幻影新建（id === '' / '__NEW__'）：标题非空就 POST 创建
+   */
+  const flushSave = (target: Todo) => {
+    const f = formRef.current
+    const title = f.title.trim()
+    // 空标题 / 无归属列表 = 用户放弃编辑，不落盘（否则会建出空任务或 list_id 为空的脏数据）
+    if (!title || !f.listId) return
+    const tags = f.tagsText.split(/[,，]/).map((t) => t.trim()).filter(Boolean)
+    const isPhantom = target.id === '' || target.id === '__NEW__'
+    if (!isPhantom) {
+      const changed =
+        f.title !== target.title ||
+        (f.body || '') !== (target.body ?? '') ||
+        f.importance !== target.importance ||
+        (f.dueDate || '') !== (target.due_date ?? '') ||
+        (f.plannedDate || '') !== (target.planned_date ?? '') ||
+        (f.startDate || '') !== (target.start_date ?? '') ||
+        f.complexity !== (target.complexity || 'medium') ||
+        JSON.stringify(tags) !== JSON.stringify(target.tags ?? []) ||
+        f.listId !== target.list_id ||
+        f.status !== target.status
+      if (!changed) return
+    }
+    onSaveRef.current({
+      ...target,
+      title,
+      body: f.body.trim() || null,
+      importance: f.importance,
+      due_date: f.dueDate || null,
+      planned_date: f.plannedDate || null,
+      start_date: f.startDate || null,
+      complexity: f.complexity,
+      tags: tags.length ? tags : null,
+      list_id: f.listId,
+      status: f.status,
+    })
+  }
 
   useEffect(() => {
-    const prev = prevTodoRef.current
     prevTodoRef.current = todo
-    const closeReason = closeReasonRef.current
-    closeReasonRef.current = 'user'
-
-    const prevId = prev?.id ?? null
-    const curId = todo?.id ?? null
-    const prevIsReal = prev != null && prev.id != null && prev.id !== '' && prev.id !== '__NEW__'
-    const prevIsPhantom = prev != null && (prev.id === '' || prev.id === '__NEW__')
-    if (closeReason === 'user' && prevIsReal && prevId !== curId) {
-      const f = formRef.current
-      const tags = f.tagsText.split(/[,，]/).map((t) => t.trim()).filter(Boolean)
-      const changed =
-        f.title !== prev.title ||
-        (f.body || '') !== (prev.body ?? '') ||
-        f.importance !== prev.importance ||
-        (f.dueDate || '') !== (prev.due_date ?? '') ||
-        (f.plannedDate || '') !== (prev.planned_date ?? '') ||
-        (f.startDate || '') !== (prev.start_date ?? '') ||
-        f.complexity !== (prev.complexity || 'medium') ||
-        JSON.stringify(tags) !== JSON.stringify(prev.tags ?? []) ||
-        f.listId !== prev.list_id ||
-        f.status !== prev.status
-      if (f.title.trim() && changed) {
-        onSaveRef.current({
-          ...prev,
-          title: f.title.trim(),
-          body: f.body.trim() || null,
-          importance: f.importance,
-          due_date: f.dueDate || null,
-          planned_date: f.plannedDate || null,
-          start_date: f.startDate || null,
-          complexity: f.complexity,
-          tags: tags.length ? tags : null,
-          list_id: f.listId,
-          status: f.status,
-        })
-      }
-    }
-
-    if (closeReason === 'user' && prevIsPhantom && curId === null) {
-      const f = formRef.current
-      if (f.title.trim()) {
-        onSaveRef.current({
-          ...prev,
-          title: f.title.trim(),
-          body: f.body.trim() || null,
-          importance: f.importance,
-          due_date: f.dueDate || null,
-          planned_date: f.plannedDate || null,
-          start_date: f.startDate || null,
-          complexity: f.complexity,
-          tags: f.tagsText.split(/[,，]/).map((t) => t.trim()).filter(Boolean),
-          list_id: f.listId,
-          status: f.status,
-        })
-      }
-    }
 
     if (todo) {
+      // 同步把表单快照写进 formRef，使 ref 与「刚装载的 todo」保持一致。
+      // 两个必要作用：
+      // 1) StrictMode 开发模式下 React 会「body → cleanup → body」模拟一次卸载，
+      //    若 ref 还停在初始空值，那次模拟 cleanup 会拿空表单去 flush，可能误发 PUT；
+      // 2) 保证「打开后没改动就关闭」时 flushSave 的 changed 判定恒为 false。
+      formRef.current = {
+        title: todo.title,
+        body: todo.body ?? '',
+        importance: todo.importance,
+        dueDate: todo.due_date ?? '',
+        plannedDate: todo.planned_date ?? '',
+        startDate: todo.start_date ?? '',
+        complexity: todo.complexity || 'medium',
+        tagsText: (todo.tags ?? []).join(', '),
+        listId: todo.list_id,
+        status: todo.status,
+      }
       setTitle(todo.title)
       setBody(todo.body ?? '')
       setImportance(todo.importance)
@@ -143,9 +145,30 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
       setStatus(todo.status)
       setDueExpanded(false)
       setPlannedExpanded(false)
-      // 打开新 todo 时才重置保存守卫（避免关闭流程中的 effect 抢先把 savingRef 翻回去）
       savingRef.current = false
       setSaving(false)
+    }
+    skipFlushRef.current = false
+
+    return () => {
+      // 离开「上一个编辑对象」时统一落盘。
+      //
+      // 为什么放在 cleanup 而不是 body：
+      //   cleanup 在 React 提交新渲染之后、下一个 effect body 之前执行，此时
+      //   formRef.current 仍是用户刚输入的值；而组件卸载时 React 同样会执行 cleanup。
+      //   于是这一条路径同时覆盖了 ——
+      //     点 X 关闭 / 点侧栏切列表 / 切到另一个待办 / 切视图导致整个面板卸载
+      //   之前把条件写成「prevIsPhantom && curId === null」，只覆盖了「切到无选中」
+      //   一种情况，另外三种都会静默丢输入（用户报的就是这个）。
+      //
+      // 为什么读 ref 而不是闭包捕获 prev：
+      //   捕获到的是「body 执行那一刻」的上一个 todo，A→B→C 连续切换时会拿到 null 导致漏存。
+      if (skipFlushRef.current) {
+        skipFlushRef.current = false
+        return
+      }
+      const leaving = prevTodoRef.current
+      if (leaving) flushSave(leaving)
     }
   }, [todo?.id])
 
@@ -174,13 +197,13 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
     status,
   })
 
-  // 显式保存：保存并关闭面板（切走时仍有自动保存兜底）
+  // 显式保存：自己提交一次，再用 skipFlushRef 让紧随其后的 cleanup 别重复提交
   const save = () => {
     if (savingRef.current) return
     if (!title.trim() || !listId) return
     savingRef.current = true
     setSaving(true)
-    closeReasonRef.current = 'saved'
+    skipFlushRef.current = true
     onSave(buildData())
     onClose()
   }
@@ -300,7 +323,11 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
         <div className="flex items-center justify-between gap-2">
           <button
             onClick={() => {
-              if (confirm(`删除待办「${todo.title}」？`)) onDelete(todo.id)
+              // 删除后面板会关闭，必须阻止 cleanup 把这条刚删掉的记录又 flush 回去
+              if (confirm(`删除待办「${todo.title}」？`)) {
+                skipFlushRef.current = true
+                onDelete(todo.id)
+              }
             }}
             className="flex items-center gap-1 text-sm text-red-500 hover:text-red-600 whitespace-nowrap"
           >
