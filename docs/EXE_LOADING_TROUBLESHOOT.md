@@ -168,6 +168,12 @@ Start-Process "TT-Calendar-Launcher.exe"
   - 即便重 build 了，WebView2 缓存目录 `%LOCALAPPDATA%\com.tt.calendar` 还在，会优先用缓存的旧版
 - 修复：杀进程 → `npm run build` → `npx tauri build --no-bundle` → 复制 `target/release/app.exe` 为项目根 `TT Calendar.exe` → 删 `%LOCALAPPDATA%\com.tt.calendar` → 启动 launcher。验证：新 dist hash 在新 exe 里 1 次，旧的 0 次；4 个 API 请求 200 无重试。
 
+**再次复发（2026-09-01，todo 自动保存修复未进 exe）**：
+
+- 现象：todo 面板"点别处丢任务"的 bug（v4 修复，见 `TODO_VIEWS_DESIGN.md` §9.8），浏览器 5173 已验证修好，但用户双击 `TT-Calendar-Launcher.exe` 后 bug 依旧。
+- 30 秒定位（按 §7 方法）：`frontend/dist/assets/` 实际是 `index-CUN0TNKe.js`（v4）；对 `TT Calendar.exe` 搜 hash → 新 hash 0 次、旧 hash `qbuxpjVD`（v3）1 次 → **exe 内嵌的还是修复前的 dist**。`TT Calendar.exe` 时间戳 09-01 14:30，早于 15 点的修复构建，说明修复后没人重建 Tauri。
+- 修复：杀进程 → `cd frontend && npx tauri build --no-bundle`（纯前端改动，**无需重打 sidecar**）→ 复制 `target/release/app.exe` → `TT Calendar.exe` → WebView2 缓存目录**改名**（`%LOCALAPPDATA%\com.tt.calendar` → `.bak-20260901`，等同清除且可回滚）→ launcher 启动。验证：新 exe 内 `CUN0TNKe` 1 次、旧 hash 0 次，8765 与桌面端一致。
+
 **核心方法论（双向都对）**：改任何业务代码后，**别只用 dev 前端（5173）判断"改完了"**。5173 能看到 ≠ exe 能看到。
 - 5173 ≠ exe 体现在三处：① dev 后端 vs sidecar 后端；② vite HMR vs 内嵌 dist；③ 浏览器 vs WebView2（CORS / 拖拽 / 缓存路径都不同）。
 - 唯一可靠的事后验证：按 §7 字符串搜新 exe，确认新 hash / 新字符串存在 + launcher 启动后 4 个 API 200 无重试。
