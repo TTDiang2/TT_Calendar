@@ -63,6 +63,9 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
 
   const savingRef = useRef(false)
   const [saving, setSaving] = useState(false)
+  // 区分本次关闭的来源：save() 设 'saved' 阻止 effect 自动保存；用户点 X/空白关闭为 'user'
+  // 触发「切走时自动保存兜底」语义
+  const closeReasonRef = useRef<'user' | 'saved'>('user')
   const prevTodoRef = useRef<Todo | null>(null)
   const onSaveRef = useRef(onSave)
   onSaveRef.current = onSave
@@ -70,11 +73,14 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
   useEffect(() => {
     const prev = prevTodoRef.current
     prevTodoRef.current = todo
+    const closeReason = closeReasonRef.current
+    closeReasonRef.current = 'user'
 
     const prevId = prev?.id ?? null
     const curId = todo?.id ?? null
     const prevIsReal = prev != null && prev.id != null && prev.id !== '' && prev.id !== '__NEW__'
-    if (prevIsReal && prevId !== curId) {
+    const prevIsPhantom = prev != null && (prev.id === '' || prev.id === '__NEW__')
+    if (closeReason === 'user' && prevIsReal && prevId !== curId) {
       const f = formRef.current
       const tags = f.tagsText.split(/[,，]/).map((t) => t.trim()).filter(Boolean)
       const changed =
@@ -99,6 +105,25 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
           start_date: f.startDate || null,
           complexity: f.complexity,
           tags: tags.length ? tags : null,
+          list_id: f.listId,
+          status: f.status,
+        })
+      }
+    }
+
+    if (closeReason === 'user' && prevIsPhantom && curId === null) {
+      const f = formRef.current
+      if (f.title.trim()) {
+        onSaveRef.current({
+          ...prev,
+          title: f.title.trim(),
+          body: f.body.trim() || null,
+          importance: f.importance,
+          due_date: f.dueDate || null,
+          planned_date: f.plannedDate || null,
+          start_date: f.startDate || null,
+          complexity: f.complexity,
+          tags: f.tagsText.split(/[,，]/).map((t) => t.trim()).filter(Boolean),
           list_id: f.listId,
           status: f.status,
         })
@@ -155,6 +180,7 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
     if (!title.trim() || !listId) return
     savingRef.current = true
     setSaving(true)
+    closeReasonRef.current = 'saved'
     onSave(buildData())
     onClose()
   }
