@@ -412,7 +412,27 @@ StrictMode 开发模式下 React 会「body → cleanup → body」模拟一次�
 
 `vitest.config.ts` 随之调整：加 `@vitejs/plugin-react`（JSX 转换）、`environment` 改为 `jsdom`、`include` 补上 `.tsx`。原有 `core/merge.golden.test.ts` 不受影响。
 
-commit `0044b8b`，`dist/assets/index-CUN0TNKe.js` 已构建（生产后端 `backend/main.py` 直接 `StaticFiles` 挂载 `frontend/dist`，重启应用即生效）。
+#### 端到端验证（真实浏览器）
+
+jsdom 只证明组件逻辑成立，证明不了真实点击路径。补了 `tests/e2e_todo_autosave.cjs`：
+用 CDP 驱动本机 Edge headless 打开 `http://127.0.0.1:8765`，发真实鼠标/键盘事件走完流程，再用后端 API 计数。无需安装 Playwright（Node 22 自带 `WebSocket`，Edge 随 Windows 附带）。
+
+**反向验证（金标准）** —— 同一套脚本分别跑 v3 旧包与 v4 修复包：
+
+| 场景 | v3（用户测的那版） | v4（本次修复） |
+|---|---|---|
+| 1a. 输入标题 → 点另一个待办 | ❌ **0 条（丢失）** | ✅ 1 条 |
+| 1b. 输入标题 → 切到日历 tab | ❌ **0 条（丢失）** | ✅ 1 条 |
+| 1c. 输入标题 → 点 X 关闭 | ✅ 1 条 | ✅ 1 条 |
+| 2. 输入标题 → 点「保存」 | ✅ 1 条 | ✅ 1 条 |
+| 3. 输入标题 → Ctrl+Enter | ✅ 1 条 | ✅ 1 条 |
+| 4. 空标题 → 切走 | ✅ 0 条 | ✅ 0 条 |
+
+表里 v3 那一列就是用户报告的完整复现：「点保存 / Ctrl+Enter 正常，点别处丢失」，且丢失的正是路径 3、4。
+
+脚本会自动清理测试数据（标题以 `E2E_AUTOSAVE_` 开头，跑完逐条 DELETE）。
+
+commit `0044b8b`，`dist/assets/index-CUN0TNKe.js` 已构建。生产后端 `backend/main.py` 用 `StaticFiles` 挂载 `frontend/dist`，且 `_frontend_dist()` 优先取 exe 同级目录的 `frontend/dist`，所以**重新 build 后重启应用即生效**，不必重新打包 exe。
 
 ### 9.9 经验教训：这个 bug 为什么修了四版
 
@@ -440,5 +460,12 @@ v3 的 `closeReasonRef`（区分 `'saved'` / `'user'`）是典型的坏味道：
 **7. StrictMode 会模拟卸载**
 开发模式下 React 会「body → cleanup → body」跑一遍。任何写在 cleanup 里的副作用都会因此被多执行一次。所以 cleanup 中的逻辑必须**幂等或自带守卫**（这次靠"表单快照同步进 formRef"让模拟那次的 `changed` 恒为 false）。写 cleanup 副作用时先问一句：它被执行两次会怎样？
 
-**8. 工程小坑：别把临时备份写进 `/tmp`**
-沙箱环境与宿主环境的 `/tmp` 不互通，备份文件消失了，害我重新做了一遍修改。要放工作区内的路径。
+**8. 组件测试通过 ≠ 真实路径通过**
+jsdom 里 11 条断言全绿，仍不能证明用户点鼠标时对。这次补了真实浏览器 E2E 才敢说结论。
+单元测试适合钉住**分支逻辑**，端到端适合证明**交互路径**——尤其是"组件会不会被卸载"这种
+只有真实路由切换才暴露的事（这次的丢失路径 4 就是）。两者不可互相替代。
+
+**9. 工程小坑：临时备份不能只写一份**
+本次把备份写进 `/tmp` 后文件消失了（沙箱与宿主不互通），换到工作区内路径**同样丢了一次**，
+害得修改要重做一遍。结论：**做完修改先 commit，用 git 当备份**，而不是依赖手工拷贝文件。
+`git checkout HEAD -- <file>` 恢复比任何临时文件都可靠。
