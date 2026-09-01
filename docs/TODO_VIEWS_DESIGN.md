@@ -300,3 +300,11 @@ end   优先级：completed → completed_at
 修复（commit 1a17188）：
 - `savingRef` + `saving` state：save() 进入即占位，in-flight 期间 button 显示「保存中」」且 onClick 早返；Ctrl+Enter 共用同一守卫
 - useEffect 跳过 prev 为 `__NEW__` 或 null 的场景（没有真实旧 todo 要 flush）；saving 状态在 todo 变化时重置
+
+### 9.6 新建待办双重提交修复 v2（2026-09-01）
+
+上一版（9.5 / commit 1a17188）实测仍复发。诚实复盘：上一版的两个修复都"看着对"但条件错了。
+- **Bug B 真根因**：`prev.id != null` 对空字符串 `""` 也为真。新待办的 id 就是空串 `''`（TodoView line 531），所以 autosave 在新建→关闭时依然触发。修正：用 truthy 检查 `prev.id && prev.id !== ''`，同时排除 `'__NEW__'` 哨兵。
+- **Bug A 真根因**：savingRef 在 useEffect 的 commit 阶段被无条件 reset。Save→onClose→重渲染→effect 跑完之前已经把 savingRef 翻回 false，下一次 click 进 save() 守卫失效。修正：reset 只放在「打开 todo」的分支（`if (todo)` 内），关闭流程中绝不动守卫。
+
+commit 8ebb923，release 已更新，prod 已部署。
