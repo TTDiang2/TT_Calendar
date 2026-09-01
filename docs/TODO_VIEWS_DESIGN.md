@@ -308,3 +308,18 @@ end   优先级：completed → completed_at
 - **Bug A 真根因**：savingRef 在 useEffect 的 commit 阶段被无条件 reset。Save→onClose→重渲染→effect 跑完之前已经把 savingRef 翻回 false，下一次 click 进 save() 守卫失效。修正：reset 只放在「打开 todo」的分支（`if (todo)` 内），关闭流程中绝不动守卫。
 
 commit 8ebb923，release 已更新，prod 已部署。
+
+### 9.7 新建待办双重提交修复 v3（2026-09-01）
+
+v2（9.6）修好了 Save/Ctrl+Enter 重复提交，但误伤了 case 1（点别处关掉→应自动创建）：phantom 过滤把所有"新建→关闭"路径都拦了。
+
+正确区分「谁关的」：
+- `closeReasonRef = 'saved'`：save()/Ctrl+Enter 设的，effect 跳过自动保存（避免重复 POST）
+- `closeReasonRef = 'user'`：用户点 X / 侧栏 / 背景 关闭，effect 触发自动保存：
+  - prev 真实任务 + 有改动 → update
+  - prev 幻影新任务（id=''）+ title 非空 → create（恢复 case 1）
+
+commit 13c9abb，prod 已部署。三个场景应同时正确：
+1. 点别处 → 1 条（自动创建）
+2. 点保存 → 1 条（显式保存，effect 跳过）
+3. Ctrl+Enter → 1 条（同上）
