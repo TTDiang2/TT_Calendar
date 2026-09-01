@@ -70,12 +70,10 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
   useEffect(() => {
     const prev = prevTodoRef.current
     prevTodoRef.current = todo
-    setSaving(false)
-    savingRef.current = false
 
     const prevId = prev?.id ?? null
     const curId = todo?.id ?? null
-    const prevIsReal = prev != null && prev.id != null && prev.id !== '__NEW__'
+    const prevIsReal = prev != null && prev.id != null && prev.id !== '' && prev.id !== '__NEW__'
     if (prevIsReal && prevId !== curId) {
       const f = formRef.current
       const tags = f.tagsText.split(/[,，]/).map((t) => t.trim()).filter(Boolean)
@@ -120,6 +118,9 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
       setStatus(todo.status)
       setDueExpanded(false)
       setPlannedExpanded(false)
+      // 打开新 todo 时才重置保存守卫（避免关闭流程中的 effect 抢先把 savingRef 翻回去）
+      savingRef.current = false
+      setSaving(false)
     }
   }, [todo?.id])
 
