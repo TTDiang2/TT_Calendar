@@ -412,7 +412,7 @@ StrictMode 开发模式下 React 会「body → cleanup → body」模拟一次�
 
 `vitest.config.ts` 随之调整：加 `@vitejs/plugin-react`（JSX 转换）、`environment` 改为 `jsdom`、`include` 补上 `.tsx`。原有 `core/merge.golden.test.ts` 不受影响。
 
-commit `TBD`，`dist/assets/index-CUN0TNKe.js` 已构建（生产后端直接 serve `frontend/dist`，重启即生效）。
+commit `0044b8b`，`dist/assets/index-CUN0TNKe.js` 已构建（生产后端 `backend/main.py` 直接 `StaticFiles` 挂载 `frontend/dist`，重启应用即生效）。
 
 ### 9.9 经验教训：这个 bug 为什么修了四版
 
