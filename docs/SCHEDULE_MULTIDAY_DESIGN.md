@@ -57,7 +57,8 @@ WHERE date <= :end AND COALESCE(end_date, date) >= :start
 
 - 顶部「涂色 / 点点」分段切换：涂色 = 色块标记（marks/coloring），点点 = 带时间的日程条目。
 - 点点模式下有日期区间选择（开始=双击的格子，结束默认同日，改结束日即成多日）。
-- 「同时创建待办」勾选框：
+- 「同时创建待办」勾选框（**默认不勾 opt-in**，用户 2026-09-03 确认；勾选偏好
+  用 localStorage 记住，勾过一次后保持，`initialKind` 不参与默认）：
   - 列表用「日程待办」，不存在则先 `createTodoList` 再用；
   - `planned_date = 起始日`，`due_date = 结束日`（多日时跨整个区间）；
   - 待办标题与日程标题一致。
