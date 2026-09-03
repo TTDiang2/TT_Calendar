@@ -649,6 +649,45 @@ async def _fetch_jisilu_range(conn, start: date_t, end: date_t) -> tuple[int, st
             await source.close()
 
 
+async def _fetch_investing_range(conn, start: date_t, end: date_t) -> tuple[int, str | None]:
+    """英为财情抓取核心（区间 → 写 events，按图层开关过滤 + cookie 注入）。"""
+    from tt_calendar.sources.investing import InvestingSource, load_cookies_file
+    from tt_calendar import config as cfg
+
+    source = None
+    try:
+        source = get_source("investing")
+        if source is None or not isinstance(source, InvestingSource):
+            return 0, "investing source unavailable"
+
+        # 桌面应用允许用户把浏览器导出的 cookie 放在 data/investing_cookies.json
+        cookies: dict[str, str] | None = None
+        cookie_path = cfg.DATA_DIR / "investing_cookies.json"
+        if cookie_path.exists():
+            try:
+                cookies = load_cookies_file(str(cookie_path))
+                if not cookies:
+                    cookies = None
+            except Exception as e:
+                log.warning("load investing cookies failed: %s", e)
+
+        events, result = await source.fetch(
+            start, end, countries=None, importance=None, cookies=cookies
+        )
+        enabled_ids = {l.layer_id for l in db.fetch_layer_configs(conn) if l.enabled}
+        inserted = 0
+        for ev in events:
+            if ev.layer_id not in enabled_ids:
+                continue
+            db.upsert_event(conn, ev)
+            inserted += 1
+        conn.commit()
+        return inserted, result.error
+    finally:
+        if source:
+            await source.close()
+
+
 def _refresh_one_subscription(conn, sub) -> dict:
     """按 source_key 分发刷新。未知的 source_key = 待适配，返回需要提示。"""
     if sub.source_key == "jisilu":
@@ -661,6 +700,28 @@ def _refresh_one_subscription(conn, sub) -> dict:
         end = date_t.today() + timedelta(days=90)
         try:
             inserted, err = asyncio_run(_fetch_jisilu_range(conn, start, end))
+        except Exception as e:
+            db.touch_subscription_synced(conn, sub.id, "error", str(e))
+            conn.commit()
+            return {"id": sub.id, "ok": False, "error": str(e)}
+        if err:
+            db.touch_subscription_synced(conn, sub.id, "error", err)
+            conn.commit()
+            return {"id": sub.id, "ok": False, "error": err, "inserted": inserted}
+        db.touch_subscription_synced(conn, sub.id, "active")
+        conn.commit()
+        return {"id": sub.id, "ok": True, "inserted": inserted}
+    if sub.source_key == "investing":
+        # 经济日历覆盖近 7 天就够（事件更新密集、过期无意义）
+        start = date_t.today() - timedelta(days=2)
+        if sub.last_synced_at:
+            try:
+                start = max(start, datetime.fromisoformat(sub.last_synced_at).date())
+            except Exception:
+                pass
+        end = date_t.today() + timedelta(days=14)
+        try:
+            inserted, err = asyncio_run(_fetch_investing_range(conn, start, end))
         except Exception as e:
             db.touch_subscription_synced(conn, sub.id, "error", str(e))
             conn.commit()

@@ -9,9 +9,11 @@ from typing import Iterable
 
 from .base import Source
 from .jisilu import JisiluSource
+from .investing import InvestingSource
 
 _REGISTRY: dict[str, type[Source]] = {
     "jisilu": JisiluSource,
+    "investing": InvestingSource,
 }
 
 

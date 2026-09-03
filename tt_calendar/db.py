@@ -1065,7 +1065,32 @@ def _parse_legacy_schedule_text(text: str) -> tuple[str | None, str | None, str 
 
 
 def ensure_default_layer_configs(conn: sqlite3.Connection) -> None:
-    """如果 layer_config 表为空，写入默认图层列表。"""
+    """如果 layer_config 表为空，写入默认图层列表。
+
+    注：英为财情（investing）子图层走"幂等补种"路径，无论是否已 seeded 都会跑，
+    这样老 DB 升级时也能补出 investing 国家图层（只插缺失，绝不覆盖用户已有 enabled）。
+    """
+
+    # 英为财情子图层（按 country 分，国家名作为子标签，归类为订阅 display_name）
+    # 放在最前面：不论是否 seeded 都跑一次；缺失才补，幂等。
+    for code, info in cfg.INVESTING_COUNTRIES.items():
+        layer_id = cfg.LayerID.INVESTING_PREFIX + str(code)
+        if conn.execute("SELECT 1 FROM layer_config WHERE layer_id=?", (layer_id,)).fetchone():
+            continue
+        name = str(info.get("name") or f"国家{code}")
+        upsert_layer_config(
+            conn,
+            LayerConfig(
+                layer_id=layer_id,
+                display_name=f"英为财情·{name}",
+                enabled=bool(info.get("enabled", True)),
+                color=str(info.get("color") or "#3D6BFB"),
+                sort_order=11,
+                kind="dot",
+                group=cfg.INVESTING_GROUP_NAME,
+                config={"country_code": str(code)},
+            ),
+        )
 
     if get_meta(conn, "default_layers_seeded") == "1":
         return
