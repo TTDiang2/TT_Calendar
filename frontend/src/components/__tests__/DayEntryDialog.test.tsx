@@ -140,7 +140,9 @@ describe('DayEntryDialog 自动建待办', () => {
     renderDialog('2026-09-03')
     fireEvent.change(contentBox(), { target: { value: '出差' } })
     fireEvent.change(endDateBox(), { target: { value: '2026-09-05' } })
-    expect(autoTodoBox().checked).toBe(true) // 点点模式默认勾选
+    expect(autoTodoBox().checked).toBe(false) // 默认不勾（opt-in）
+    fireEvent.click(autoTodoBox())
+    expect(autoTodoBox().checked).toBe(true)
 
     fireEvent.click(addButton())
 
@@ -152,31 +154,31 @@ describe('DayEntryDialog 自动建待办', () => {
     expect(todo.due_date).toBe('2026-09-05')
   })
 
-  it('5. 「日程待办」列表不存在时自动创建，已存在则复用', async () => {
-    // 不存在
+  it('5a. 「日程待办」列表不存在时自动创建', async () => {
     vi.mocked(getTodoLists).mockResolvedValue([{ id: 'list-1', display_name: '别的列表', sort_order: 0, created_at: null }])
     renderDialog('2026-09-03')
     fireEvent.change(contentBox(), { target: { value: '写周报' } })
+    fireEvent.click(autoTodoBox())
     fireEvent.click(addButton())
     await waitFor(() => expect(createTodoList).toHaveBeenCalledWith('日程待办'))
     expect(vi.mocked(createTodo).mock.calls[0]![0].list_id).toBe('list-schedule')
+  })
 
-    cleanup()
-    vi.clearAllMocks()
-    // 已存在
+  it('5b. 「日程待办」列表已存在则复用，不重复创建', async () => {
     vi.mocked(getTodoLists).mockResolvedValue([{ id: 'list-9', display_name: '日程待办', sort_order: 0, created_at: null }])
     renderDialog('2026-09-03')
     fireEvent.change(contentBox(), { target: { value: '写周报' } })
+    fireEvent.click(autoTodoBox())
     fireEvent.click(addButton())
     await waitFor(() => expect(createTodo).toHaveBeenCalledTimes(1))
     expect(createTodoList).not.toHaveBeenCalled()
     expect(vi.mocked(createTodo).mock.calls[0]![0].list_id).toBe('list-9')
   })
 
-  it('6. 取消勾选则不建待办', async () => {
+  it('6. 默认不勾选则不建待办', async () => {
     renderDialog('2026-09-03')
     fireEvent.change(contentBox(), { target: { value: '只是记一笔' } })
-    fireEvent.click(autoTodoBox())
+    expect(autoTodoBox().checked).toBe(false)
     fireEvent.click(addButton())
 
     await waitFor(() => expect(createScheduleItem).toHaveBeenCalledTimes(1))
@@ -185,17 +187,16 @@ describe('DayEntryDialog 自动建待办', () => {
 
   it('7. 待办勾选偏好写入 localStorage，下次打开保持', async () => {
     renderDialog('2026-09-03')
-    fireEvent.click(autoTodoBox()) // 关掉
-    expect(localStorage.getItem('day-entry:auto-todo')).toBe('0')
+    fireEvent.click(autoTodoBox()) // 勾上
+    expect(localStorage.getItem('day-entry:auto-todo')).toBe('1')
     cleanup()
 
-    vi.mocked(getTodoLists).mockResolvedValue([])
+    vi.mocked(getTodoLists).mockResolvedValue([{ id: 'list-1', display_name: '日程待办', sort_order: 0, created_at: null }])
     renderDialog('2026-09-04')
-    expect(autoTodoBox().checked).toBe(false)
-    fireEvent.change(contentBox(), { target: { value: '不带待办' } })
+    expect(autoTodoBox().checked).toBe(true) // 偏好保持
+    fireEvent.change(contentBox(), { target: { value: '带待办' } })
     fireEvent.click(addButton())
-    await waitFor(() => expect(createScheduleItem).toHaveBeenCalled())
-    expect(createTodo).not.toHaveBeenCalled()
+    await waitFor(() => expect(createTodo).toHaveBeenCalledTimes(1))
   })
 })
 

@@ -769,9 +769,10 @@ export function DayEntryDialog({
       : colorCfg?.color ?? '#9ca3af'
 
   // ---- 自动建待办 ----
+  // 默认不勾（opt-in）：用户明确要求「允许选择是否自动创建」，默认开会让没注意到的人
+  // 待办列表被日程刷屏；勾选状态用 localStorage 记住，勾过一次以后保持。
   const [autoTodo, setAutoTodo] = useState<boolean>(() => {
-    const saved = localStorage.getItem(AUTO_TODO_PREF_KEY)
-    return saved === null ? initialKind === 'dot' : saved === '1'
+    return localStorage.getItem(AUTO_TODO_PREF_KEY) === '1'
   })
   const setAutoTodoPersist = (v: boolean) => {
     setAutoTodo(v)
