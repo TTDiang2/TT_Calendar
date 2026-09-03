@@ -11,11 +11,10 @@ interface Props {
   onEditEvent: (date: string, event: CalEvent) => void
   onEditSchedule: (date: string) => void
   onSetColoring: (date: string) => void
-  onAddDot: (date: string) => void
-  onAddColor: (date: string) => void
+  onAddEntry: (date: string, kind: 'dot' | 'color') => void
 }
 
-export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetColoring, onAddDot, onAddColor }: Props) {
+export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetColoring, onAddEntry }: Props) {
   const qc = useQueryClient()
   const { data: busyConfig } = useQuery({ queryKey: ['todoBusyConfig'], queryFn: getTodoBusyConfig, staleTime: 60_000 })
   const delMut = useMutation({
@@ -83,13 +82,13 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
 
       <div className="flex gap-1 mb-4">
         <button
-          onClick={() => onAddDot(day.date)}
+          onClick={() => onAddEntry(day.date, 'dot')}
           className="flex-1 flex items-center justify-center gap-1 text-xs text-gray-600 py-1.5 rounded-md bg-gray-50 hover:bg-gray-100"
         >
           <Clock size={12} /> 点点
         </button>
         <button
-          onClick={() => onAddColor(day.date)}
+          onClick={() => onAddEntry(day.date, 'color')}
           className="flex-1 flex items-center justify-center gap-1 text-xs text-gray-600 py-1.5 rounded-md bg-gray-50 hover:bg-gray-100"
         >
           <Palette size={12} /> 涂色
@@ -223,7 +222,14 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
                   <span className="text-gray-400 flex-shrink-0 tabular-nums whitespace-nowrap text-sm">
                     {it.start_time ? (it.end_time ? `${it.start_time}-${it.end_time}` : it.start_time) : '全天'}
                   </span>
-                  <span className="text-sm text-gray-700 flex-1 min-w-0 truncate">{it.title}</span>
+                  <span className="text-sm text-gray-700 flex-1 min-w-0 truncate">
+                    {it.title}
+                    {it.span_total && it.span_total > 1 && (
+                      <span className="ml-1 text-[10px] text-blue-600">
+                        多日 {it.span_index}/{it.span_total}
+                      </span>
+                    )}
+                  </span>
                   <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition flex-shrink-0">
                     <button
                       onClick={() => onEditSchedule(day.date)}

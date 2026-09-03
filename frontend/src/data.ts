@@ -36,6 +36,35 @@ export function todayStr(): string {
   return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`
 }
 
+export function toISODate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+/**
+ * 生成 [start, end] 闭区间内的所有日期（'YYYY-MM-DD'）。
+ * 多日日程要按天展开写入（涂色/事件），或计算跨天天数时用。
+ * end 早于 start 或为空时退化成单日 [start]。
+ */
+export function dateRange(start: string, end?: string | null): string[] {
+  const from = parseDateStr(start)
+  if (!end || end <= start) return [start]
+  const to = parseDateStr(end)
+  const out: string[] = []
+  const cur = new Date(from)
+  // 上限 366 天：防止误填年份（如 2099）时把循环打爆，静默截断
+  for (let i = 0; i < 366 && cur <= to; i++) {
+    out.push(toISODate(cur))
+    cur.setDate(cur.getDate() + 1)
+  }
+  return out
+}
+
+export function daysBetween(start: string, end: string): number {
+  const a = parseDateStr(start).getTime()
+  const b = parseDateStr(end).getTime()
+  return Math.round((b - a) / 86_400_000) + 1
+}
+
 // 给 day + today + config（可选），返回当日应展示的忙度图层颜色数组：
 //   过去日期返回 done 色；今天双层（done 在下、predict 在上）；未来返回 predict 色
 // 颜色从 config.predict_colors / config.done_colors 取，缺省走 TODO_BUSY_*_COLORS

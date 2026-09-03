@@ -58,7 +58,8 @@ CREATE TABLE IF NOT EXISTS schedule (
 
 CREATE TABLE IF NOT EXISTS schedule_items (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
-    date         TEXT NOT NULL,           -- 'YYYY-MM-DD'
+    date         TEXT NOT NULL,           -- 'YYYY-MM-DD'（起始日）
+    end_date     TEXT,                    -- 多日日程结束日（含，'YYYY-MM-DD'）；NULL=单日
     start_time   TEXT,                    -- 'HH:MM'
     end_time     TEXT,                    -- 'HH:MM'
     title        TEXT NOT NULL,
@@ -235,6 +236,8 @@ def _ensure_schedule_item_columns(cur: sqlite3.Cursor) -> None:
     cols = {r["name"] for r in cur.execute("PRAGMA table_info(schedule_items)").fetchall()}
     if "category" not in cols:
         cur.execute("ALTER TABLE schedule_items ADD COLUMN category TEXT DEFAULT 'work'")
+    if "end_date" not in cols:
+        cur.execute("ALTER TABLE schedule_items ADD COLUMN end_date TEXT")
 
 
 def _ensure_layer_config_columns(cur: sqlite3.Cursor) -> None:
@@ -657,41 +660,86 @@ def _row_to_schedule_item(row: sqlite3.Row) -> ScheduleItem:
         color=row["color"],
         category=row["category"] or "work",
         sort_order=row["sort_order"] or 0,
+        end_date=_parse_iso_date(row["end_date"]) if "end_date" in row.keys() else None,
     )
+
+
+def _parse_iso_date(raw: str | None) -> date_t | None:
+    """宽容解析 'YYYY-MM-DD'；空值或脏数据返回 None（多日日程退化为单日，不让视图崩）。"""
+
+    if not raw:
+        return None
+    try:
+        return date_t.fromisoformat(raw)
+    except (TypeError, ValueError):
+        return None
 
 
 def fetch_schedule_items_between(
     conn: sqlite3.Connection, start: date_t, end: date_t
 ) -> list[ScheduleItem]:
+    """取 [start, end] 内可见的日程（含多日日程）。
+
+    多日日程只存一行（date=起始日, end_date=结束日），所以判定条件是「区间相交」而非
+    「date 落在区间内」：
+        date <= end                      起始日不晚于视图末日
+        COALESCE(end_date, date) >= start 结束日（单日用起始日）不早于视图首日
+    否则跨月视图里，上月开始、本月仍在持续的日程会整条消失。
+    """
+
     rows = conn.execute(
-        "SELECT * FROM schedule_items WHERE date >= ? AND date <= ? "
+        "SELECT * FROM schedule_items WHERE date <= ? AND COALESCE(end_date, date) >= ? "
         "ORDER BY date, sort_order, start_time, id",
-        (start.isoformat(), end.isoformat()),
+        (end.isoformat(), start.isoformat()),
     ).fetchall()
     return [_row_to_schedule_item(r) for r in rows]
 
 
 def upsert_schedule_item(conn: sqlite3.Connection, item: ScheduleItem) -> ScheduleItem:
+    # 归一化：倒挂或等于起始日的 end_date 一律清掉，避免脏数据把普通日程变成跨天。
+    # 直接改对象 —— 返回值会回给前端，必须和库里的真实状态一致，否则 UI 会画出幽灵跨天条。
+    if item.end_date is not None and item.end_date <= item.date:
+        item.end_date = None
+
+    now = datetime.now().isoformat(timespec="seconds")
     with cursor(conn) as cur:
-        cur.execute(
-            "INSERT INTO schedule_items(date, start_time, end_time, title, color, category, sort_order, updated_at) "
-            "VALUES(?,?,?,?,?,?,?,?) "
-            "ON CONFLICT(id) DO UPDATE SET date=excluded.date, start_time=excluded.start_time, "
-            "end_time=excluded.end_time, title=excluded.title, color=excluded.color, "
-            "category=excluded.category, sort_order=excluded.sort_order, updated_at=excluded.updated_at",
-            (
-                item.date.isoformat(),
-                item.start_time,
-                item.end_time,
-                item.title,
-                item.color,
-                item.category,
-                item.sort_order,
-                datetime.now().isoformat(timespec="seconds"),
-            ),
-        )
         if item.id is None:
+            cur.execute(
+                "INSERT INTO schedule_items(date, end_date, start_time, end_time, title, color, category, sort_order, updated_at) "
+                "VALUES(?,?,?,?,?,?,?,?,?)",
+                (
+                    item.date.isoformat(),
+                    item.end_date.isoformat() if item.end_date else None,
+                    item.start_time,
+                    item.end_time,
+                    item.title,
+                    item.color,
+                    item.category,
+                    item.sort_order,
+                    now,
+                ),
+            )
             item.id = cur.lastrowid
+        else:
+            # 显式 UPDATE。曾经用「INSERT 不带 id + ON CONFLICT(id) DO UPDATE」，
+            # 但 INSERT 不指定 id 时永远拿到新自增 id，冲突永不触发 —— 每次“更新”
+            # 实际都插入了新行（2026-09-03 由 HTTP 集成测试暴露：缩短日程后旧行仍在）。
+            cur.execute(
+                "UPDATE schedule_items SET date=?, end_date=?, start_time=?, end_time=?, "
+                "title=?, color=?, category=?, sort_order=?, updated_at=? WHERE id=?",
+                (
+                    item.date.isoformat(),
+                    item.end_date.isoformat() if item.end_date else None,
+                    item.start_time,
+                    item.end_time,
+                    item.title,
+                    item.color,
+                    item.category,
+                    item.sort_order,
+                    now,
+                    item.id,
+                ),
+            )
     return item
 
 

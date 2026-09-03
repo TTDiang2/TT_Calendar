@@ -187,6 +187,28 @@ def _custom_layer_color(
     return None, None
 
 
+def _expand_schedule_spans(
+    items: list, start: date, end: date
+) -> dict:
+    """把多日日程展开到区间内每一天。
+
+    多日日程在库里只有一行（date=起始日, end_date=结束日），但日历的每个格子都要看得见，
+    所以这里按天复制引用：{date: [item, ...]}，并裁剪到 [start, end]（视图窗口外不展开）。
+    展开后的 item 仍是同一个对象，「今天是第几天」这类信息在 _build_day 里按具体日期计算，
+    不写进对象，避免同一个 span 的不同天互相污染。
+    """
+
+    by_date: dict = defaultdict(list)
+    for item in items:
+        first = max(item.date, start)
+        last = min(item.end_date or item.date, end)
+        cur = first
+        while cur <= last:
+            by_date[cur].append(item)
+            cur += timedelta(days=1)
+    return by_date
+
+
 def _build_day(
     d: date,
     events_by_date: dict,
@@ -220,7 +242,17 @@ def _build_day(
     gkey = f"{d.year}-{d.month:02d}-{d.day:02d}"
     day_todos = todos_by_date.get(d, [])
     todos_json = [t.model_dump(mode="json") for t in day_todos]
-    items = [i.model_dump(mode="json") for i in schedule_items_by_date.get(d, [])]
+    items = []
+    for i in schedule_items_by_date.get(d, []):
+        row = i.model_dump(mode="json")
+        if i.is_multi_day:
+            # 跨天元信息按「今天在这个 span 里的位置」计算：首日显示标题，后续天画延续条
+            row["is_multi_day"] = True
+            row["span_start"] = i.date.isoformat()
+            row["span_end"] = i.end_date.isoformat()  # type: ignore[union-attr]
+            row["span_index"] = (d - i.date).days + 1
+            row["span_total"] = i.span_days
+        items.append(row)
     busy = day_busy.get(d) if day_busy else None
     predict_level = busy[0] if busy else None
     done_level = busy[1] if busy else None
@@ -290,9 +322,7 @@ def build_view(
     todos_by_date = db.fetch_todos_between(conn, start, end)
     schedule_items = db.fetch_schedule_items_between(conn, start, end)
     marks_by_date = db.fetch_marks_between(conn, start, end)
-    schedule_items_by_date: dict = defaultdict(list)
-    for item in schedule_items:
-        schedule_items_by_date[item.date].append(item)
+    schedule_items_by_date: dict = _expand_schedule_spans(schedule_items, start, end)
 
     layers = db.fetch_layer_configs(conn)
     layers, removed_sub_layer_ids = apply_subscription_switch(conn, layers)

@@ -109,6 +109,11 @@ export function DayView({ monthData, layers, selectedDate, onSelect, onDoubleCli
                       </span>
                     )}
                     <span className="text-gray-800">{it.title}</span>
+                    {it.span_total && it.span_total > 1 && (
+                      <span className="text-[11px] text-blue-600 flex-shrink-0">
+                        第 {it.span_index}/{it.span_total} 天 · {it.span_start} ~ {it.span_end}
+                      </span>
+                    )}
                   </div>
                 ))}
             </div>

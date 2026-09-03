@@ -27,6 +27,15 @@ export interface ScheduleItem {
   color: string | null
   category: string
   sort_order: number
+  /** 多日日程结束日（含）；null/等于 date 表示单日 */
+  end_date: string | null
+  // ---- 以下为聚合层下发的跨天元信息（按天计算，库里不存）----
+  is_multi_day?: boolean
+  span_start?: string
+  span_end?: string
+  /** 第几天，首日 = 1 */
+  span_index?: number
+  span_total?: number
 }
 
 export interface CustomBg {

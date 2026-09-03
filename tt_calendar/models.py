@@ -46,7 +46,11 @@ class ScheduleEntry(BaseModel):
 
 
 class ScheduleItem(BaseModel):
-    """带起止时间的单条日程（新结构，一天可多条）。"""
+    """带起止时间的单条日程（新结构，一天可多条）。
+
+    date 是起始日；end_date 非空且 > date 时为多日日程，覆盖 date..end_date 每一天（含两端）。
+    存储只有一行，由聚合层展开到区间内每一天（见 aggregator._expand_schedule_spans）。
+    """
 
     id: Optional[int] = None
     date: date_t
@@ -56,6 +60,17 @@ class ScheduleItem(BaseModel):
     color: Optional[str] = None
     category: str = "work"             # work/course/sport/play/other
     sort_order: int = 0
+    end_date: Optional[date_t] = None  # 多日日程结束日（含）；None 或等于 date 视为单日
+
+    @property
+    def is_multi_day(self) -> bool:
+        return self.end_date is not None and self.end_date > self.date
+
+    @property
+    def span_days(self) -> int:
+        if not self.is_multi_day:
+            return 1
+        return (self.end_date - self.date).days + 1  # type: ignore[operator]
 
 
 class ColoringEntry(BaseModel):

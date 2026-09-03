@@ -20,8 +20,7 @@ import {
   SearchDialog,
   SubscriptionDialog,
   ContextMenu,
-  DotEntryDialog,
-  ColorEntryDialog,
+  DayEntryDialog,
 } from './components/dialogs'
 import { SettingsDialog } from './components/SettingsDialog'
 import { ReminderBanner } from './components/ReminderBanner'
@@ -30,8 +29,8 @@ type DialogState =
   | { kind: 'event'; date: string; event?: CalEvent | null }
   | { kind: 'schedule'; date: string }
   | { kind: 'coloring'; date: string }
-  | { kind: 'dot'; date: string }
-  | { kind: 'color'; date: string }
+  // 新建统一入口：kind='dot' 点点/日程，'color' 涂色
+  | { kind: 'entry'; date: string; entryKind: 'dot' | 'color' }
   | { kind: 'search' }
   | { kind: 'subscription' }
   | { kind: 'settings' }
@@ -209,7 +208,12 @@ export default function App() {
     setDialog({ kind: 'event', date, event })
   }, [])
 
-  const handleDoubleClick = useCallback((date: string) => openEvent(date), [openEvent])
+  // 双击格子 = 新建，默认走「点点 / 日程」，弹窗里可切到「涂色」
+  const openEntry = useCallback((date: string, entryKind: 'dot' | 'color' = 'dot') => {
+    setDialog({ kind: 'entry', date, entryKind })
+  }, [])
+
+  const handleDoubleClick = useCallback((date: string) => openEntry(date, 'dot'), [openEntry])
 
   const handleContextMenu = useCallback(
     (e: { clientX: number; clientY: number }, date: string) => {
@@ -242,7 +246,7 @@ export default function App() {
       if (e.key === 'ArrowLeft') navigate(-1)
       else if (e.key === 'ArrowRight') navigate(1)
       else if (e.key === 't' || e.key === 'T') goToday()
-      else if ((e.key === 'n' || e.key === 'N') && selectedDate) openEvent(selectedDate)
+      else if ((e.key === 'n' || e.key === 'N') && selectedDate) openEntry(selectedDate, 'dot')
       else if (e.key === '/') {
         e.preventDefault()
         setDialog({ kind: 'search' })
@@ -250,7 +254,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [dialog, ctxMenu, selectedDate, openEvent, mode, dayAnchor])
+  }, [dialog, ctxMenu, selectedDate, openEvent, openEntry, mode, dayAnchor])
 
   const title = useMemo(() => {
     if (!monthData) return '—'
@@ -410,8 +414,7 @@ export default function App() {
                 onEditEvent={openEvent}
                 onEditSchedule={(d) => setDialog({ kind: 'schedule', date: d })}
                 onSetColoring={(d) => setDialog({ kind: 'coloring', date: d })}
-                onAddDot={(d) => setDialog({ kind: 'dot', date: d })}
-                onAddColor={(d) => setDialog({ kind: 'color', date: d })}
+                onAddEntry={openEntry}
               />
             )}
           </>
@@ -463,17 +466,11 @@ export default function App() {
           onClose={() => setDialog(null)}
         />
       )}
-      {dialog?.kind === 'dot' && (
-        <DotEntryDialog
+      {dialog?.kind === 'entry' && (
+        <DayEntryDialog
           date={dialog.date}
           layers={layers}
-          onClose={() => setDialog(null)}
-        />
-      )}
-      {dialog?.kind === 'color' && (
-        <ColorEntryDialog
-          date={dialog.date}
-          layers={layers}
+          initialKind={dialog.entryKind}
           onClose={() => setDialog(null)}
         />
       )}

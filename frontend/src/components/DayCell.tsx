@@ -187,21 +187,45 @@ export const DayCell = memo(function DayCell({ day, layers, selected, dragOver, 
         )
       })()}
 
-      {/* 日程摘要（首条时段 + 剩余计数） */}
+      {/* 日程：多日日程首日显示标题，后续天画延续条（避免长日程占满每个格子） */}
       {scheduleItems.length > 0 && (
         <div className="flex flex-col gap-px overflow-hidden">
           {(() => {
             const last = colorLayers[colorLayers.length - 1]
             const labelColor = last ? pickContrastColor(last.color) : '#3D6BFB'
             const sorted = [...scheduleItems].sort((a, b) => (a.start_time ?? '').localeCompare(b.start_time ?? ''))
-            const first = sorted[0]!
+            // 延续天（span_index > 1）不占文字行，画细色条
+            const continuations = sorted.filter((i) => (i.span_index ?? 1) > 1)
+            const heads = sorted.filter((i) => (i.span_index ?? 1) === 1)
+            const shown = heads.slice(0, Math.max(1, maxLabels - continuations.length))
+            const hidden = sorted.length - continuations.length - shown.length
             return (
               <>
-                <span className="text-[10px] truncate leading-tight font-medium" style={{ color: labelColor }} title={first.title}>
-                  {first.start_time ? `${first.start_time} ${first.title}` : first.title}
-                </span>
-                {sorted.length > 1 && (
-                  <span className="text-[10px]" style={{ color: labelColor }}>+{sorted.length - 1} 项日程</span>
+                {continuations.map((it, i) => (
+                  <span
+                    key={`cont-${it.id ?? i}`}
+                    className="block h-[3px] rounded-full my-[2px]"
+                    style={{ backgroundColor: it.color ?? '#3D6BFB' }}
+                    title={`${it.title}（${it.span_index}/${it.span_total} 天，${it.span_start} 起）`}
+                  />
+                ))}
+                {shown.map((it, i) => (
+                  <span
+                    key={it.id ?? `s-${i}`}
+                    className="text-[10px] truncate leading-tight font-medium"
+                    style={{ color: labelColor }}
+                    title={it.span_total && it.span_total > 1
+                      ? `${it.title}（多日 ${it.span_start} ~ ${it.span_end}，共 ${it.span_total} 天）`
+                      : it.title}
+                  >
+                    {it.start_time ? `${it.start_time} ${it.title}` : it.title}
+                    {it.span_total && it.span_total > 1 && (
+                      <span className="opacity-70"> ↦{it.span_total}天</span>
+                    )}
+                  </span>
+                ))}
+                {hidden > 0 && (
+                  <span className="text-[10px]" style={{ color: labelColor }}>+{hidden} 项日程</span>
                 )}
               </>
             )
