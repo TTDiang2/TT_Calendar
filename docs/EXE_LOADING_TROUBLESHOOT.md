@@ -109,6 +109,20 @@ Copy-Item "dist\tt-calendar-backend.exe" `
 
 > `tauri.conf.json` 里 `externalBin: ["binaries/tt-calendar-backend"]`，Tauri 会自动找带平台后缀的文件。
 
+**⚠️ sidecar 有三份副本，三份都要更新（2026-09-03 踩坑）**：
+
+| 位置 | 用途 |
+|---|---|
+| `dist\tt-calendar-backend.exe` | PyInstaller 的输出原件 |
+| `frontend\src-tauri\binaries\tt-calendar-backend-x86_64-pc-windows-msvc.exe` | Tauri 打包时内嵌 |
+| **`tt-calendar-backend.exe`（项目根目录，launcher 旁边）** | **launcher 实际拉起的生产后端** |
+
+`launcher/src/main.rs` 的 `find_file(exe_dir, &["tt-calendar-backend.exe", ...])`
+找的是 **launcher 自己旁边**的副本。2026-09-03 只更新了前两个，结果 exe 里前端是新的、
+8765 跑的还是 8/26 的旧后端——多日日程 API 直接不生效。复验生产链路
+（对 launcher 拉起的 8765 发真实 API 请求）才暴露。
+`release\tt-calendar-backend-x64.exe` 是第四份（分发用），同步养成习惯一起更新。
+
 ### 4.3 验证新 sidecar 的 CORS（可选但推荐）
 
 ```powershell

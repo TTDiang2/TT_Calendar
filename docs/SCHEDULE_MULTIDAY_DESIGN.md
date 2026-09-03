@@ -112,6 +112,11 @@ cd frontend && npx vitest run
 
 ## 7. 部署注意
 
-纯前端改动 + 后端 Python 改动，**sidecar 后端需要重打**（这次动了 `tt_calendar/`），
-Tauri exe 也要重建（前端变了）。按 `EXE_LOADING_TROUBLESHOOT.md` §4.4 完整流程走，
-别只 `npm run build` 就以为 exe 能看到。
+本次前后端都改了，完整部署链：**PyInstaller 重打 sidecar → 同步三处副本
+（`dist/`、`src-tauri/binaries/`、**根目录 launcher 旁边**）→ `tauri build --no-bundle`
+→ 复制 `app.exe` → `TT Calendar.exe` → 清 WebView2 缓存 → launcher 重启**。
+
+2026-09-03 实际踩坑：sidecar 有三份副本，launcher 拉起的是**它自己旁边那份**
+（见 `EXE_LOADING_TROUBLESHOOT.md` §4.2）。只更新 `src-tauri/binaries/` 的话，
+exe 里前端是新的、8765 跑的还是旧后端。**部署后必须对 launcher 拉起的 8765
+发真实 API 请求复验**（本次就是这样抓到旧 sidecar 的）。
