@@ -204,8 +204,11 @@ export const DayCell = memo(function DayCell({ day, layers, selected, dragOver, 
                 {continuations.map((it, i) => (
                   <span
                     key={`cont-${it.id ?? i}`}
-                    className="block h-[3px] rounded-full my-[2px]"
-                    style={{ backgroundColor: it.color ?? '#3D6BFB' }}
+                    className="block h-[6px] rounded-full my-[2px] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
+                    style={{
+                      backgroundColor: it.color ?? '#3D6BFB',
+                      backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0.28), rgba(255,255,255,0) 30%, rgba(0,0,0,0.06))',
+                    }}
                     title={`${it.title}（${it.span_index}/${it.span_total} 天，${it.span_start} 起）`}
                   />
                 ))}
