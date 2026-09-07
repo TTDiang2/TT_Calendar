@@ -43,7 +43,10 @@ interface CtxMenuState {
 }
 
 export default function App() {
-  const [monthKey, setMonthKey] = useState('2026-8')
+  const [monthKey, setMonthKey] = useState(() => {
+    const n = new Date()
+    return `${n.getFullYear()}-${n.getMonth() + 1}`
+  })
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [mode, setMode] = useState<ViewMode>('month')
   const [topTab, setTopTab] = useState<TopTab>('calendar')
