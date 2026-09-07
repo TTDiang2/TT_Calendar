@@ -36,6 +36,7 @@ from datetime import date as date_t, datetime
 from typing import Any
 
 import httpx
+from bs4 import BeautifulSoup
 
 from .. import config as cfg
 from ..models import Event, ImportResult
@@ -45,6 +46,7 @@ log = logging.getLogger(__name__)
 
 _TAG_RE = re.compile(r"<[^>]+>")
 _WS_RE = re.compile(r"\s+")
+_HTML_TD_RE = re.compile(r"<[^>]+>")
 
 # CF 拦截特征（cf-ray 是 Cloudflare 请求 ID；headers 里 cf-mitigated 表示触发了挑战）
 _CF_HINT_HEADERS: tuple[str, ...] = ("cf-ray", "cf-mitigated", "cf-cache-status")
@@ -180,17 +182,46 @@ class InvestingSource(Source):
             cf_blocked = _is_cf_block(resp)
             if resp.status_code != 200:
                 return country, [], f"HTTP {resp.status_code}", cf_blocked
-            data = resp.json()
-            if data is False or data == "false" or data == "":
-                return country, [], None, False  # 该组合无数据，不算错误
-            if not isinstance(data, list):
-                return country, [], f"unexpected response: {str(data)[:80]}", cf_blocked
-            events = [_parse_item(item, layer_id, country) for item in data]
-            events = [e for e in events if e is not None]
+            events = self._parse_response(resp, layer_id, country, importance)
             return country, events, None, cf_blocked
         except Exception as e:
             log.warning("investing fetch %s importance=%s failed: %s", country, importance, e)
             return country, [], str(e), False
+
+    def _parse_response(
+        self,
+        resp: httpx.Response,
+        layer_id: str,
+        country: str,
+        importance: int,
+    ) -> list[Event]:
+        """Investing.com 的 JSON Service 端点在不同站/配置下返回两种形态：
+        1. 顶层 JSON 列表（早期投资日历的纯 API 形态）
+        2. {"data": "<HTML 片段>"} 包装（当前 cn.investing.com 主站返回）
+        都处理一下。一次性记下响应形态便于以后 debug。
+        """
+        try:
+            data = resp.json()
+        except Exception as e:
+            log.warning("investing: response not JSON (%s): %r", e, resp.text[:200])
+            return []
+
+        if isinstance(data, list):
+            log.debug("investing: top-level list shape, %d items", len(data))
+            return [e for e in (_parse_item(it, layer_id, country) for it in data) if e]
+
+        if isinstance(data, dict):
+            inner = data.get("data")
+            if isinstance(inner, list):
+                log.debug("investing: dict-wrapped list, %d items", len(inner))
+                return [e for e in (_parse_item(it, layer_id, country) for it in inner) if e]
+            if isinstance(inner, str) and inner.strip():
+                log.debug("investing: dict-wrapped HTML, %d chars", len(inner))
+                return _parse_html_table(inner, layer_id, country, importance)
+
+        log.warning("investing: unexpected response shape, top-level type=%s, sample=%r",
+                    type(data).__name__, str(data)[:200])
+        return []
 
 
 # ---------------------------------------------------------------------------
@@ -206,6 +237,170 @@ def _strip_tags(s: str) -> str:
     text = html.unescape(text)
     text = _WS_RE.sub(" ", text).strip()
     return text
+
+
+# ---------------------------------------------------------------------------
+# HTML 形态解析（用于 {"data": "<HTML 片段>"} 包装）
+# ---------------------------------------------------------------------------
+
+# cn.investing.com 事件行在返回的 HTML 片段里的常见选择器（按可靠性排序）
+_HTML_ROW_SELECTORS = (
+    "tr.js-event-item",
+    "tr[data-event_attr_id]",
+    "tr[class*='js-event']",
+    "tr[class*='event']",
+)
+# 单格内文本/字段的常见选择器
+_HTML_FIELD_TD = ("td", "th")
+
+
+def _parse_html_table(
+    html_fragment: str,
+    layer_id: str,
+    country: str,
+    importance: int,
+) -> list[Event]:
+    """从 Service 端点 data 字段的 HTML 片段里解析事件行。
+    选择器冗余覆盖不同的字段命名（Investing 历史上换过结构）。
+    """
+    try:
+        soup = BeautifulSoup(html_fragment, "html.parser")
+    except Exception as e:
+        log.warning("investing: BS4 parse failed: %s", e)
+        return []
+
+    rows = []
+    for sel in _HTML_ROW_SELECTORS:
+        rows = soup.select(sel)
+        if rows:
+            break
+    if not rows:
+        log.warning("investing: no event rows found in HTML (len=%d)", len(html_fragment))
+        return []
+
+    country_info = cfg.INVESTING_COUNTRIES.get(country, {})
+    country_name = str(country_info.get("name") or f"country_{country}")
+    color = str(country_info.get("color") or "#3D6BFB")
+    currency = str(country_info.get("currency") or "")
+
+    out: list[Event] = []
+    for tr in rows:
+        try:
+            ev = _parse_html_row(tr, layer_id, country, country_name, currency, color, importance)
+            if ev:
+                out.append(ev)
+        except Exception as e:
+            log.warning("investing: HTML row parse failed: %s", e)
+    return out
+
+
+def _parse_html_row(
+    tr: Any,
+    layer_id: str,
+    country: str,
+    country_name: str,
+    currency: str,
+    color: str,
+    importance: int,
+) -> Event | None:
+    """从一行 tr 提取一条事件。HTML 形态字段命名不稳定，按 td 下标 + class 双轨取。"""
+    tds = tr.find_all(_HTML_FIELD_TD)
+    if len(tds) < 4:
+        return None
+
+    # 常见列结构: [时间, 货币/国家, 重要性, 事件名, 实际, 预报, 前值]
+    # 退而其次: [时间, 重要性, 事件名, 实际, 预报, 前值]
+    time_str = ""
+    title = ""
+    actual = forecast = previous = ""
+    if len(tds) >= 7:
+        time_str = tds[0].get_text(" ", strip=True)
+        title = tds[3].get_text(" ", strip=True)
+        actual = tds[4].get_text(" ", strip=True)
+        forecast = tds[5].get_text(" ", strip=True)
+        previous = tds[6].get_text(" ", strip=True)
+    else:
+        time_str = tds[0].get_text(" ", strip=True)
+        title = tds[2].get_text(" ", strip=True)
+        if len(tds) >= 6:
+            actual = tds[3].get_text(" ", strip=True)
+            forecast = tds[4].get_text(" ", strip=True)
+            previous = tds[5].get_text(" ", strip=True)
+
+    if not title:
+        return None
+
+    # 事件日期：行可能有 data-event-datetime 或父 theDay 头；为简化取 start..end 区间后从 time 推
+    d = _date_from_html_row(tr, tds)
+    if d is None:
+        return None
+
+    ev_id = tr.get("data-event_attr_id") or tr.get("event_attr_id") or tr.get("id") or ""
+
+    vs = _vs_forecast(actual or None, forecast or None, previous or None)
+
+    extra: dict[str, Any] = {
+        "country": country_name,
+        "country_code": country,
+        "currency": currency,
+        "importance": importance,
+        "vs_forecast": vs,
+    }
+    if time_str:
+        extra["time"] = time_str
+    if actual:
+        extra["actual"] = actual
+    if forecast:
+        extra["forecast"] = forecast
+    if previous:
+        extra["previous"] = previous
+
+    source_ref = f"{country}:{ev_id}" if ev_id else f"{country}:{title}:{d.isoformat()}:{time_str}"
+
+    return Event(
+        layer_id=layer_id,
+        source="investing",
+        date=d,
+        title=title,
+        description=None,
+        color=color,
+        source_ref=source_ref,
+        extra=extra,
+        sort_key=0,
+    )
+
+
+def _date_from_html_row(tr: Any, tds: list[Any]) -> date_t | None:
+    """从一行 tr（或其 tds）推断事件日期。优先用 data-* 属性，回落 tds 文本。"""
+    # 1) 显式日期属性
+    for attr in ("data-event-datetime", "data-date", "data-start", "data-time-utc"):
+        v = tr.get(attr)
+        if v:
+            try:
+                if "T" in v:
+                    return datetime.fromisoformat(v.replace("Z", "+00:00")).date()
+                return datetime.strptime(v, "%Y-%m-%d").date()
+            except Exception:
+                pass
+    # 2) 退而其次：找父 theDay 头（cn.investing.com HTML 里有 <tr class="theDay">日期头）
+    parent = tr.parent
+    if parent:
+        for sib in parent.find_all("tr", recursive=False):
+            if "theDay" in (sib.get("class") or []):
+                day_text = sib.get_text(" ", strip=True)
+                return _parse_day_header(day_text)
+    # 3) 实在不行：今天的日期
+    return date_t.today()
+
+
+def _parse_day_header(s: str) -> date_t | None:
+    """theDay 行文本形如 'Sep 1, 2026' 或 '2026年9月1日'。"""
+    for fmt in ("%b %d, %Y", "%B %d, %Y", "%Y年%m月%d日"):
+        try:
+            return datetime.strptime(s.strip(), fmt).date()
+        except ValueError:
+            continue
+    return None
 
 
 def _is_cf_block(resp: httpx.Response) -> bool:

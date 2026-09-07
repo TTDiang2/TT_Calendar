@@ -292,3 +292,91 @@ if __name__ == "__main__":
             print(f"  FAIL  {t.__name__ if hasattr(t, '__name__') else t}: {e}")
     print(f"\n{fail} failed, {len(tests) - fail} passed")
     raise SystemExit(1 if fail else 0)
+
+# -------------------------------------------------------------
+# 双形态响应解析：顶层 JSON 列表 vs {data: HTML/列表} 包装
+# -------------------------------------------------------------
+
+class _FakeResp:
+    def __init__(self, body, status=200, ctype='application/json'):
+        self.status_code = status
+        self._body = body
+        self.headers = {'content-type': ctype}
+        self.text = body
+    def json(self):
+        import json
+        return json.loads(self._body)
+
+def test_parse_response_top_level_list():
+    src = InvestingSource()
+    body = json.dumps([
+        {
+            'id': '338',
+            'title': '<a href="/foo">美国 ISM 制造业 PMI</a>',
+            'country': 5,
+            'date': 'Sep 01, 2026',
+            'time': '10:00 AM',
+            'actual': '48.7',
+            'forecast': '49.5',
+            'previous': '48.0',
+            'importance': 3,
+        }
+    ], ensure_ascii=False)
+    evs = src._parse_response(_FakeResp(body), 'investing_5', '5', 3)
+    assert len(evs) == 1, f'expected 1, got {len(evs)}'
+    assert evs[0].title == '美国 ISM 制造业 PMI'
+    assert evs[0].date.isoformat() == '2026-09-01'
+    assert evs[0].extra['vs_forecast'] == '不及'
+
+def test_parse_response_dict_wrapped_list():
+    src = InvestingSource()
+    body = json.dumps({'data': [
+        {'id': '1', 'title': '新西兰决议', 'country': 37, 'date': 'Sep 02, 2026', 'time': '', 'actual': '', 'forecast': '2.5', 'previous': '2.5', 'importance': 3}
+    ]}, ensure_ascii=False)
+    evs = src._parse_response(_FakeResp(body), 'investing_37', '37', 3)
+    assert len(evs) == 1
+    assert evs[0].extra['vs_forecast'] == '待公布'
+
+def test_parse_response_dict_wrapped_html():
+    src = InvestingSource()
+    html = '''<table>
+      <tr class="theDay"><td>Sep 03, 2026</td></tr>
+      <tr class="js-event-item" data-event_attr_id="338" data-event-datetime="2026-09-03T22:30:00Z">
+        <td class="time">22:30</td>
+        <td class="flagCur"><span class="ceFlags USA" title="USD"></span> USD</td>
+        <td class="sentiment"></td>
+        <td class="event"><a href="/x">美国当周 EIA 原油库存变动</a></td>
+        <td class="act">-4.450M</td>
+        <td class="fore">-0.400M</td>
+        <td class="prev">0.095M</td>
+      </tr>
+      <tr class="js-event-item" data-event_attr_id="339">
+        <td class="time">20:30</td>
+        <td class="flagCur">USD</td>
+        <td class="sentiment"></td>
+        <td class="event"><a>美国初请失业金人数</a></td>
+        <td class="act"></td>
+        <td class="fore">205K</td>
+        <td class="prev">203K</td>
+      </tr>
+    </table>'''
+    body = json.dumps({'data': html}, ensure_ascii=False)
+    evs = src._parse_response(_FakeResp(body), 'investing_5', '5', 3)
+    assert len(evs) == 2, f'expected 2, got {len(evs)}'
+    assert evs[0].title == '美国当周 EIA 原油库存变动'
+    assert evs[0].extra['vs_forecast'] == '不及'  # -4.45M < -0.4M
+    assert evs[1].title == '美国初请失业金人数'
+    assert evs[1].extra['vs_forecast'] == '待公布'  # actual 空
+
+def test_parse_response_unexpected_shape():
+    src = InvestingSource()
+    body = json.dumps({'weird': [1, 2, 3]}, ensure_ascii=False)
+    evs = src._parse_response(_FakeResp(body), 'investing_5', '5', 3)
+    assert evs == []
+
+def test_parse_response_empty_data():
+    src = InvestingSource()
+    evs = src._parse_response(_FakeResp('false'), 'investing_5', '5', 3)
+    assert evs == []
+    evs = src._parse_response(_FakeResp('{"data": false}'), 'investing_5', '5', 3)
+    assert evs == []
