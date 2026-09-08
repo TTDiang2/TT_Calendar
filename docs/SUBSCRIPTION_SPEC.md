@@ -3,6 +3,13 @@
 > 你（agent）收到「有新的订阅要做适配」的提醒时，按本文档执行。
 > 背景：TT Calendar 的订阅架构见 docs/PHILOSOPHY.md §3；用户在应用内登记订阅后，登记信息存 SQLite `subscriptions` 表（status='pending'），应用不能拉取，等你完成适配。
 
+## ⚠️ 先读这个（2026-09 插件化后）
+
+订阅源现在是**插件协议**（`tt_calendar/sources/base.py` 的 `Source` + `plugins/` 目录发现），
+**不再需要改 config.py / db.py / routes.py**。写新源 = 建一个 `Source` 子类（放
+`plugins/*.py` 或内置源 `tt_calendar/sources/`），社区复用见
+**docs/SUBSCRIPTION_PLUGIN_GUIDE.md**。下方旧流程保留供参考（历史实现方式）。
+
 ## 适配流程
 
 1. **读需求单**：

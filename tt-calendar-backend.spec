@@ -11,6 +11,10 @@ a = Analysis(
         # borax is imported statically (tt_calendar/utils/lunar_utils.py) but force-bundle it
         # so a rebuild can never silently omit it again.
         'borax', 'borax.calendars', 'borax.calendars.lunardate',
+        # curl_cffi is imported under try/except in plugins/investing.py
+        # (CF bypass via chrome impersonation). Force-bundle so a rebuild never drops it.
+        # 注：插件（plugins/*.py）不打包进 exe —— 由用户从插件仓库放入 exe 旁 plugins/ 目录
+        'curl_cffi', 'curl_cffi.requests', 'curl_cffi.requests.session',
     ],
     hookspath=[],
     hooksconfig={},

@@ -279,6 +279,23 @@ export const refreshSubscription = (id: string) =>
   post<{ id: string; ok: boolean; inserted?: number; error?: string }>(`/subscriptions/${id}/refresh`)
 export const refreshDueSubscriptions = () =>
   post<{ refreshed: { id: string; ok: boolean; inserted?: number; error?: string }[] }>('/subscriptions/refresh-due')
+
+// 数据源（订阅插件）：后端把每个源的元数据 + 事件字段 UI 规格下发，
+// 前端按 ev.source 查 field_specs 渲染事件 extra（schema 驱动，插件无需写前端）
+export interface SourceFieldSpec {
+  meta?: { key: string }[]
+  importance?: { key: string; max?: number }
+  columns?: { key: string; label?: string }[]
+  badges?: { key: string; map: Record<string, { label?: string; tone?: 'good' | 'bad' | 'info' | 'muted' }> }
+}
+export interface SourceInfo {
+  source_id: string
+  display_name: string
+  needs_internet: boolean
+  needs_credentials: boolean
+  field_specs: SourceFieldSpec | null
+}
+export const getSources = () => get<SourceInfo[]>('/sources')
 export const saveSyncConfig = (cfg: { repo: string; branch: string; token?: string; auto_on_start: boolean; sync_on_close?: boolean }) =>
   put<{ ok: boolean }>('/sync/config', cfg)
 export const testSync = () => post<{ ok: boolean; detail: string }>('/sync/test')

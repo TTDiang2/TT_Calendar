@@ -3,7 +3,8 @@ import { CalendarDays, CheckCircle2, Clock, Palette, Pencil, Sparkles, Trash2 } 
 import clsx from 'clsx'
 import type { CalEvent, Day, Layer } from '../types'
 import { COLORING_COLORS, parseDate, TODO_BUSY_PREDICT_COLORS, TODO_BUSY_DONE_COLORS } from '../data'
-import { deleteEvent, deleteMark, deleteScheduleItem, getTodoBusyConfig, updateTodo } from '../api/client'
+import { deleteEvent, deleteMark, deleteScheduleItem, getSources, getTodoBusyConfig, updateTodo, type SourceFieldSpec } from '../api/client'
+import { SourceFields } from './SourceFields'
 
 interface Props {
   day: Day | null
@@ -17,6 +18,12 @@ interface Props {
 export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetColoring, onAddEntry }: Props) {
   const qc = useQueryClient()
   const { data: busyConfig } = useQuery({ queryKey: ['todoBusyConfig'], queryFn: getTodoBusyConfig, staleTime: 60_000 })
+  const { data: sources } = useQuery({ queryKey: ['sources'], queryFn: getSources, staleTime: 5 * 60_000 })
+  // source_id → 字段 UI 规格（插件声明；无规格的源不渲染 extra）
+  const fieldSpecBySource = {} as Record<string, SourceFieldSpec>
+  for (const s of sources ?? []) {
+    if (s.field_specs) fieldSpecBySource[s.source_id] = s.field_specs
+  }
   const delMut = useMutation({
     mutationFn: (id: number) => deleteEvent(id),
     onSuccess: () => {
@@ -275,6 +282,9 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
                     <p className="text-sm text-gray-700 leading-tight">{ev.title}</p>
                     <p className="text-[11px] text-gray-400 mt-0.5">{layerName(ev.layer_id)}</p>
                     {ev.description && <p className="text-xs text-gray-400 mt-1">{ev.description}</p>}
+                    {fieldSpecBySource[ev.source] && ev.source !== 'manual' && (
+                      <SourceFields spec={fieldSpecBySource[ev.source]} extra={ev.extra} />
+                    )}
                   </div>
                   {ev.source === 'manual' && ev.id && (
                     <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition">

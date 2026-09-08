@@ -16,7 +16,6 @@ from tt_calendar import db
 from tt_calendar.config import LayerID
 from tt_calendar.models import ColoringEntry, Event, LayerConfig, Mark, ScheduleEntry, ScheduleItem, Todo, TodoList
 from tt_calendar.sources import get_source
-from tt_calendar.sources.jisilu import JisiluSource
 from tt_calendar.utils.date_utils import parse_date, shift_month
 
 from backend import aggregator
@@ -601,7 +600,7 @@ async def import_jisilu(body: ImportBody, conn=Depends(get_db)):
     source = None
     try:
         source = get_source("jisilu")
-        if source is None or not isinstance(source, JisiluSource):
+        if source is None:
             return {"inserted": 0, "error": "jisilu source unavailable"}
         start = parse_date(body.start)
         end = parse_date(body.end)
@@ -627,13 +626,12 @@ async def import_jisilu(body: ImportBody, conn=Depends(get_db)):
 # ---------------------------------------------------------------------------
 
 
-async def _fetch_jisilu_range(conn, start: date_t, end: date_t) -> tuple[int, str | None]:
-    """集思录抓取核心（区间 → 写 events，按图层开关过滤）。"""
-    source = None
+async def _fetch_source_range(conn, source, start: date_t, end: date_t) -> tuple[int, str | None]:
+    """通用抓取核心：source.fetch → 启用图层过滤 → upsert。
+
+    所有订阅源共用（jisilu / investing / 社区插件），源负责自己的凭据与网络细节。
+    """
     try:
-        source = get_source("jisilu")
-        if source is None or not isinstance(source, JisiluSource):
-            return 0, "jisilu source unavailable"
         events, result = await source.fetch(start, end)
         enabled_ids = {l.layer_id for l in db.fetch_layer_configs(conn) if l.enabled}
         inserted = 0
@@ -645,95 +643,37 @@ async def _fetch_jisilu_range(conn, start: date_t, end: date_t) -> tuple[int, st
         conn.commit()
         return inserted, result.error
     finally:
-        if source:
-            await source.close()
-
-
-async def _fetch_investing_range(conn, start: date_t, end: date_t) -> tuple[int, str | None]:
-    """英为财情抓取核心（区间 → 写 events，按图层开关过滤 + cookie 注入）。"""
-    from tt_calendar.sources.investing import InvestingSource, load_cookies_file
-    from tt_calendar import config as cfg
-
-    source = None
-    try:
-        source = get_source("investing")
-        if source is None or not isinstance(source, InvestingSource):
-            return 0, "investing source unavailable"
-
-        # 桌面应用允许用户把浏览器导出的 cookie 放在 data/investing_cookies.json
-        cookies: dict[str, str] | None = None
-        cookie_path = cfg.DATA_DIR / "investing_cookies.json"
-        if cookie_path.exists():
-            try:
-                cookies = load_cookies_file(str(cookie_path))
-                if not cookies:
-                    cookies = None
-            except Exception as e:
-                log.warning("load investing cookies failed: %s", e)
-
-        events, result = await source.fetch(
-            start, end, countries=None, importance=None, cookies=cookies
-        )
-        enabled_ids = {l.layer_id for l in db.fetch_layer_configs(conn) if l.enabled}
-        inserted = 0
-        for ev in events:
-            if ev.layer_id not in enabled_ids:
-                continue
-            db.upsert_event(conn, ev)
-            inserted += 1
-        conn.commit()
-        return inserted, result.error
-    finally:
-        if source:
-            await source.close()
+        await source.close()
 
 
 def _refresh_one_subscription(conn, sub) -> dict:
-    """按 source_key 分发刷新。未知的 source_key = 待适配，返回需要提示。"""
-    if sub.source_key == "jisilu":
-        start = date_t.today() - timedelta(days=180)
-        if sub.last_synced_at:
-            try:
-                start = max(start, datetime.fromisoformat(sub.last_synced_at).date())
-            except Exception:
-                pass
-        end = date_t.today() + timedelta(days=90)
+    """按注册表刷新订阅。未知 source_key = 待适配（需 agent 适配插件）。"""
+    source = get_source(sub.source_key)
+    if source is None:
+        return {"id": sub.id, "ok": False, "error": "pending_adaptation"}
+
+    # 刷新窗口由源声明（refresh_past_days / refresh_future_days）；
+    # 上次成功同步之后的不重复拉（增量）
+    start = date_t.today() - timedelta(days=source.refresh_past_days)
+    if sub.last_synced_at:
         try:
-            inserted, err = asyncio_run(_fetch_jisilu_range(conn, start, end))
-        except Exception as e:
-            db.touch_subscription_synced(conn, sub.id, "error", str(e))
-            conn.commit()
-            return {"id": sub.id, "ok": False, "error": str(e)}
-        if err:
-            db.touch_subscription_synced(conn, sub.id, "error", err)
-            conn.commit()
-            return {"id": sub.id, "ok": False, "error": err, "inserted": inserted}
-        db.touch_subscription_synced(conn, sub.id, "active")
+            start = max(start, datetime.fromisoformat(sub.last_synced_at).date())
+        except Exception:
+            pass
+    end = date_t.today() + timedelta(days=source.refresh_future_days)
+    try:
+        inserted, err = asyncio_run(_fetch_source_range(conn, source, start, end))
+    except Exception as e:
+        db.touch_subscription_synced(conn, sub.id, "error", str(e))
         conn.commit()
-        return {"id": sub.id, "ok": True, "inserted": inserted}
-    if sub.source_key == "investing":
-        # 经济日历覆盖近 7 天就够（事件更新密集、过期无意义）
-        start = date_t.today() - timedelta(days=2)
-        if sub.last_synced_at:
-            try:
-                start = max(start, datetime.fromisoformat(sub.last_synced_at).date())
-            except Exception:
-                pass
-        end = date_t.today() + timedelta(days=14)
-        try:
-            inserted, err = asyncio_run(_fetch_investing_range(conn, start, end))
-        except Exception as e:
-            db.touch_subscription_synced(conn, sub.id, "error", str(e))
-            conn.commit()
-            return {"id": sub.id, "ok": False, "error": str(e)}
-        if err:
-            db.touch_subscription_synced(conn, sub.id, "error", err)
-            conn.commit()
-            return {"id": sub.id, "ok": False, "error": err, "inserted": inserted}
-        db.touch_subscription_synced(conn, sub.id, "active")
+        return {"id": sub.id, "ok": False, "error": str(e)}
+    if err:
+        db.touch_subscription_synced(conn, sub.id, "error", err)
         conn.commit()
-        return {"id": sub.id, "ok": True, "inserted": inserted}
-    return {"id": sub.id, "ok": False, "error": "pending_adaptation"}
+        return {"id": sub.id, "ok": False, "error": err, "inserted": inserted}
+    db.touch_subscription_synced(conn, sub.id, "active")
+    conn.commit()
+    return {"id": sub.id, "ok": True, "inserted": inserted}
 
 
 def asyncio_run(coro):
@@ -745,6 +685,27 @@ def asyncio_run(coro):
     import concurrent.futures as _cf
     with _cf.ThreadPoolExecutor(max_workers=1) as pool:
         return pool.submit(_asyncio.run, coro).result()
+
+
+@router.get("/sources")
+def list_sources_api():
+    """全部可用数据源（内置 + plugins）+ 事件字段 UI 规格。
+
+    前端按事件 source 查 field_specs 决定 how 渲染 extra；没有 specs 的源只显示
+    标题/描述。这也是社区插件在 UI 里"自描述"的入口。
+    """
+    from tt_calendar.sources import list_sources
+
+    return [
+        {
+            "source_id": cls.source_id,
+            "display_name": cls.display_name,
+            "needs_internet": cls.needs_internet,
+            "needs_credentials": cls.needs_credentials,
+            "field_specs": cls().field_specs(),
+        }
+        for cls in list_sources()
+    ]
 
 
 class SubscriptionIn(BaseModel):

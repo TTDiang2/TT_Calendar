@@ -1065,79 +1065,50 @@ def _parse_legacy_schedule_text(text: str) -> tuple[str | None, str | None, str 
 
 
 def ensure_default_layer_configs(conn: sqlite3.Connection) -> None:
-    """如果 layer_config 表为空，写入默认图层列表。
+    """通用默认图层（首启动）+ 所有订阅源的声明图层（幂等）。
 
-    注：英为财情（investing）子图层走"幂等补种"路径，无论是否已 seeded 都会跑，
-    这样老 DB 升级时也能补出 investing 国家图层（只插缺失，绝不覆盖用户已有 enabled）。
+    订阅源的图层由源自己播种（Source.ensure_layers），这里遍历注册表调用，
+    核心代码不认识任何具体源；老 DB 升级时同样会补出新图层，是否覆盖用户
+    enabled 由各源的 ensure_layers 决定。
     """
 
-    # 英为财情子图层（按 country 分，国家名作为子标签，归类为订阅 display_name）
-    # 放在最前面：不论是否 seeded 都跑一次；缺失才补，幂等。
-    for code, info in cfg.INVESTING_COUNTRIES.items():
-        layer_id = cfg.LayerID.INVESTING_PREFIX + str(code)
-        if conn.execute("SELECT 1 FROM layer_config WHERE layer_id=?", (layer_id,)).fetchone():
-            continue
-        name = str(info.get("name") or f"国家{code}")
-        upsert_layer_config(
-            conn,
-            LayerConfig(
-                layer_id=layer_id,
-                display_name=f"英为财情·{name}",
-                enabled=bool(info.get("enabled", True)),
-                color=str(info.get("color") or "#3D6BFB"),
-                sort_order=11,
-                kind="dot",
-                group=cfg.INVESTING_GROUP_NAME,
-                config={"country_code": str(code)},
-            ),
-        )
-
-    if get_meta(conn, "default_layers_seeded") == "1":
-        return
-    existing = conn.execute("SELECT COUNT(*) AS c FROM layer_config").fetchone()["c"]
-    if existing > 0:
-        set_meta(conn, "default_layers_seeded", "1")
-        return
-
+    # 1) 通用默认图层：仅首启动（layer_config 为空时）建一次
     from .theme import LAYER_COLORS  # 避免循环导入
 
-    defaults: list[tuple[str, str, str, int, str, str | None]] = [
-        # (layer_id, display_name, color, sort_order, kind, group)
-        (cfg.LayerID.SCHEDULE,  "日程（旧）",   LAYER_COLORS[cfg.LayerID.SCHEDULE],  0, "dot", "日程"),
-        (cfg.LayerID.IMPORTANT, "重要日期",   LAYER_COLORS[cfg.LayerID.IMPORTANT], 1, "color", None),
-        (cfg.LayerID.COLORING,  "充实度染色", LAYER_COLORS[cfg.LayerID.COLORING],  2, "color", None),
-        (cfg.LayerID.HOLIDAY,   "公共节假日", LAYER_COLORS[cfg.LayerID.HOLIDAY],   3, "color", None),
-    ]
-    for layer_id, name, color, order, kind, group in defaults:
-        upsert_layer_config(
-            conn,
-            LayerConfig(
-                layer_id=layer_id,
-                display_name=name,
-                enabled=False if layer_id == cfg.LayerID.SCHEDULE else True,
-                color=color,
-                sort_order=order,
-                kind=kind,
-                group=group,
-            ),
-        )
-    # 集思录子图层（每个 qtype 一个，点点图层，归类"集思录"）
-    for qtype, info in cfg.JISILU_QTYPES.items():
-        layer_id = cfg.LayerID.JISILU_PREFIX + qtype
-        upsert_layer_config(
-            conn,
-            LayerConfig(
-                layer_id=layer_id,
-                display_name=f"集思录·{info['label']}",
-                enabled=bool(info["enabled"]),
-                color=str(info["color"]),
-                sort_order=10,
-                kind="dot",
-                group="集思录",
-                config={"qtype": qtype},
-            ),
-        )
-    set_meta(conn, "default_layers_seeded", "1")
+    if get_meta(conn, "default_layers_seeded") != "1":
+        existing = conn.execute("SELECT COUNT(*) AS c FROM layer_config").fetchone()["c"]
+        if existing == 0:
+            defaults: list[tuple[str, str, str, int, str, str | None]] = [
+                # (layer_id, display_name, color, sort_order, kind, group)
+                (cfg.LayerID.SCHEDULE,  "日程（旧）",   LAYER_COLORS[cfg.LayerID.SCHEDULE],  0, "dot", "日程"),
+                (cfg.LayerID.IMPORTANT, "重要日期",   LAYER_COLORS[cfg.LayerID.IMPORTANT], 1, "color", None),
+                (cfg.LayerID.COLORING,  "充实度染色", LAYER_COLORS[cfg.LayerID.COLORING],  2, "color", None),
+                (cfg.LayerID.HOLIDAY,   "公共节假日", LAYER_COLORS[cfg.LayerID.HOLIDAY],   3, "color", None),
+            ]
+            for layer_id, name, color, order, kind, group in defaults:
+                upsert_layer_config(
+                    conn,
+                    LayerConfig(
+                        layer_id=layer_id,
+                        display_name=name,
+                        enabled=False if layer_id == cfg.LayerID.SCHEDULE else True,
+                        color=color,
+                        sort_order=order,
+                        kind=kind,
+                        group=group,
+                    ),
+                )
+        set_meta(conn, "default_layers_seeded", "1")
+
+    # 2) 订阅源图层播种（无条件跑，幂等；老库升级 / 新插件都能补上）
+    from .sources import list_sources
+
+    for source_cls in list_sources():
+        try:
+            source_cls().ensure_layers(conn)
+        except Exception as e:
+            log.warning("ensure layers for source %s failed: %s", source_cls.source_id, e)
+    conn.commit()
 
 
 def ensure_todo_layer(conn: sqlite3.Connection) -> None:
