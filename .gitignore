@@ -59,3 +59,9 @@ ms_todo_export.csv
 *.swp
 .DS_Store
 Thumbs.db
+
+# ---- 订阅插件（用户本地安装；主仓库不发布插件，见 docs/SUBSCRIPTION_PLUGIN_GUIDE.md）----
+plugins/*.py
+
+# ---- 本地工具工作目录 ----
+.workbuddy/
