@@ -2,52 +2,153 @@
 
 # 🗓️ TT Calendar
 
-**你的日程，你的规则。本地优先的桌面日历 + 待办 + 倒计时。**
+**Your schedule. Your rules.** A local-first desktop calendar + todo + countdown — no accounts, no cloud, no subscription fees.
 
-不需要注册账号，不需要订阅会员，不需要联网。下载解压，双击即用。
+**English · [简体中文](README.zh-CN.md)**
 
-与其给「XX清单」「XXTODO」「XX日历」充会员费，不如给 AI 充 token 费——不满意就改源码，想要什么功能自己加。
+[![Release](https://img.shields.io/badge/Release-v2.3.0-3D6BFB)](https://github.com/TTDiang2/TT_Calendar/releases)
+[![Platform](https://img.shields.io/badge/Platform-Windows%2010%2B-blue)]()
+[![License](https://img.shields.io/badge/License-MIT-green)]()
+
+> Download, unzip, double-click. It just works — **no Python required**, no registration, no configuration.
 
 </div>
 
 ---
 
-## 🎯 为什么会有这个项目
+## Why TT Calendar?
 
-市面上的日历 / 待办应用，总有一百个地方让你不爽：想按自己的方式记日程？没有。想要某个特殊的日子自动倒计时？会员。想看一周的日程密度再决定怎么安排？没有这个视图。数据不在自己手里？更别说了。
+Every calendar/todo app has a hundred little places that don't fit how *you* work.
+Can't record a schedule your own way? Need a special day to count itself down?
+Want to see a week's workload density before planning it? Data trapped in someone else's cloud?
 
-于是就有了 TT Calendar——**自己 vibe coding 出来的、完全按自己的习惯长的日历**。
-
-它没有"应该怎么做"的说教，只有你定义的操作逻辑：
-
-- **三段式日程**：一天就分「上午 / 下午 / 晚上」三段记，不搞花里胡哨的复杂表单
-- **充实度染色**：每天按日程多少染成深浅不同的绿色，一眼看出哪天被塞满、哪天是空的
-- **纪念日倒计时**：标记一次，自动生成 99 / 100 / 365 / 520 / 1000 天…的倒计时，每天提醒你"还有多少天"
-- **待办不丢**：待办按截止日期和重要度排好序，过期变红，绝不让你"忘了"
-- **数据 100% 本地**：SQLite 存本机，你的日程是你自己的，谁也拿不走
-
-而且——**它 100% 可改**。所有源码都在这里，交给任何 AI 编程助手，一句话就能加功能。
+TT Calendar is built the other way around — **your rules first, and it's 100 % modifiable.**
+Every line of source lives in this repo. Tell any AI coding assistant what you want, and it just grows.
 
 ---
 
-## ⚡ 立即使用
+## ✨ Highlights
 
-### 直接下载（推荐）
+- 🗓️ **Four calendar views** — month / week / day / year, with drag-and-drop rescheduling
+- 🧩 **Modular subscription plugins** *(new in v2.3)* — subscribe to *any* economic calendar or market data source; plugins are shared across the community. More below.
+- 📝 **Three-slot day scheduling** — a day is just *morning / afternoon / evening*. No bloated forms.
+- 🎨 **Busyness tinting** — every day is shaded by how full it is, at a glance
+- ✅ **A todo board with 5 views** — list, matrix, kanban, gantt and stickies, sorted by due date × importance
+- ⏳ **Anniversary countdown** — mark a date once; it counts down 99 / 100 / 365 / 520 / 1000 days by itself
+- 🌔 **Lunar calendar support** — built-in Chinese lunar dates & solar terms
+- 🔍 **Global search** — jump anywhere with one keystroke
+- 📥 **Data layers** — Chinese holidays, investment calendars, custom events — toggle them on the sidebar
+- 🔐 **100 % local data** — SQLite on your machine. Your data belongs to you.
 
-前往 **[GitHub Releases](https://github.com/TTDiang2/TT_Calendar/releases)** 下载最新版本，共 3 个文件：
+---
 
-| 文件 | 作用 |
+## 🧩 Plugin System: subscribe to whatever calendar you want
+
+*(introduced in v2.3 — our take on an "open subscription" ecosystem)*
+
+A subscription source is a **plugin**: a single Python file describing *what to fetch*
+and *how to display it*. Plugins are not bundled into TT Calendar itself — they live in a
+dedicated community repository and are installed locally in one step.
+
+### 📦 Plugin repository: [TTDiang2/TT_Calendar_Plugins](https://github.com/TTDiang2/TT_Calendar_Plugins)
+
+Browse the repository for the calendar source you need — **investing.com economic calendar,
+Jisilu investment calendar**, and more to come from the community.
+
+### Install a plugin (3 steps)
+
+1. Download the plugin `.py` file (e.g. `investing.py`) from the plugin repository
+2. Put it into the app's `plugins/` folder:
+
+   ```
+   TT_Calendar/
+   └── plugins/
+       └── investing.py     # ← downloaded from the plugin repo
+   ```
+
+   (For the packaged exe build: create a `plugins/` folder next to the exe and put it there.)
+
+3. Restart the app — the new layers appear in the sidebar, and you can add the source in the subscription panel.
+
+### Write & share your own
+
+- **Plug in what you care about** — economic calendars, market events, holidays… whatever your workflow needs.
+- **Write your own in ~100 lines** — fetch events → declare layers → declare how fields display.
+  No core-code changes, no frontend code required.
+- **Share it** — open a PR against the plugin repository, so others can use it without rebuilding the wheel.
+
+Read the **[Plugin Development Guide](docs/SUBSCRIPTION_PLUGIN_GUIDE.md)** for the full protocol.
+
+---
+
+## 📸 Screenshots
+
+### Calendar views
+
+| Month view · busyness tinting | Month view · today's todos in the side panel |
 |---|---|
-| `TT-Calendar-Launcher-x64.exe` | 启动器，双击它就行 |
-| `TT-Calendar-x64.exe` | 日历界面（Tauri 桌面端） |
-| `tt-calendar-backend-x64.exe` | 后端服务（已内置 Python 运行时） |
+| ![Month view with busyness tinting](docs/images/月视图展示-充实度染色.png) | ![Month view showing todos](docs/images/月视图展示-当天待办自动展示在右侧边栏.png) |
 
-**使用方法**：三个文件放进同一个文件夹，双击 `TT-Calendar-Launcher-x64.exe`，等 5~10 秒窗口打开即用。文件名即最终命名，无需改名。
+| Month view · todo deadline tinting | Day view |
+|---|---|
+| ![Month view with todo tinting](docs/images/月视图展示-待办染色.png) | ![Day view](docs/images/日视图展示.png) |
 
-> ✅ **不需要安装 Python**——后端 exe 已内置完整 Python 运行时，开箱即用。
-> ✅ 不需要注册、不需要联网、不需要任何配置。
+| Week view | Year view · busyness tinting |
+|---|---|
+| ![Week view](docs/images/周视图展示.png) | ![Year view with busyness](docs/images/年视图展示-充实度染色.png) |
 
-### 从源码运行（开发模式）
+### Create & color your day
+
+| New entry dialog | Coloring dialog |
+|---|---|
+| ![New entry dialog](docs/images/点点创建页面.png) | ![Coloring dialog](docs/images/涂色创建页面.png) |
+
+### Todos — five ways to see them
+
+| List | Matrix |
+|---|---|
+| ![Todo list view](docs/images/待办视图-列表.png) | ![Todo matrix view](docs/images/待办视图-矩阵.png) |
+
+| Kanban | Gantt |
+|---|---|
+| ![Todo kanban view](docs/images/待办视图-看板.png) | ![Todo gantt view](docs/images/待办视图-甘特.png) |
+
+| Stickies |
+|---|
+| ![Todo stickies view](docs/images/待办视图-便签.png) |
+
+### Countdown & search
+
+| Countdown cards | Event search |
+|---|---|
+| ![Countdown view](docs/images/倒数日视图.png) | ![Event search page](docs/images/事件搜索页面.png) |
+
+### Subscriptions (plugins) & sync
+
+| Create a subscription | Settings · GitHub sync |
+|---|---|
+| ![Subscription creation dialog](docs/images/订阅创建页面.png) | ![Sync settings page](docs/images/设置页面-数据同步功能展示.png) |
+
+---
+
+## ⚡ Installation
+
+### Download (recommended)
+
+Grab the latest **3 files** from [GitHub Releases](https://github.com/TTDiang2/TT_Calendar/releases):
+
+| File | Role |
+|---|---|
+| `TT-Calendar-Launcher-x64.exe` | Launcher — double-click this one |
+| `TT-Calendar-x64.exe` | Calendar UI (Tauri desktop) |
+| `tt-calendar-backend-x64.exe` | Backend service (embeds a Python runtime) |
+
+Put all three in **one folder**, double-click `TT-Calendar-Launcher-x64.exe`, and the window opens in 5–10 s.
+
+> ✅ No Python needed — the backend exe bundles a full Python runtime.
+> ✅ No registration, no mandatory internet, no configuration.
+
+### Run from source (development)
 
 ```bash
 pip install -r requirements.txt
@@ -60,121 +161,108 @@ npm install
 npm run dev
 ```
 
-浏览器打开 `http://localhost:5173`，或 `npm run tauri dev` 打开桌面窗口。
+Open http://localhost:5173 in a browser, or run `npm run tauri dev` for the desktop window.
 
 ---
 
-## 🖱️ 上手体验
+## 🖱️ First steps
 
-打开应用，你看到的是一个标准的月视图。但真正顺手的是这些操作：
-
-| 操作 | 效果 |
+| Action | Result |
 |---|---|
-| **双击**任意日期 | 新建日程事件 |
-| **右键**任意日期 | 快捷菜单：新建事件 / 设置日程 / 设置染色 |
-| **拖拽**日期格子 | 把这一天的安排整体移到另一天 |
-| **← / →** | 切换上/下月（周/日视图为上周/下周） |
-| **T** | 跳回今天 |
-| **N** | 在选中日期快速新建事件 |
-| **/** | 全局搜索，回车跳转 |
-| **侧边栏图层开关** | 一键显示/隐藏「节假日、集思录投资日历」等数据层 |
+| **Double-click** a date | Create an event |
+| **Right-click** a date | Quick menu: event / schedule / coloring |
+| **Drag** a day cell | Move the whole day's plan to another day |
+| **← / →** | Previous / next month (or week in week/day view) |
+| **T** | Jump back to today |
+| **N** | Quickly create an event on the selected date |
+| **/** | Global search — Enter jumps to the result |
+| **Sidebar layer switches** | Toggle data layers: holidays, investment calendars, etc. |
 
-### 四种视图
+### Data layers (sidebar)
 
-- **月视图**：默认视图，看整月日程密度与安排
-- **周视图**：看本周每天的三段式日程，拖拽调整最方便
-- **日视图**：单日聚焦，处理当天全部事项
-- **年视图**：全年总览，点任意日期直接跳回月视图
+Don't want something? Turn it off. Want more? Turn it on:
 
-### 顶栏三个页签
-
-- **日历**：上述四视图
-- **待办**：独立的待办清单，按「截止日期 × 重要度」排序，过期红、临近黄
-- **倒计时**：所有纪念日的天数倒计时卡片，一眼看到最近的大日子
-
-### 侧边栏数据层
-
-不想要的信息，关掉即可；想要更多，打开即可：
-
-- **中国节假日**：法定节假日与调休，自动标注
-- **集思录投资日历**：新股、可转债、分红、REITs、股指期权等 15 类投资日历数据，按需拉取
-- **充实度染色**：五档绿色直观呈现每天的日程密度
-- **重要日期图层**：手动标记的特殊日子，带倒计时
+- **Chinese public holidays** — legal holidays & make-up workdays, auto-marked
+- **Investment calendars** — stock / convertible-bond / dividend / REIT / index-option events, pulled on demand
+- **Busyness tinting** — five shades of green showing how full each day is
+- **Important dates layer** — manually flagged days with countdown
 
 ---
 
-## 📸 截图
-
-| | |
-|---|---|
-| ![image-20260811223032325](https://github.com/TTDiang2/TT_Calendar/raw/main/docs/images/image-20260811223032325.png) | ![image-20260811223134201](https://github.com/TTDiang2/TT_Calendar/raw/main/docs/images/image-20260811223134201.png) |
-| ![image-20260811223220215](https://github.com/TTDiang2/TT_Calendar/raw/main/docs/images/image-20260811223220215.png) | ![image-20260811223240418](https://github.com/TTDiang2/TT_Calendar/raw/main/docs/images/image-20260811223240418.png) |
-| ![image-20260811223635695](https://github.com/TTDiang2/TT_Calendar/raw/main/docs/images/image-20260811223635695.png) | ![image-20260811223832599](https://github.com/TTDiang2/TT_Calendar/raw/main/docs/images/image-20260811223832599.png) |
-
----
-
-## 🛠️ 对想改它的人说
-
-TT Calendar 的全部源码都在这个仓库里。**它的设计目标就是"好改"**——模块边界清晰，想加功能不用翻遍代码：
+## 🏗️ Architecture
 
 ```
-├── frontend/            # 界面（React + Tauri）
-│   └── src/
-│       ├── components/  #   所有视图与弹窗（MonthGrid / WeekView / DayView / YearView / TodoView / CountdownView...）
-│       ├── api/         #   与后端的全部接口调用，改这里就能接新数据源
-│       └── hooks/       #   数据获取 hooks
-├── backend/             # 后端 API（FastAPI）
-│   └── routes/          #   路由：日程 / 待办 / 图层 / 倒计时 / 统计
-├── tt_calendar/         # 核心业务逻辑（Python）
-│   ├── layers/          #   数据层：节假日、集思录投资日历等
-│   ├── sources/         #   外部数据源
-│   └── utils/           #   日期 / 文本工具
-├── launcher/            # 启动器（Rust）
-├── scripts/             # 辅助脚本
-└── tests/               # 自动化测试
+TT-Calendar-Launcher.exe (Rust)
+        │ spawns backend + health check + lifecycle
+        ▼
+tt-calendar-backend.exe (FastAPI · embedded Python · 127.0.0.1:8765)
+        │ REST API
+        ▼
+TT Calendar.exe (Tauri + React · UI)
 ```
 
-**想加功能？** 直接把需求告诉你的 AI 助手，例如：
+| Layer | Tech |
+|---|---|
+| UI | React · TypeScript · Tailwind CSS · Tauri 2 |
+| Backend | FastAPI · SQLite |
+| Launcher | Rust (process orchestration) |
+| Plugins | Python `Source` protocol, `plugins/` folder discovery |
 
-> "给 TT Calendar 加一个农历节气显示，放在月视图侧边栏"
-> "待办支持重复任务，每周一自动生成"
-> "把倒计时视图改成卡片式，支持自定义背景色"
+Deep dives: [Architecture](docs/ARCHITECTURE.md) · [Design philosophy](docs/PHILOSOPHY.md) ·
+[Plugin guide](docs/SUBSCRIPTION_PLUGIN_GUIDE.md) · [Sync protocol](docs/SYNC_PROTOCOL.md)
 
-**想重新发布？** 改完源码后运行一键构建脚本：
+---
+
+## 🔒 Data & Privacy
+
+- All data (schedules, todos, configs) lives in `data/calendar.db` (SQLite) next to the app.
+- No account system, no telemetry, no network reporting.
+- External data layers are fetched on demand only when you enable them.
+- The data directory is gitignored — your personal data never enters the repo.
+
+---
+
+## 🛠️ Made to be modified
+
+The whole point: **if you don't like something, change the source.**
+Module boundaries are clean on purpose — most features touch only one or two files.
+
+```
+├── frontend/            # UI (React + Tauri)
+├── backend/             # REST API (FastAPI)
+├── tt_calendar/         # core logic (Python)
+├── plugins/             # your locally installed subscription plugins (see TT_Calendar_Plugins)
+├── launcher/            # Rust launcher
+├── scripts/             # helpers
+└── tests/               # automated tests
+```
+
+**Add a feature?** Just tell your AI assistant, e.g.:
+
+> "Add lunar solar terms to the month view sidebar."
+> "Make todos repeat weekly."
+> "Support a new calendar source as a plugin."
+
+**Ship it?** Run the one-click build:
 
 ```bat
 build_release.bat
 ```
 
-它会依次构建前端、桌面端、后端、启动器，产出 3 个 exe 到 `release/` 文件夹，直接分发给任何 Windows 电脑即可——**对方不需要装任何环境**。
+It builds the frontend, desktop app, backend and launcher into 3 exes under `release/` —
+ready to distribute to any Windows machine, no environment needed.
 
 ---
 
-## 🔒 数据与隐私
+## 🤝 Contributing
 
-- 所有数据（日程、待办、配置）存储在应用目录下的 `data/calendar.db`（SQLite）
-- 无账号体系、无云同步、无遥测、无任何网络上报
-- 集思录数据仅在用户打开相应图层时按需拉取公开接口
-- 数据目录被 `.gitignore` 排除，个人数据不会进入版本库
+- Found a bug or want a feature? Open an [issue](../../issues).
+- Wrote a useful subscription plugin? **Share it** — a plugin is a single file.
+  See the [Plugin Development Guide](docs/SUBSCRIPTION_PLUGIN_GUIDE.md).
+- Documentation lives alongside code under `docs/`.
 
-## 🏗️ 架构一览
+---
 
-```
-TT-Calendar-Launcher.exe (Rust)
-        │ 拉起后端 + 健康检查 + 生命周期管理
-        ▼
-tt-calendar-backend.exe (FastAPI · 内嵌 Python · 127.0.0.1:8765)
-        │ REST API
-        ▼
-TT Calendar.exe (Tauri + React · 界面)
-```
+## 📄 License
 
-| 层 | 技术 |
-|---|---|
-| 界面 | React · TypeScript · Tailwind CSS · Tauri 2 |
-| 后端 | FastAPI · SQLite |
-| 启动器 | Rust（进程编排） |
-
-## 📄 许可证
-
-MIT License
+MIT License — do whatever you want, keep the attribution.
