@@ -48,14 +48,33 @@ def _event_passes_layer_filter(
     ev: Event,
     layer_cfg: dict | None,
 ) -> bool:
-    """判断 event 是否通过 layer 的 sub_qtypes 过滤。
+    """判断 event 是否通过 layer 的 sub_qtypes / min_importance 过滤。
 
-    layer_cfg 为 None 或不含 sub_qtypes 键 → 不过滤（向后兼容，全显示）。
+    layer_cfg 为 None 或不含相关键 → 不过滤（向后兼容，全显示）。
     sub_qtypes 格式：[{qtype: str, sub_action: str | null}, ...]
       - sub_action 为 null 表示该 qtype 下所有子动作都通过
       - sub_action 为 str 表示只有该 (qtype, sub_action) 精确匹配才通过
+    min_importance（int）：>0 时仅显示 extra.importance >= min 的事件
+      （investing 插件按重要性星级过滤；0 或缺失键 = 不过滤）。
+    两个过滤相互独立、AND 组合。
     """
-    if not layer_cfg or "sub_qtypes" not in layer_cfg:
+    if not layer_cfg:
+        return True
+    min_imp = layer_cfg.get("min_importance")
+    if min_imp:
+        try:
+            min_imp = int(min_imp)
+        except (TypeError, ValueError):
+            min_imp = 0
+        if min_imp > 0:
+            imp = (ev.extra or {}).get("importance")
+            try:
+                imp = int(imp) if imp is not None else 0
+            except (TypeError, ValueError):
+                imp = 0
+            if imp < min_imp:
+                return False
+    if "sub_qtypes" not in layer_cfg:
         return True
     sq = layer_cfg.get("sub_qtypes") or []
     if not sq:

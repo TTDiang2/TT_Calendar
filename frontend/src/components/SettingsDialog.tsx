@@ -505,6 +505,7 @@ function CustomLayerRow({ layer, onToggle }: { layer: Layer; onToggle: (id: stri
 }
 
 function LayerAccordion({ layer, onToggle }: { layer: Layer; onToggle: (id: string) => void }) {  const [open, setOpen] = useState(false)
+  const hasMinImportance = layer.config?.min_importance !== undefined
   return (
     <div className="border border-gray-200 rounded-md">
       <div className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50">
@@ -517,7 +518,7 @@ function LayerAccordion({ layer, onToggle }: { layer: Layer; onToggle: (id: stri
           onClick={() => setOpen((v) => !v)}
           className="text-[11px] text-blue-600 hover:text-blue-700 px-2"
         >
-          {open ? '收起子动作' : '展开子动作'}
+          {open ? '收起' : hasMinImportance ? '展开星级过滤' : '展开子动作'}
         </button>
         <button
           onClick={() => onToggle(layer.layer_id)}
@@ -535,7 +536,54 @@ function LayerAccordion({ layer, onToggle }: { layer: Layer; onToggle: (id: stri
           />
         </button>
       </div>
-      {open && <LayerSubActions layer={layer} />}
+      {open && (hasMinImportance ? <LayerMinImportance layer={layer} /> : <LayerSubActions layer={layer} />)}
+    </div>
+  )
+}
+
+function LayerMinImportance({ layer }: { layer: Layer }) {
+  const qc = useQueryClient()
+  // 本地乐观 state：点击立即反馈（同 LayerSubActions 模式，不依赖 props 快照刷新）
+  const [current, setCurrent] = useState<number>(Number(layer.config?.min_importance ?? 0))
+  const configMut = useMutation({
+    mutationFn: (v: number) => updateLayerConfig(layer.layer_id, { min_importance: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['view'] })
+      qc.invalidateQueries({ queryKey: ['layers'] })
+    },
+    onError: () => {
+      // 失败回滚为 props 里的原始值
+      setCurrent(Number(layer.config?.min_importance ?? 0))
+    },
+  })
+  const options: { v: number; label: string }[] = [
+    { v: 0, label: '全部' },
+    { v: 1, label: '1★ 以上' },
+    { v: 2, label: '2★ 以上' },
+    { v: 3, label: '3★' },
+  ]
+  return (
+    <div className="border-t border-gray-200 bg-gray-50 px-3 py-2">
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="text-[11px] text-gray-500">最低星级</span>
+        {options.map((o) => (
+          <button
+            key={o.v}
+            onClick={() => {
+              setCurrent(o.v)
+              configMut.mutate(o.v)
+            }}
+            className={clsx(
+              'px-2 py-0.5 text-xs rounded border transition',
+              o.v === current
+                ? 'bg-blue-50 border-blue-300 text-blue-700'
+                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300',
+            )}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }

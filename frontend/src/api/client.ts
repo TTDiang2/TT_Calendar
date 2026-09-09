@@ -68,7 +68,11 @@ export const getLayerSubActions = (layerId: string) =>
   get<{ qtype: string; sub_action: string }[]>(`/layers/${layerId}/sub-actions`)
 export const updateLayerConfig = (
   layerId: string,
-  data: { enabled?: boolean; sub_qtypes?: { qtype: string; sub_action: string | null }[] },
+  data: {
+    enabled?: boolean
+    sub_qtypes?: { qtype: string; sub_action: string | null }[]
+    min_importance?: number
+  },
 ) => put<Layer>(`/layers/${layerId}/config`, data)
 export const createLayer = (data: {
   display_name: string

@@ -200,6 +200,7 @@ class LayerSubActionRule(BaseModel):
 class LayerConfigBody(BaseModel):
     enabled: bool | None = None
     sub_qtypes: list[LayerSubActionRule] | None = None  # null/[] = 不过滤
+    min_importance: int | None = None  # 0 = 不过滤（保留键）；>0 = 最低重要性星级
 
 
 @router.get("/layers")
@@ -230,6 +231,10 @@ def update_layer_config(layer_id: str, body: LayerConfigBody, conn=Depends(get_d
                     cfg["sub_qtypes"] = [r.model_dump(exclude_none=True) for r in body.sub_qtypes]
                 else:
                     cfg.pop("sub_qtypes", None)
+                l.config = cfg
+            if body.min_importance is not None:
+                cfg = dict(l.config or {})
+                cfg["min_importance"] = max(0, int(body.min_importance))
                 l.config = cfg
             db.upsert_layer_config(conn, l)
             conn.commit()
