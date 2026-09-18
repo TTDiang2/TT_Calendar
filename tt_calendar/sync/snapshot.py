@@ -55,13 +55,17 @@ def import_plan(conn: sqlite3.Connection, upsert: Upsert,
         cur = conn.cursor()
         for table, (pk, key, auto) in SYNC_TABLES.items():
             conflict = key if auto else pk
+            local_cols = {r[1] for r in cur.execute(f"PRAGMA table_info({table})").fetchall()}
             for row in upsert.get(table, []):
                 k = row.get(key)
                 if not k:
                     continue
                 # 自增表 export 时已 pop 掉本地 id（导入时让本地重新自增分配）；
                 # TEXT 主键表（todo/todo_list 等）的 id 就是主键，必须保留。
-                cols = [c for c in row.keys() if not (auto and c == "id")]
+                # 再按本地表结构过滤：远端 Neo 端如未来再加新列，老端从「同步崩溃」降级为「静默忽略」。
+                cols = [c for c in row.keys() if not (auto and c == "id") and c in local_cols]
+                if not cols:
+                    continue
                 placeholders = ", ".join("?" * len(cols))
                 sets = ", ".join(f"{c} = excluded.{c}" for c in cols)
                 cur.execute(

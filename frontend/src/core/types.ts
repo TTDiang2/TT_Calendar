@@ -18,6 +18,7 @@ export interface TodoRow {
   importance: string | null
   due_date: string | null
   planned_date: string | null
+  alarm_at: string | null
   start_date: string | null
   complexity: string | null
   tags: string | null
@@ -78,6 +79,7 @@ export interface EventRow {
 export interface ScheduleItemRow {
   id: number
   date: string
+  end_date: string | null
   start_time: string | null
   end_time: string | null
   title: string

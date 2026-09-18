@@ -109,6 +109,9 @@ CREATE TABLE IF NOT EXISTS todo (
     importance     TEXT DEFAULT 'normal',
     due_date       TEXT,
     planned_date   TEXT,
+    -- Neo 端同步列：闹钟时刻 'YYYY-MM-DDTHH:mm'（本地时间），NULL = 未设。老端不做
+    -- 闹钟功能，仅作为透明透传列存在，sync/schema.py 会对存量库幂等补列。
+    alarm_at       TEXT,
     start_date     TEXT,
     complexity     TEXT DEFAULT 'medium',
     tags           TEXT,

@@ -32,6 +32,13 @@ SYNC_TABLES: dict[str, tuple[str, str, bool]] = {
     "subscriptions":  ("id", "id", False),
 }
 
+# 同步表新增列透传位：远端（Neo 端）已加、老端无业务含义的列，仅随快照收发。
+# 老端 `ensure_sync_schema` 启动时会按本表对存量库幂等 `ALTER TABLE ADD COLUMN`。
+# 当前条目：todo.alarm_at —— Neo 端闹钟功能，老端无闹钟 UI，仅透传。
+EXTRA_PASSTHROUGH_COLUMNS: dict[str, list[str]] = {
+    "todo": ["alarm_at"],
+}
+
 # meta 表中同步凭据等本机私有键，永不导出、永不产生墓碑
 LOCAL_ONLY_META_PREFIX = "sync."
 
@@ -128,5 +135,8 @@ def ensure_sync_schema(conn: sqlite3.Connection) -> None:
                 )
                 cur.execute(
                     f"UPDATE {table} SET updated_at = {fallback} WHERE updated_at IS NULL")
+            for extra in EXTRA_PASSTHROUGH_COLUMNS.get(table, []):
+                if extra not in cols:
+                    cur.execute(f"ALTER TABLE {table} ADD COLUMN {extra} TEXT")
             for sql in _triggers(table, pk, key, auto):
                 cur.execute(sql)
