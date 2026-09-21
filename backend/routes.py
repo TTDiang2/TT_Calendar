@@ -906,6 +906,7 @@ class TodoIn(BaseModel):
     due_date: Optional[str] = None
     planned_date: Optional[str] = None
     start_date: Optional[str] = None
+    repeat: Optional[str] = None
     complexity: str = "medium"
     tags: Optional[list[str]] = None
     sort_order: int = 0
@@ -926,11 +927,73 @@ def _todo_from_in(body: TodoIn) -> Todo:
         due_date=parse_date(body.due_date) if body.due_date else None,
         planned_date=parse_date(body.planned_date) if body.planned_date else None,
         start_date=parse_date(body.start_date) if body.start_date else None,
+        repeat=body.repeat,
         complexity=body.complexity or "medium",
         tags=body.tags or None,
         completed_at=completed_at,
         sort_order=body.sort_order,
     )
+
+
+_REPEAT_MODES = ("daily", "weekdays", "weekly")
+
+
+def _is_workday(d: date_t) -> bool:
+    """工作日判定：中文日历（法定节假日 + 调休补班）；数据缺该年份时回退周一~周五。"""
+    try:
+        import chinese_calendar as cc
+
+        return bool(cc.is_workday(d))
+    except Exception:
+        return d.weekday() < 5
+
+
+def _next_repeat_date(mode: str, planned: date_t, completed_day: date_t) -> date_t:
+    """重复待办的下一期计划日。
+
+    从旧 planned_date 按节奏推进，跳过错过的天数（拖延补卡不产生过期待办）：
+    daily 逐天、weekly 保持星期几；weekdays 落在完成日之后的第一个工作日
+    （中文日历口径）。planned 必须早于等于 completed_day 由调用方保证。
+    """
+    if mode == "weekly":
+        d = planned + timedelta(days=7)
+        while d <= completed_day:
+            d += timedelta(days=7)
+        return d
+    d = planned + timedelta(days=1)
+    if mode == "weekdays":
+        while d <= completed_day or not _is_workday(d):
+            d += timedelta(days=1)
+        return d
+    while d <= completed_day:
+        d += timedelta(days=1)
+    return d
+
+
+def _spawn_next_repeat(conn, done: Todo) -> Todo | None:
+    """完成转化时生成下一期克隆（新 id、notStarted、planned=下一期）；不满足条件返回 None。"""
+    if done.repeat not in _REPEAT_MODES or not done.planned_date:
+        return None
+    completed_day = _completed_date(done) or date_t.today()
+    next_d = _next_repeat_date(done.repeat, done.planned_date, completed_day)
+    delta = next_d - done.planned_date
+    clone = Todo(
+        id=str(uuid.uuid4()),
+        list_id=done.list_id,
+        title=done.title,
+        body=done.body,
+        status="notStarted",
+        importance=done.importance,
+        due_date=done.due_date + delta if done.due_date else None,
+        planned_date=next_d,
+        start_date=done.start_date + delta if done.start_date else None,
+        repeat=done.repeat,
+        complexity=done.complexity,
+        tags=done.tags,
+        sort_order=done.sort_order,
+    )
+    db.upsert_todo(conn, clone)
+    return clone
 
 
 def _completed_date(t: Todo | None) -> date_t | None:
@@ -1002,7 +1065,16 @@ def update_todo(todo_id: str, body: TodoIn, conn=Depends(get_db)):
         t.completed_at = datetime.fromisoformat(existing["completed_at"])
     db.upsert_todo(conn, t)
     _recompute_day_busy_for_todo(conn, todo_id=todo_id, old=old_todo, new=t)
+    # 重复待办完成转化（未完成 → 完成）→ 生成下一期；已完成的重复 PUT 不再触发
+    was_completed = bool(old_todo and old_todo.status == "completed")
+    spawned = None
+    if t.status == "completed" and not was_completed:
+        spawned = _spawn_next_repeat(conn, t)
+        if spawned is not None:
+            _recompute_day_busy_for_todo(conn, todo_id=spawned.id, old=None, new=spawned)
     conn.commit()
+    if spawned is not None:
+        return {**t.model_dump(mode="json"), "spawned": spawned.model_dump(mode="json")}
     return t.model_dump(mode="json")
 
 

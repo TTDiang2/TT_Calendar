@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, ChevronDown, ChevronUp, Inbox, ListPlus, Pencil, Plus, Star, Trash2, Upload } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, Inbox, ListPlus, Pencil, Plus, Repeat, Star, Trash2, Upload } from 'lucide-react'
 import clsx from 'clsx'
 import { getTodoLists, getTodos, getTodoStats, createTodo, updateTodo, deleteTodo, createTodoList, updateTodoList, deleteTodoList, importTodosCsv, reorderTodoLists, reorderTodos } from '../api/client'
 import { todayStr } from '../utils/todoLogic'
@@ -528,7 +528,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
       <TodoDetailPanel
         ref={detailRef}
         todo={selectedTodoId === '__NEW__'
-          ? { id: '' as string, list_id: selectedList ?? lists[0]?.id ?? '', title: '', body: null, importance: 'normal', due_date: null, planned_date: null, start_date: null, complexity: 'medium', tags: null, status: 'notStarted', created_at: null, completed_at: null, sort_order: 0 }
+          ? { id: '' as string, list_id: selectedList ?? lists[0]?.id ?? '', title: '', body: null, importance: 'normal', due_date: null, planned_date: null, start_date: null, repeat: null, complexity: 'medium', tags: null, status: 'notStarted', created_at: null, completed_at: null, sort_order: 0 }
           : selectedTodo}
         lists={lists}
         onClose={() => setSelectedTodoId(null)}
@@ -542,6 +542,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
               due_date: data.due_date,
               planned_date: data.planned_date,
               start_date: data.start_date,
+              repeat: data.repeat,
               complexity: data.complexity,
               tags: data.tags,
               status: data.status,
@@ -684,6 +685,12 @@ function TodoRow({ todo, listName, isDone, overdue, selected, leaving, onSelect,
           <span className={clsx('text-[10px] px-1.5 py-0.5 rounded', IMPORTANCE_TAG_CLS[todo.importance] ?? IMPORTANCE_TAG_CLS.normal)}>
             {IMPORTANCE_LABEL[todo.importance] ?? todo.importance}
           </span>
+          {todo.repeat && todo.repeat !== 'none' && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 inline-flex items-center gap-0.5">
+              <Repeat size={9} />
+              {todo.repeat === 'daily' ? '每日' : todo.repeat === 'weekdays' ? '工作日' : todo.repeat === 'weekly' ? '每周' : todo.repeat}
+            </span>
+          )}
           {!isDone && todo.status && todo.status !== 'notStarted' && (
             <span className={clsx('text-[10px] px-1.5 py-0.5 rounded', STATUS_TAG_CLS[todo.status] ?? STATUS_TAG_CLS.notStarted)}>
               {STATUS_LABEL[todo.status] ?? todo.status}

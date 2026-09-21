@@ -36,6 +36,13 @@ const COMPLEXITY_OPTIONS: { key: string; label: string }[] = [
   { key: 'hard', label: '复杂' },
 ]
 
+const REPEAT_OPTIONS: { key: string; label: string }[] = [
+  { key: 'none', label: '不重复' },
+  { key: 'daily', label: '每日重复' },
+  { key: 'weekdays', label: '每工作日重复' },
+  { key: 'weekly', label: '每周重复' },
+]
+
 export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function TodoDetailPanel(
   { todo, lists, onClose, onSave, onDelete },
   ref,
@@ -47,6 +54,7 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
   const [plannedDate, setPlannedDate] = useState('')
   const [startDate, setStartDate] = useState('')
   const [complexity, setComplexity] = useState('medium')
+  const [repeat, setRepeat] = useState('none')
   const [tagsText, setTagsText] = useState('')
   const [notesModalOpen, setNotesModalOpen] = useState(false)
   const [listId, setListId] = useState('')
@@ -58,8 +66,8 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
   }))
   const [plannedExpanded, setPlannedExpanded] = useState(false)
 
-  const formRef = useRef({ title, body, importance, dueDate, plannedDate, startDate, complexity, tagsText, listId, status })
-  formRef.current = { title, body, importance, dueDate, plannedDate, startDate, complexity, tagsText, listId, status }
+  const formRef = useRef({ title, body, importance, dueDate, plannedDate, startDate, repeat, complexity, tagsText, listId, status })
+  formRef.current = { title, body, importance, dueDate, plannedDate, startDate, repeat, complexity, tagsText, listId, status }
 
   const savingRef = useRef(false)
   const [saving, setSaving] = useState(false)
@@ -92,6 +100,7 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
         (f.plannedDate || '') !== (target.planned_date ?? '') ||
         (f.startDate || '') !== (target.start_date ?? '') ||
         f.complexity !== (target.complexity || 'medium') ||
+        (f.repeat || 'none') !== (target.repeat || 'none') ||
         JSON.stringify(tags) !== JSON.stringify(target.tags ?? []) ||
         f.listId !== target.list_id ||
         f.status !== target.status
@@ -105,6 +114,7 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
       due_date: f.dueDate || null,
       planned_date: f.plannedDate || null,
       start_date: f.startDate || null,
+      repeat: f.repeat === 'none' ? null : f.repeat,
       complexity: f.complexity,
       tags: tags.length ? tags : null,
       list_id: f.listId,
@@ -128,6 +138,7 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
         dueDate: todo.due_date ?? '',
         plannedDate: todo.planned_date ?? '',
         startDate: todo.start_date ?? '',
+        repeat: todo.repeat || 'none',
         complexity: todo.complexity || 'medium',
         tagsText: (todo.tags ?? []).join(', '),
         listId: todo.list_id,
@@ -139,6 +150,7 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
       setDueDate(todo.due_date ?? '')
       setPlannedDate(todo.planned_date ?? '')
       setStartDate(todo.start_date ?? '')
+      setRepeat(todo.repeat || 'none')
       setComplexity(todo.complexity || 'medium')
       setTagsText((todo.tags ?? []).join(', '))
       setListId(todo.list_id)
@@ -191,6 +203,7 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
     due_date: dueDate || null,
     planned_date: plannedDate || null,
     start_date: startDate || null,
+    repeat: repeat === 'none' ? null : repeat,
     complexity,
     tags: tags.length ? tags : null,
     list_id: listId,
@@ -295,6 +308,14 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
             <span className="block mb-1">状态</span>
             <select className="tt-input" value={status} onChange={(e) => setStatus(e.target.value)}>
               {STATUS_OPTIONS.map((o) => (
+                <option key={o.key} value={o.key}>{o.label}</option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs text-gray-500">
+            <span className="block mb-1">重复</span>
+            <select className="tt-input" value={repeat} onChange={(e) => setRepeat(e.target.value)} title="完成后自动生成下一期">
+              {REPEAT_OPTIONS.map((o) => (
                 <option key={o.key} value={o.key}>{o.label}</option>
               ))}
             </select>

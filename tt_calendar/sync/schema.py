@@ -32,11 +32,12 @@ SYNC_TABLES: dict[str, tuple[str, str, bool]] = {
     "subscriptions":  ("id", "id", False),
 }
 
-# 同步表新增列透传位：远端（Neo 端）已加、老端无业务含义的列，仅随快照收发。
-# 老端 `ensure_sync_schema` 启动时会按本表对存量库幂等 `ALTER TABLE ADD COLUMN`。
-# 当前条目：todo.alarm_at —— Neo 端闹钟功能，老端无闹钟 UI，仅透传。
+# 同步表后期新增列的补列位：老库启动时按本表幂等 `ALTER TABLE ADD COLUMN`。
+# 两种来源：① 远端（Neo 端）已加、老端仅透传的列（如 todo.alarm_at）；
+#           ② 老端自己迭代新增、有业务的列（如 todo.repeat）。
+# 都可以放这里 —— 对存量库来说动作相同：补一个可空 TEXT 列。
 EXTRA_PASSTHROUGH_COLUMNS: dict[str, list[str]] = {
-    "todo": ["alarm_at"],
+    "todo": ["alarm_at", "repeat"],
 }
 
 # meta 表中同步凭据等本机私有键，永不导出、永不产生墓碑

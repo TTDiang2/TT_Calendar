@@ -20,6 +20,7 @@ export interface TodoRow {
   planned_date: string | null
   alarm_at: string | null
   start_date: string | null
+  repeat: string | null
   complexity: string | null
   tags: string | null
   created_at: string | null

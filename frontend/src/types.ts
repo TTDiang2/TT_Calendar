@@ -121,6 +121,7 @@ export interface Todo {
   due_date: string | null
   planned_date: string | null
   start_date: string | null
+  repeat: string | null
   complexity: string
   tags: string[] | null
   created_at: string | null

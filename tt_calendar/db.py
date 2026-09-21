@@ -113,6 +113,7 @@ CREATE TABLE IF NOT EXISTS todo (
     -- 闹钟功能，仅作为透明透传列存在，sync/schema.py 会对存量库幂等补列。
     alarm_at       TEXT,
     start_date     TEXT,
+    repeat         TEXT,
     complexity     TEXT DEFAULT 'medium',
     tags           TEXT,
     created_at     TEXT DEFAULT (datetime('now','localtime')),
@@ -1241,6 +1242,7 @@ def _row_to_todo(row: sqlite3.Row) -> Todo:
         due_date=parse_date(row["due_date"]) if row["due_date"] else None,
         planned_date=parse_date(row["planned_date"]) if row["planned_date"] else None,
         start_date=parse_date(row["start_date"]) if row["start_date"] else None,
+        repeat=row["repeat"],
         complexity=row["complexity"] or "medium",
         tags=json.loads(row["tags"]) if row["tags"] else None,
         created_at=datetime.fromisoformat(row["created_at"]) if row["created_at"] else None,
@@ -1389,12 +1391,13 @@ def upsert_todo(conn: sqlite3.Connection, todo: Todo) -> None:
     with cursor(conn) as cur:
         cur.execute(
             "INSERT INTO todo(id, list_id, title, body, status, importance, due_date, "
-            "planned_date, start_date, complexity, tags, completed_at, sort_order) "
-            "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) "
+            "planned_date, start_date, repeat, complexity, tags, completed_at, sort_order) "
+            "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
             "ON CONFLICT(id) DO UPDATE SET list_id=excluded.list_id, title=excluded.title, "
             "body=excluded.body, status=excluded.status, importance=excluded.importance, "
             "due_date=excluded.due_date, planned_date=excluded.planned_date, "
-            "start_date=excluded.start_date, complexity=excluded.complexity, "
+            "start_date=excluded.start_date, repeat=excluded.repeat, "
+            "complexity=excluded.complexity, "
             "tags=excluded.tags, completed_at=excluded.completed_at, "
             "sort_order=excluded.sort_order",
             (
@@ -1407,6 +1410,7 @@ def upsert_todo(conn: sqlite3.Connection, todo: Todo) -> None:
                 todo.due_date.isoformat() if todo.due_date else None,
                 todo.planned_date.isoformat() if todo.planned_date else None,
                 todo.start_date.isoformat() if todo.start_date else None,
+                todo.repeat,
                 todo.complexity or "medium",
                 json.dumps(todo.tags, ensure_ascii=False) if todo.tags else None,
                 todo.completed_at.isoformat() if todo.completed_at else None,

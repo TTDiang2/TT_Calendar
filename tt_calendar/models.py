@@ -142,6 +142,7 @@ class Todo(BaseModel):
     due_date: Optional[date_t] = None      # 截止日期（DDL）
     planned_date: Optional[date_t] = None  # 计划日期（今天规划要做）
     start_date: Optional[date_t] = None
+    repeat: Optional[str] = None    # None=不重复 | daily 每日 | weekdays 每工作日 | weekly 每周
     complexity: str = "medium"      # simple|medium|hard
     tags: Optional[list[str]] = None
     created_at: Optional[datetime] = None
