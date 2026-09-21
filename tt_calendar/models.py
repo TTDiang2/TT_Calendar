@@ -118,6 +118,9 @@ class ImportResult(BaseModel):
     updated: int = 0
     skipped: int = 0
     error: Optional[str] = None
+    # 抓取是否完整覆盖了请求窗口（CF 拦截/放弃分段/异常时置 False）。
+    # 上游据此决定是否清理"API 已不再返回"的幽灵事件——不完整时绝不能清。
+    complete: bool = True
     finished_at: datetime = Field(default_factory=datetime.now)
 
 

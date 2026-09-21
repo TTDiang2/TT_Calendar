@@ -645,6 +645,18 @@ async def _fetch_source_range(conn, source, start: date_t, end: date_t) -> tuple
                 continue
             db.upsert_event(conn, ev)
             inserted += 1
+        # 幽灵清理：抓取完整且无错时，窗口内 API 已不再返回的旧事件删除
+        # （外部源改排期后旧占位行会永远滞留）。任何不完整都跳过，宁留勿删。
+        if (
+            not result.error
+            and result.complete
+            and events
+            and all(ev.source_ref for ev in events)
+        ):
+            refs = {ev.source_ref for ev in events}
+            removed = db.delete_events_missing_refs(conn, source.source_id, start, end, refs)
+            if removed:
+                result.skipped = removed
         conn.commit()
         return inserted, result.error
     finally:

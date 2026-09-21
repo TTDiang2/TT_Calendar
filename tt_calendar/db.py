@@ -1256,6 +1256,34 @@ def fetch_todo_lists(conn: sqlite3.Connection) -> list[TodoList]:
     return [_row_to_todo_list(r) for r in rows]
 
 
+def delete_events_missing_refs(
+    conn: sqlite3.Connection,
+    source: str,
+    start: date_t,
+    end: date_t,
+    keep_refs: set[str],
+) -> int:
+    """删除某 source 在 [start, end] 内、但本次完整抓取未返回的事件（幽灵清理）。
+
+    外部源改排期后，旧的占位 occurrence 会永远留在本地（API 已不再返回它），
+    渲染成"待公布"的幽灵卡片。调用方必须确认本次抓取完整且无错误
+    （ImportResult.complete 且 error 为空），否则会误删真实事件。
+    只按 source 过滤，manual 等其他来源不受影响；删除不产生同步墓碑
+    （events 墓碑触发器仅对 source='manual' 生效）。返回删除行数。
+    """
+    rows = conn.execute(
+        "SELECT id, source_ref FROM events WHERE source=? AND source_ref IS NOT NULL "
+        "AND date BETWEEN ? AND ?",
+        (source, start.isoformat(), end.isoformat()),
+    ).fetchall()
+    doomed = [r["id"] for r in rows if r["source_ref"] not in keep_refs]
+    if not doomed:
+        return 0
+    with cursor(conn) as cur:
+        cur.executemany("DELETE FROM events WHERE id=?", [(i,) for i in doomed])
+    return len(doomed)
+
+
 def upsert_todo_list(conn: sqlite3.Connection, todo_list: TodoList) -> None:
     with cursor(conn) as cur:
         cur.execute(
