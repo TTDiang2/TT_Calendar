@@ -567,10 +567,7 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
                     <button
                       onClick={() => onRefresh(s)}
                       disabled={refreshing === s.id}
-                      className={s.status === 'error'
-                        ? 'px-2 py-0.5 text-xs rounded border border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 disabled:opacity-40 font-medium'
-                        : 'text-[11px] text-blue-600 hover:text-blue-700 disabled:opacity-40'}
-                      title={s.status === 'error' ? '点这里立即重试（每次都是全新尝试，不会锁死状态）' : undefined}
+                      className="text-[11px] text-blue-600 hover:text-blue-700 disabled:opacity-40"
                     >
                       {refreshing === s.id ? '更新中…' : '立即更新'}
                     </button>
