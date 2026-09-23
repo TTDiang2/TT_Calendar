@@ -554,7 +554,7 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
                     <p className="whitespace-pre-wrap"><span className="text-gray-400">规则：</span>{s.rules_text ?? '（无）'}</p>
                   </div>
                 )}
-                <div className="mt-2 flex items-center gap-3">
+<div className="mt-2 flex items-center gap-3">
                   <label className="flex items-center gap-1 text-[11px] text-gray-500 cursor-pointer select-none">
                     <input
                       type="checkbox"
@@ -563,11 +563,14 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
                     />
                     打开时自动更新
                   </label>
-                  {s.status === 'active' && (
+                  {s.status !== 'pending' && (
                     <button
                       onClick={() => onRefresh(s)}
                       disabled={refreshing === s.id}
-                      className="text-[11px] text-blue-600 hover:text-blue-700 disabled:opacity-40"
+                      className={s.status === 'error'
+                        ? 'px-2 py-0.5 text-xs rounded border border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 disabled:opacity-40 font-medium'
+                        : 'text-[11px] text-blue-600 hover:text-blue-700 disabled:opacity-40'}
+                      title={s.status === 'error' ? '点这里立即重试（每次都是全新尝试，不会锁死状态）' : undefined}
                     >
                       {refreshing === s.id ? '更新中…' : '立即更新'}
                     </button>
