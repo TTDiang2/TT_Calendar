@@ -631,10 +631,18 @@ async def import_jisilu(body: ImportBody, conn=Depends(get_db)):
 # ---------------------------------------------------------------------------
 
 
-async def _fetch_source_range(conn, source, start: date_t, end: date_t) -> tuple[int, str | None]:
-    """通用抓取核心：source.fetch → 启用图层过滤 → upsert。
+async def _fetch_source_range(
+    conn, source, start: date_t, end: date_t, gc_start: date_t, gc_end: date_t
+) -> tuple[int, str | None]:
+    """通用抓取核心：source.fetch → 启用图层过滤 → upsert + 幽灵清理。
 
     所有订阅源共用（jisilu / investing / 社区插件），源负责自己的凭据与网络细节。
+
+    Args:
+        start/end: 本次抓取窗口（增量：上次成功之后的不重复拉）。
+        gc_start/gc_end: 幽灵清理窗口（与抓取窗口解耦，用源声明的
+            refresh_past/future_days 覆盖整个历史+未来，便于历史窗口任期内
+            改排期/重发产生的孤儿被清理——不受 incremental 起点卡住）。
     """
     try:
         events, result = await source.fetch(start, end)
@@ -645,8 +653,9 @@ async def _fetch_source_range(conn, source, start: date_t, end: date_t) -> tuple
                 continue
             db.upsert_event(conn, ev)
             inserted += 1
-        # 幽灵清理：抓取完整且无错时，窗口内 API 已不再返回的旧事件删除
+        # 幽灵清理：抓取完整且无错时，GC 窗口内 API 已不再返回的旧事件删除
         # （外部源改排期后旧占位行会永远滞留）。任何不完整都跳过，宁留勿删。
+        # GC 窗口独立于 fetch 窗口：source 声明的 refresh_past/future_days 完整覆盖。
         if (
             not result.error
             and result.complete
@@ -654,7 +663,8 @@ async def _fetch_source_range(conn, source, start: date_t, end: date_t) -> tuple
             and all(ev.source_ref for ev in events)
         ):
             refs = {ev.source_ref for ev in events}
-            removed = db.delete_events_missing_refs(conn, source.source_id, start, end, refs)
+            removed = db.delete_events_missing_refs(
+                conn, source.source_id, gc_start, gc_end, refs)
             if removed:
                 result.skipped = removed
         conn.commit()
@@ -671,15 +681,20 @@ def _refresh_one_subscription(conn, sub) -> dict:
 
     # 刷新窗口由源声明（refresh_past_days / refresh_future_days）；
     # 上次成功同步之后的不重复拉（增量）
-    start = date_t.today() - timedelta(days=source.refresh_past_days)
+    today = date_t.today()
+    fetch_start = today - timedelta(days=source.refresh_past_days)
     if sub.last_synced_at:
         try:
-            start = max(start, datetime.fromisoformat(sub.last_synced_at).date())
+            fetch_start = max(fetch_start, datetime.fromisoformat(sub.last_synced_at).date())
         except Exception:
             pass
-    end = date_t.today() + timedelta(days=source.refresh_future_days)
+    fetch_end = today + timedelta(days=source.refresh_future_days)
+    # 幽灵清理窗口独立计算：源声明的完整覆盖区间（不受 incremental 起点限制）
+    gc_start = today - timedelta(days=source.refresh_past_days)
+    gc_end = today + timedelta(days=source.refresh_future_days)
     try:
-        inserted, err = asyncio_run(_fetch_source_range(conn, source, start, end))
+        inserted, err = asyncio_run(
+            _fetch_source_range(conn, source, fetch_start, fetch_end, gc_start, gc_end))
     except Exception as e:
         db.touch_subscription_synced(conn, sub.id, "error", str(e))
         conn.commit()
