@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import clsx from 'clsx'
 import { CheckCircle2 } from 'lucide-react'
 import type { Todo, TodoList } from '../../types'
-import { ganttRange, STATUS_LABELS } from '../../utils/todoLogic'
+import { ganttRange, labelOf, STATUS_KEYS } from '../../utils/todoLogic'
+import { useT } from '../../i18n'
 
 interface Props {
   todos: Todo[]
@@ -31,6 +32,7 @@ const BAR_STYLE: Record<string, string> = {
 }
 
 export function TodoGanttView({ todos, lists, selectedTodoId, onSelect }: Props) {
+  const t = useT()
   const today = new Date().toISOString().slice(0, 10)
   const scrollRef = useRef<HTMLDivElement>(null)
   const [viewW, setViewW] = useState(0)
@@ -139,16 +141,16 @@ export function TodoGanttView({ todos, lists, selectedTodoId, onSelect }: Props)
             style={{ left: LABEL_W + todayX, top: 0, height: rows.length * ROW_H }}
           />
 
-          {rows.map(({ t, r }) => {
+          {rows.map(({ t: td, r }) => {
             const x = (dayIndex(r.start) - geo.t0) * geo.dayW
             const w = Math.max((dayIndex(r.end) - dayIndex(r.start) + 1) * geo.dayW - 2, geo.dayW - 2)
-            const selected = selectedTodoId === t.id
-            const ln = listName(t.list_id)
+            const selected = selectedTodoId === td.id
+            const ln = listName(td.list_id)
             return (
               <div
-                key={t.id}
+                key={td.id}
                 className={clsx('flex border-b border-gray-50 hover:bg-blue-50/30 cursor-pointer relative z-[5]', selected && 'bg-blue-50/60')}
-                onClick={() => onSelect(t.id)}
+                onClick={() => onSelect(td.id)}
                 style={{ height: ROW_H }}
               >
                 <div
@@ -161,7 +163,7 @@ export function TodoGanttView({ todos, lists, selectedTodoId, onSelect }: Props)
                 >
                   {r.completed && <CheckCircle2 size={12} className="text-emerald-500 flex-shrink-0" />}
                   <span className={clsx('text-xs truncate', r.completed ? 'text-gray-400 line-through' : 'text-gray-700')}>
-                    {t.title}
+                    {td.title}
                   </span>
                   {ln && <span className="text-[10px] text-gray-300 flex-shrink-0 ml-auto">{ln}</span>}
                 </div>
@@ -169,11 +171,11 @@ export function TodoGanttView({ todos, lists, selectedTodoId, onSelect }: Props)
                   <div
                     className={clsx(
                       'absolute rounded-md border text-[9px] text-white flex items-center px-1.5 overflow-hidden whitespace-nowrap',
-                      r.overdue ? 'bg-red-400 border-red-500' : BAR_STYLE[t.status] ?? BAR_STYLE.notStarted,
+                      r.overdue ? 'bg-red-400 border-red-500' : BAR_STYLE[td.status] ?? BAR_STYLE.notStarted,
                       selected && 'ring-2 ring-blue-400',
                     )}
                     style={{ left: x, width: w, top: (ROW_H - BAR_H) / 2, height: BAR_H }}
-                    title={`${r.start} → ${r.end}${r.overdue ? '（已过期）' : ''} · ${STATUS_LABELS[t.status] ?? t.status}`}
+                    title={`${r.start} → ${r.end}${r.overdue ? '（已过期）' : ''} · ${labelOf(STATUS_KEYS, td.status, t)}`}
                   >
                     {r.overdue && <span className="font-medium">逾期中</span>}
                   </div>

@@ -252,6 +252,16 @@ function reportText(r: SyncResult, t: I18n['t']): string {
     + (r.warning ? t('settings.sync.reportWarning', { warning: r.warning }) : '')
 }
 
+/**
+ * syncNow 失败的显示文案：client.ts 的结构化错误码 `sync_failed:<status>` 按码翻译
+ *（errors.syncFailed，手册决策 #10）；后端 detail 串与其余错误原样透传（后端数据）。
+ */
+function syncFailText(e: unknown, t: I18n['t']): string {
+  const m = e instanceof Error ? e.message : String(e)
+  const hit = /^sync_failed:(\d+)$/.exec(m)
+  return hit ? t('errors.syncFailed', { status: hit[1]! }) : String(e)
+}
+
 function ReminderConfigSection() {
   const t = useT()
   const qc = useQueryClient()
@@ -379,7 +389,7 @@ function SyncConfigSection() {
         setMsg({ ok: true, text: reportText(r, t) })
       }
       qc.invalidateQueries()
-    } catch (e) { setMsg({ ok: false, text: String(e) }) } finally { setBusy(null) }
+    } catch (e) { setMsg({ ok: false, text: syncFailText(e, t) }) } finally { setBusy(null) }
   }
 
   const onResolve = async (mode: 'pull_overwrite' | 'merge_push') => {

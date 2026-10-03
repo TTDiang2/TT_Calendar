@@ -1,4 +1,5 @@
 import type { SourceFieldSpec } from '../api/client'
+import { useT } from '../i18n'
 
 /**
  * 订阅源事件字段的通用渲染器（schema 驱动）。
@@ -19,9 +20,10 @@ const TONE_CLS: Record<string, string> = {
 }
 
 function ImportanceDots({ level, max = 3 }: { level: number; max?: number }) {
+  const t = useT()
   const stars = level >= 1 && level <= max ? level : 0
   return (
-    <span className="inline-flex gap-px align-middle" title={`重要性 ${'★'.repeat(stars) || '未知'}`}>
+    <span className="inline-flex gap-px align-middle" title={t('sourceFields.importanceTitle', { stars: '★'.repeat(stars) || t('sourceFields.unknown') })}>
       {Array.from({ length: max }).map((_, i) => (
         <span key={i} className={i < stars ? 'text-amber-500' : 'text-gray-300'}>★</span>
       ))}

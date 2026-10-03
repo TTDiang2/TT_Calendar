@@ -7,6 +7,7 @@ import { createLayer, getSubscriptions } from '../api/client'
 import { COLOR_PRESETS, GRADED_PALETTES } from '../data'
 import { Modal, Field } from './ui/Modal'
 import { useT, type TxKey } from '../i18n'
+import { paletteLabelKey } from '../i18n/adapt/labels'
 
 interface Props {
   layers: Layer[]
@@ -222,9 +223,8 @@ function CreateLayerDialog({ onClose, onCreated }: { onClose: () => void; onCrea
   const [mode, setMode] = useState<'solid' | 'graded' | 'tag'>('solid')
   const [name, setName] = useState('')
   const [color, setColor] = useState<string | null>(COLOR_PRESETS[0])
-  // '绿' 是 GRADED_PALETTES 的中文 key（data.ts 逻辑键，非文案；data.ts 本批不动，显示原样）
-  // eslint-disable-next-line no-restricted-syntax
-  const [paletteName, setPaletteName] = useState<keyof typeof GRADED_PALETTES>('绿')
+  // paletteName 是 GRADED_PALETTES 的 ASCII key（data.ts 逻辑键，非文案；显示名走 palette.* 字典，台账 C2）
+  const [paletteName, setPaletteName] = useState<keyof typeof GRADED_PALETTES>('green')
   const [tag, setTag] = useState('')
   const [group, setGroup] = useState('')
 
@@ -338,7 +338,7 @@ function CreateLayerDialog({ onClose, onCreated }: { onClose: () => void; onCrea
                         paletteName === pk ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600',
                       )}
                     >
-                      {pk}
+                      {t(paletteLabelKey(pk))}
                     </button>
                   ))}
                 </div>

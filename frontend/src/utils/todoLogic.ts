@@ -1,4 +1,5 @@
 import type { Todo } from '../types'
+import type { TxKey } from '../i18n'
 
 export type UrgencyLevel = 'urgent' | 'soon' | 'later'
 
@@ -69,14 +70,25 @@ export function ganttRange(t: Todo, today = todayStr()): GanttRange {
   return { start, end: end ?? start, overdue, completed }
 }
 
-export const IMPORTANCE_LABELS: Record<string, string> = {
-  high: '高', normal: '中', low: '低',
+/**
+ * 旧词表三张（与 todoDetail 表措辞不同：等他人/高·中·低/困难·中等·简单），zh 逐屏一致
+ * 红线禁合并；labelKey 模式（手册 §8.2）：常量表只存字典 key，渲染时经 labelOf() 出文案。
+ * 落点：i18n/dict/fragments/todo.ts 的 todo.card.*（消费方：看板列头/迷你卡/甘特条）。
+ */
+export const IMPORTANCE_KEYS: Record<string, TxKey> = {
+  high: 'todo.card.importance.high', normal: 'todo.card.importance.normal', low: 'todo.card.importance.low',
 }
 
-export const COMPLEXITY_LABELS: Record<string, string> = {
-  hard: '困难', medium: '中等', simple: '简单',
+export const COMPLEXITY_KEYS: Record<string, TxKey> = {
+  hard: 'todo.card.complexity.hard', medium: 'todo.card.complexity.medium', simple: 'todo.card.complexity.simple',
 }
 
-export const STATUS_LABELS: Record<string, string> = {
-  notStarted: '未开始', inProgress: '进行中', waitingOnOthers: '等他人', deferred: '已推迟', completed: '已完成',
+export const STATUS_KEYS: Record<string, TxKey> = {
+  notStarted: 'todo.card.status.notStarted', inProgress: 'todo.card.status.inProgress', waitingOnOthers: 'todo.card.status.waitingOnOthers', deferred: 'todo.card.status.deferred', completed: 'todo.card.status.completed',
+}
+
+/** 词表 key 查询：未知枚举回落原值（同原 `LABELS[v] ?? v` 语义，新档位先行时不白屏） */
+export function labelOf(keys: Record<string, TxKey>, value: string, t: (k: TxKey) => string): string {
+  const k = keys[value]
+  return k ? t(k) : value
 }

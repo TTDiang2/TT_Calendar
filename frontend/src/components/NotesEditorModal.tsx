@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Modal } from './ui/Modal'
+import { useT } from '../i18n'
 
 export interface NotesEditorModalProps {
   open: boolean
@@ -11,11 +12,15 @@ export interface NotesEditorModalProps {
 
 export function NotesEditorModal({
   open,
-  title = '备注',
+  title,
   initialValue,
-  placeholder = '备注（可选）',
+  placeholder,
   onClose,
 }: NotesEditorModalProps) {
+  const t = useT()
+  // 默认值在组件体内解析（原为解构默认值里的中文字面量，zh 逐字不变）
+  const resolvedTitle = title ?? t('detail.notes.title')
+  const resolvedPlaceholder = placeholder ?? t('detail.notes.placeholder')
   const [draft, setDraft] = useState(initialValue)
   const taRef = useRef<HTMLTextAreaElement>(null)
 
@@ -45,16 +50,16 @@ export function NotesEditorModal({
   if (!open) return null
 
   return (
-    <Modal title={title} onClose={() => onClose(draft)} width={680}>
+    <Modal title={resolvedTitle} onClose={() => onClose(draft)} width={680}>
       <textarea
         ref={taRef}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
-        placeholder={placeholder}
+        placeholder={resolvedPlaceholder}
         className="w-full min-h-[320px] max-h-[60vh] text-sm border border-gray-200 rounded-md p-3 focus:border-blue-400 focus:outline-none resize-y leading-relaxed"
       />
       <p className="mt-2 text-[11px] text-gray-400 text-right">
-        ESC 或点击空白处关闭（自动保存）
+        {t('detail.notes.hint')}
       </p>
     </Modal>
   )

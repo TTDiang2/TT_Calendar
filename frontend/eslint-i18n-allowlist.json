@@ -1,18 +1,9 @@
 [
-  "src/api/client.ts",
-  "src/components/DetailPanel.tsx",
-  "src/components/ErrorBoundary.tsx",
-  "src/components/NotesEditorModal.tsx",
-  "src/components/ReminderBanner.tsx",
-  "src/components/SourceFields.tsx",
-  "src/components/StatsView.tsx",
-  "src/components/TodoEditor.tsx",
   "src/components/TodoView.tsx",
   "src/components/todo/TodoGanttView.tsx",
   "src/components/todo/TodoJarView.tsx",
   "src/components/todo/TodoKanbanView.tsx",
   "src/components/todo/TodoMatrixView.tsx",
   "src/components/todo/TodoMiniCard.tsx",
-  "src/components/todo/TodoStickiesView.tsx",
-  "src/utils/todoLogic.ts"
+  "src/components/todo/TodoStickiesView.tsx"
 ]

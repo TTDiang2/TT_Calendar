@@ -47,7 +47,7 @@ async function patch<T>(path: string, body?: unknown): Promise<T> {
 
 // 视图聚合
 export const getView = (mode: ViewMode, anchor: string) => {
-  if (mode === 'countdown') throw new Error('countdown 视图不走 getView')
+  if (mode === 'countdown') throw new Error('getView does not support countdown mode')
   if (mode === 'year') {
     const y = Number(anchor.split('-')[0])
     return get<YearData>(`/view/year/${y}`)
@@ -312,7 +312,9 @@ export async function syncNow(): Promise<SyncResult> {
   }
   if (!r.ok) {
     const d = await r.json().catch(() => null)
-    throw new Error(d?.detail ?? `同步失败（${r.status}）`)
+    // 结构化错误码（决策 #10：API 层零文案）——显示文案由 UI 按码翻译
+    //（errors.syncFailed，消费方 SettingsDialog）；后端 detail 字符串原样透传
+    throw new Error(d?.detail ?? `sync_failed:${r.status}`)
   }
   return r.json()
 }

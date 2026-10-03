@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import type { Todo } from '../../types'
-import { COMPLEXITY_LABELS, IMPORTANCE_LABELS, STATUS_LABELS, dueInDays } from '../../utils/todoLogic'
+import { COMPLEXITY_KEYS, IMPORTANCE_KEYS, STATUS_KEYS, dueInDays, labelOf } from '../../utils/todoLogic'
+import { useT } from '../../i18n'
 
 // 状态点的颜色：看板/矩阵卡片元信息行用小圆点区分状态，比文字 badge 更紧凑
 const STATUS_DOT: Record<string, string> = {
@@ -37,6 +38,7 @@ export function TodoMiniCard({ todo, selected, sub, onClick, onToggle }: {
   onToggle?: (done: boolean) => void
 }) {
   const done = todo.status === 'completed'
+  const t = useT()
   const din = dueInDays(todo)
   const overdue = !done && din !== null && din < 0
   const dueToday = !done && din === 0
@@ -89,13 +91,13 @@ export function TodoMiniCard({ todo, selected, sub, onClick, onToggle }: {
           <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] leading-none text-gray-500">
             <span className="flex items-center gap-0.5">
               <span className={clsx('w-1.5 h-1.5 rounded-full', STATUS_DOT[todo.status] ?? 'bg-gray-300')} />
-              {STATUS_LABELS[todo.status] ?? todo.status}
+              {labelOf(STATUS_KEYS, todo.status, t)}
             </span>
             <span className={clsx(IMPORTANCE_CLS[todo.importance] ?? '')}>
-              {IMPORTANCE_LABELS[todo.importance] ?? todo.importance}
+              {labelOf(IMPORTANCE_KEYS, todo.importance, t)}
             </span>
             <span className={clsx(COMPLEXITY_CLS[todo.complexity] ?? '')}>
-              {COMPLEXITY_LABELS[todo.complexity] ?? todo.complexity}
+              {labelOf(COMPLEXITY_KEYS, todo.complexity, t)}
             </span>
             {todo.due_date && (
               <span className={clsx(overdue && 'text-red-600 font-medium')}>

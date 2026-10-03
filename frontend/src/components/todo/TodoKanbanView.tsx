@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import clsx from 'clsx'
 import { CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Todo, TodoList } from '../../types'
-import { COMPLEXITY_LABELS, IMPORTANCE_LABELS, STATUS_LABELS, todayStr } from '../../utils/todoLogic'
+import { COMPLEXITY_KEYS, IMPORTANCE_KEYS, STATUS_KEYS, labelOf, todayStr } from '../../utils/todoLogic'
+import { useT, type TxKey } from '../../i18n'
 import { TodoMiniCard } from './TodoMiniCard'
 
 type Dim = 'status' | 'planned' | 'importance' | 'complexity' | 'tag'
@@ -83,7 +84,10 @@ function tagHash(s: string): number {
   return h
 }
 
-function buildColumns(openTodos: Todo[], dim: Dim, today: string): Column[] {
+/** 翻译函数形参类型（buildColumns 是模块级函数，无 hook 环境，由调用方传入 t） */
+type Translate = (k: TxKey) => string
+
+function buildColumns(openTodos: Todo[], dim: Dim, today: string, tr: Translate): Column[] {
   const map = new Map<string, Column>()
 
   const col = (key: string, title: string, tone?: string, headCls?: string): Column => {
@@ -98,7 +102,7 @@ function buildColumns(openTodos: Todo[], dim: Dim, today: string): Column[] {
   for (const t of openTodos) {
     switch (dim) {
       case 'status':
-        col(t.status, STATUS_LABELS[t.status] ?? t.status, STATUS_TONE[t.status]).items.push(t)
+        col(t.status, labelOf(STATUS_KEYS, t.status, tr), STATUS_TONE[t.status]).items.push(t)
         break
       case 'planned': {
         if (t.planned_date && t.planned_date < today) break
@@ -110,10 +114,10 @@ function buildColumns(openTodos: Todo[], dim: Dim, today: string): Column[] {
         break
       }
       case 'importance':
-        col(t.importance, IMPORTANCE_LABELS[t.importance] ?? t.importance, IMPORTANCE_TONE[t.importance]).items.push(t)
+        col(t.importance, labelOf(IMPORTANCE_KEYS, t.importance, tr), IMPORTANCE_TONE[t.importance]).items.push(t)
         break
       case 'complexity':
-        col(t.complexity, COMPLEXITY_LABELS[t.complexity] ?? t.complexity, COMPLEXITY_TONE[t.complexity]).items.push(t)
+        col(t.complexity, labelOf(COMPLEXITY_KEYS, t.complexity, tr), COMPLEXITY_TONE[t.complexity]).items.push(t)
         break
       case 'tag': {
         const tags = t.tags ?? []
@@ -152,13 +156,14 @@ function buildColumns(openTodos: Todo[], dim: Dim, today: string): Column[] {
 const COMPLETED_RENDER_LIMIT = 50
 
 export function TodoKanbanView({ openTodos, completedTodos, completedCount, lists, selectedTodoId, onSelect, onToggle, onUpdate }: Props) {
+  const t = useT()
   const [dim, setDim] = useState<Dim>('status')
   const [dragId, setDragId] = useState<string | null>(null)
   const [overCol, setOverCol] = useState<string | null>(null)
   const [showCompletedCol, setShowCompletedCol] = useState(false)
 
   const today = todayStr()
-  const columns = useMemo(() => buildColumns(openTodos, dim, today), [openTodos, dim, today])
+  const columns = useMemo(() => buildColumns(openTodos, dim, today, t), [openTodos, dim, today, t])
   const listName = useMemo(() => {
     const m = new Map(lists.map((l) => [l.id, l.display_name]))
     return (t: Todo) => m.get(t.list_id)

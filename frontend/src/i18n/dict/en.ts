@@ -14,6 +14,13 @@ import { shell } from './fragments/shell'
 import { countdown } from './fragments/countdown'
 import { calendar } from './fragments/calendar'
 import { app } from './fragments/app'
+import { stats } from './fragments/stats'
+import { detail } from './fragments/detail'
+import { todoEditor } from './fragments/todoEditor'
+import { todo } from './fragments/todo'
+import { palette } from './fragments/palette'
+import { sourceFields } from './fragments/sourceFields'
+import { errors } from './fragments/errors'
 
 export const en: DeepPartialDict<Dict> = {
   common: common.en,
@@ -26,4 +33,11 @@ export const en: DeepPartialDict<Dict> = {
   countdown: countdown.en,
   calendar: calendar.en,
   app: app.en,
+  stats: stats.en,
+  detail: detail.en,
+  todoEditor: todoEditor.en,
+  todo: todo.en,
+  palette: palette.en,
+  sourceFields: sourceFields.en,
+  errors: errors.en,
 }

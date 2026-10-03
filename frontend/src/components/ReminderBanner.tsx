@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ListTodo, X } from 'lucide-react'
 import { getTodos, getTodoReminderConfig, type TodoReminderConfig } from '../api/client'
+import { useT, useTPlural } from '../i18n'
 import type { Todo } from '../types'
 
 const DISMISS_KEY_PREFIX = 'tt_reminder_dismissed_'
@@ -47,6 +48,8 @@ export interface ReminderBannerProps {
 }
 
 export function ReminderBanner({ onJumpToTodo }: ReminderBannerProps) {
+  const t = useT()
+  const tPlural = useTPlural()
   const { data: cfg } = useQuery({
     queryKey: ['todoReminderConfig'],
     queryFn: getTodoReminderConfig,
@@ -113,17 +116,17 @@ export function ReminderBanner({ onJumpToTodo }: ReminderBannerProps) {
     >
       <ListTodo size={16} className="flex-shrink-0 text-amber-600" />
       <span className="flex-1 min-w-0 truncate">
-        今日还有 <span className="font-medium">{count}</span> 条计划任务未完成
+        {tPlural('detail.reminder.plannedLeft', count)}
       </span>
       <button
         onClick={handleView}
         className="text-xs px-2.5 py-1 rounded-md bg-amber-500 text-white hover:bg-amber-600 transition-colors"
       >
-        查看
+        {t('detail.reminder.view')}
       </button>
       <button
         onClick={handleDismiss}
-        aria-label="关闭今日提醒"
+        aria-label={t('detail.reminder.dismissAria')}
         className="text-amber-600 hover:text-amber-800 transition-colors"
       >
         <X size={16} />
