@@ -8,6 +8,7 @@ import { common } from './fragments/common'
 import { dialogs } from './fragments/dialogs'
 import { todoDetail } from './fragments/todoDetail'
 import { settings } from './fragments/settings'
+import { language } from './fragments/language'
 import { terms } from './fragments/terms'
 import { topbar } from './fragments/topbar'
 import { shell } from './fragments/shell'
@@ -44,4 +45,5 @@ export const en: DeepPartialDict<Dict> = {
   errors: errors.en,
   todoview: todoview.en,
   todoboards: todoboards.en,
+  language: language.en,
 }
