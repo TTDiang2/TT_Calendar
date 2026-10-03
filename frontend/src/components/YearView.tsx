@@ -4,6 +4,7 @@ import clsx from 'clsx'
 import type { Day, Layer, YearData } from '../types'
 import { COLORING_COLORS, getBusyColors, parseDate, todayStr } from '../data'
 import { getTodoBusyConfig, type TodoBusyConfig } from '../api/client'
+import { useLang, fmtWeekday, fmtMonthName } from '../i18n'
 
 interface Props {
   yearData: YearData
@@ -32,6 +33,7 @@ function miniCellColor(day: Day, layerById: Map<string, Layer>, busyConfig?: Tod
 }
 
 export function YearView({ yearData, layers, selectedDate, onSelectDate }: Props) {
+  const lang = useLang()
   const layerById = useMemo(() => new Map(layers.map((l) => [l.layer_id, l])), [layers])
   const { data: busyConfig } = useQuery({ queryKey: ['todoBusyConfig'], queryFn: getTodoBusyConfig, staleTime: 60_000 })
 
@@ -48,11 +50,13 @@ export function YearView({ yearData, layers, selectedDate, onSelectDate }: Props
           const days = byMonth.get(m) ?? []
           return (
             <div key={m} className="bg-white rounded-lg border border-gray-200 p-2">
-              <p className="text-xs font-semibold text-gray-600 mb-1">{m}月</p>
+              {/* 月标/星期名走 Intl（决策 #7）：zh「10月」「一…日」与旧手写串逐字一致，en 为 Oct / M…S */}
+              <p className="text-xs font-semibold text-gray-600 mb-1">{fmtMonthName(lang, new Date(yearData.year, m - 1, 1), 'short')}</p>
               <div className="grid grid-cols-7 gap-px">
-                {['一', '二', '三', '四', '五', '六', '日'].map((w, wi) => (
+                {/* key 用列号：en 窄星期名有重复字母（T/S），按名做 key 会撞 */}
+                {Array.from({ length: 7 }, (_, wi) => fmtWeekday(lang, new Date(2023, 0, 2 + wi), 'narrow')).map((w, wi) => (
                   <span
-                    key={w}
+                    key={wi}
                     className={clsx(
                       'text-[8px] text-center',
                       wi >= 5 ? 'text-red-400' : 'text-gray-400',

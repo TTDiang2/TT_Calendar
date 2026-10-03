@@ -4,6 +4,7 @@ import clsx from 'clsx'
 import type { Day, Layer } from '../types'
 import { COLORING_COLORS, getBusyColors, parseDate, pickContrastColor, todayStr } from '../data'
 import { getTodoBusyConfig } from '../api/client'
+import { useT, useTPlural } from '../i18n'
 
 interface Props {
   day: Day
@@ -20,6 +21,8 @@ interface Props {
 }
 
 export const DayCell = memo(function DayCell({ day, layers, selected, dragOver, onClick, onDoubleClick, onContextMenu, onDragStart, onDragEnter, onDrop, maxLabels = 3 }: Props) {
+  const t = useT()
+  const tPlural = useTPlural()
   const { d } = parseDate(day.date)
   const { data: busyConfig } = useQuery({ queryKey: ['todoBusyConfig'], queryFn: getTodoBusyConfig, staleTime: 60_000 })
 
@@ -146,7 +149,7 @@ export const DayCell = memo(function DayCell({ day, layers, selected, dragOver, 
           {d}
         </span>
         {day.holiday?.is_workday_made_up && (
-          <span className="text-[9px] bg-amber-500 text-white px-1 rounded leading-tight">班</span>
+          <span className="text-[9px] bg-amber-500 text-white px-1 rounded leading-tight">{t('calendar.makeUpWorkday')}</span>
         )}
         {day.holiday?.name && (
           <span className="text-[9px] bg-purple-500 text-white px-1 rounded leading-tight truncate max-w-[40px]">
@@ -209,7 +212,7 @@ export const DayCell = memo(function DayCell({ day, layers, selected, dragOver, 
                       backgroundColor: it.color ?? '#3D6BFB',
                       backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0.28), rgba(255,255,255,0) 30%, rgba(0,0,0,0.06))',
                     }}
-                    title={`${it.title}（${it.span_index}/${it.span_total} 天，${it.span_start} 起）`}
+                    title={t('calendar.contTitle', { title: it.title, i: String(it.span_index), total: String(it.span_total), start: String(it.span_start) })}
                   />
                 ))}
                 {shown.map((it, i) => (
@@ -218,17 +221,17 @@ export const DayCell = memo(function DayCell({ day, layers, selected, dragOver, 
                     className="text-[10px] truncate leading-tight font-medium"
                     style={{ color: labelColor }}
                     title={it.span_total && it.span_total > 1
-                      ? `${it.title}（多日 ${it.span_start} ~ ${it.span_end}，共 ${it.span_total} 天）`
+                      ? t('calendar.multiDayTitle', { title: it.title, start: String(it.span_start), end: String(it.span_end), total: it.span_total })
                       : it.title}
                   >
                     {it.start_time ? `${it.start_time} ${it.title}` : it.title}
                     {it.span_total && it.span_total > 1 && (
-                      <span className="opacity-70"> ↦{it.span_total}天</span>
+                      <span className="opacity-70">{t('calendar.spanDays', { n: it.span_total })}</span>
                     )}
                   </span>
                 ))}
                 {hidden > 0 && (
-                  <span className="text-[10px]" style={{ color: labelColor }}>+{hidden} 项日程</span>
+                  <span className="text-[10px]" style={{ color: labelColor }}>{tPlural('calendar.scheduleMore', hidden)}</span>
                 )}
               </>
             )

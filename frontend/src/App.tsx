@@ -24,6 +24,8 @@ import {
 } from './components/dialogs'
 import { SettingsDialog } from './components/SettingsDialog'
 import { ReminderBanner } from './components/ReminderBanner'
+import { useT, useLang, fmtDate } from './i18n'
+import { SYNC_IN_PROGRESS_MARK } from './i18n/dict/fragments/app'
 
 type DialogState =
   | { kind: 'event'; date: string; event?: CalEvent | null }
@@ -43,6 +45,8 @@ interface CtxMenuState {
 }
 
 export default function App() {
+  const t = useT()
+  const lang = useLang()
   const [monthKey, setMonthKey] = useState(() => {
     const n = new Date()
     return `${n.getFullYear()}-${n.getMonth() + 1}`
@@ -86,7 +90,7 @@ export default function App() {
 
   // 启动自动同步：延迟到首屏渲染后静默执行，失败不打扰
   useEffect(() => {
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       try {
         const [st, cfg] = await Promise.all([getSyncStatus(), getSyncConfig()])
         if (st.configured && cfg.auto_on_start) {
@@ -106,7 +110,7 @@ export default function App() {
         /* 拉取失败不打扰启动 */
       }
     }, 2000)
-    return () => clearTimeout(t)
+    return () => clearTimeout(timer)
   }, [qc])
 
   // 关闭前自动同步（仅 Tauri 桌面版）：拦截窗口关闭 → 同步 → 自动退出；
@@ -128,7 +132,7 @@ export default function App() {
             await w.destroy()
           } catch (e) {
             const msg = e instanceof Error ? e.message : String(e)
-            if (msg.includes('正在进行')) {
+            if (msg.includes(SYNC_IN_PROGRESS_MARK)) {
               await w.destroy()
               return
             }
@@ -259,11 +263,15 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [dialog, ctxMenu, selectedDate, openEvent, openEntry, mode, dayAnchor])
 
+  // 中间标题：年/月串按决策 #7 走 Intl（zh 形态「2026年」「2026年10月」，
+  // 与旧手写「2026 年」「2026 年 10 月」的差异为 Intl 化有意差异，见提交记录）
   const title = useMemo(() => {
     if (!monthData) return '—'
-    if (mode === 'year' && 'year' in monthData && !('days' in monthData)) return `${monthData.year} 年`
-    return `${monthData.year} 年 ${('month' in monthData ? monthData.month : '')} 月`
-  }, [mode, monthData])
+    if (mode === 'year' && 'year' in monthData && !('days' in monthData)) {
+      return fmtDate(lang, new Date(monthData.year, 0, 1), { year: 'numeric' })
+    }
+    return fmtDate(lang, new Date(monthData.year, ('month' in monthData ? monthData.month : 1) - 1, 1), { year: 'numeric', month: 'long' })
+  }, [mode, monthData, lang])
 
   const selectedDay = useMemo(() => {
     if (!selectedDate || !monthData || mode === 'year') return null
@@ -290,11 +298,11 @@ export default function App() {
             {exitSync.state === 'syncing' ? (
               <>
                 <div className="mx-auto mb-3 w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm text-gray-700">正在同步，同步完成后会自动退出……</p>
+                <p className="text-sm text-gray-700">{t('app.syncExiting')}</p>
               </>
             ) : (
               <>
-                <p className="text-sm text-red-600 font-medium mb-1">关闭前同步失败</p>
+                <p className="text-sm text-red-600 font-medium mb-1">{t('app.syncOnCloseFailed')}</p>
                 <p className="text-xs text-gray-500 mb-4 break-all max-h-24 overflow-y-auto">{exitSync.error}</p>
                 <div className="flex justify-center gap-2">
                   <button
@@ -310,7 +318,7 @@ export default function App() {
                     }}
                     className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                   >
-                    重试同步
+                    {t('app.retrySync')}
                   </button>
                   <button
                     onClick={async () => {
@@ -319,13 +327,13 @@ export default function App() {
                     }}
                     className="px-4 py-1.5 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200"
                   >
-                    强制退出
+                    {t('app.forceQuit')}
                   </button>
                   <button
                     onClick={() => setExitSync(null)}
                     className="px-4 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg"
                   >
-                    取消关闭
+                    {t('app.cancelClose')}
                   </button>
                 </div>
               </>
@@ -334,7 +342,7 @@ export default function App() {
         </div>
       )}
       <TopBar
-        title={isLoading ? '加载中…' : title}
+        title={isLoading ? t('common.loading') : title}
         topTab={topTab}
         mode={mode}
         todoView={todoView}
@@ -365,7 +373,7 @@ export default function App() {
             />
             <main className="flex-1 flex flex-col p-4 min-w-0">
               {isLoading || !monthData ? (
-                <div className="flex-1 flex items-center justify-center text-gray-400">加载中…</div>
+                <div className="flex-1 flex items-center justify-center text-gray-400">{t('common.loading')}</div>
               ) : mode === 'year' ? (
                 <YearView
                   yearData={monthData as YearData}

@@ -3,6 +3,7 @@ import clsx from 'clsx'
 import type { Day, Layer, MonthData } from '../types'
 import { COLORING_COLORS, getBusyColors, parseDate, todayStr } from '../data'
 import { getTodoBusyConfig } from '../api/client'
+import { useT, useLang, fmtDate } from '../i18n'
 
 interface Props {
   monthData: MonthData
@@ -12,16 +13,19 @@ interface Props {
   onDoubleClick: (date: string) => void
 }
 
-const WEEK_NAMES = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-
 export function DayView({ monthData, layers, selectedDate, onSelect, onDoubleClick }: Props) {
+  const t = useT()
+  const lang = useLang()
   const { data: busyConfig } = useQuery({ queryKey: ['todoBusyConfig'], queryFn: getTodoBusyConfig, staleTime: 60_000 })
   const day = monthData.days[0]
-  if (!day) return <div className="flex-1 flex items-center justify-center text-gray-400">无数据</div>
+  if (!day) return <div className="flex-1 flex items-center justify-center text-gray-400">{t('calendar.noData')}</div>
 
   const { y, m, d } = parseDate(day.date)
   const dt = new Date(y, m - 1, d)
-  const weekday = WEEK_NAMES[dt.getDay() === 0 ? 6 : dt.getDay() - 1]
+  // 日期串走 Intl（决策 #7）：zh「9月3日」「2023年 周六」与旧手写拼接逐字一致
+  //（后者含 year 与星期间的半角空格，Intl 的 year+weekday 组合恰好保留）
+  const titleDate = fmtDate(lang, dt, { month: 'short', day: 'numeric' })
+  const titleYearWeekday = fmtDate(lang, dt, { year: 'numeric', weekday: 'short' })
   const layerById = new Map(layers.map((l) => [l.layer_id, l]))
 
   const visibleEvents = Object.entries(day.events_by_layer)
@@ -60,8 +64,8 @@ export function DayView({ monthData, layers, selectedDate, onSelect, onDoubleCli
           onDoubleClick={() => onDoubleClick(day.date)}
         >
           <div>
-            <p className="text-lg font-semibold">{m}月{d}日</p>
-            <p className="text-xs opacity-80">{y}年 {weekday}{day.is_weekend ? ' · 周末' : ''}</p>
+            <p className="text-lg font-semibold">{titleDate}</p>
+            <p className="text-xs opacity-80">{titleYearWeekday}{day.is_weekend ? t('calendar.weekendSuffix') : ''}</p>
           </div>
           {day.holiday?.name && <span className="text-xs bg-purple-500 text-white px-2 py-1 rounded">{day.holiday.name}</span>}
         </div>
@@ -69,7 +73,7 @@ export function DayView({ monthData, layers, selectedDate, onSelect, onDoubleCli
         <div className="flex-1 p-4 overflow-y-auto">
           {day.custom_bg && (
             <div className="mb-4 flex items-center gap-1">
-              <span className="text-xs text-gray-500 mr-1">标记</span>
+              <span className="text-xs text-gray-500 mr-1">{t('calendar.markLabel')}</span>
               <span
                 className="px-2 py-0.5 rounded text-[11px] text-white"
                 style={{ backgroundColor: day.custom_bg.color }}
@@ -80,7 +84,7 @@ export function DayView({ monthData, layers, selectedDate, onSelect, onDoubleCli
           )}
           {day.coloring_level != null && (
             <div className="mb-4 flex items-center gap-1">
-              <span className="text-xs text-gray-500 mr-1">充实度</span>
+              <span className="text-xs text-gray-500 mr-1">{t('calendar.fullnessLabel')}</span>
               {COLORING_COLORS.map((c, i) => (
                 <span
                   key={i}
@@ -111,7 +115,7 @@ export function DayView({ monthData, layers, selectedDate, onSelect, onDoubleCli
                     <span className="text-gray-800">{it.title}</span>
                     {it.span_total && it.span_total > 1 && (
                       <span className="text-[11px] text-blue-600 flex-shrink-0">
-                        第 {it.span_index}/{it.span_total} 天 · {it.span_start} ~ {it.span_end}
+                        {t('calendar.spanRange', { i: it.span_index ?? '', total: it.span_total, start: it.span_start ?? '', end: it.span_end ?? '' })}
                       </span>
                     )}
                   </div>
@@ -119,7 +123,7 @@ export function DayView({ monthData, layers, selectedDate, onSelect, onDoubleCli
             </div>
           )}
           {visibleEvents.length === 0 ? (
-            <p className="text-sm text-gray-400">当天无事件</p>
+            <p className="text-sm text-gray-400">{t('calendar.emptyDay')}</p>
           ) : (
             <ul className="space-y-2">
               {visibleEvents.map((ev) => {

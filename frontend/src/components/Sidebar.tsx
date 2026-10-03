@@ -6,6 +6,7 @@ import type { Layer } from '../types'
 import { createLayer, getSubscriptions } from '../api/client'
 import { COLOR_PRESETS, GRADED_PALETTES } from '../data'
 import { Modal, Field } from './ui/Modal'
+import { useT, type TxKey } from '../i18n'
 
 interface Props {
   layers: Layer[]
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function Sidebar({ layers, onToggle, countdown }: Props) {
+  const t = useT()
   const qc = useQueryClient()
   const [showCreate, setShowCreate] = useState(false)
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {
@@ -53,9 +55,10 @@ export function Sidebar({ layers, onToggle, countdown }: Props) {
   const { data: subs = [] } = useQuery({ queryKey: ['subscriptions'], queryFn: getSubscriptions })
   const subNames = useMemo(() => new Set(subs.map((s) => s.display_name)), [subs])
 
-  const kindMeta: Record<string, { title: string }> = {
-    color: { title: '涂色' },
-    dot: { title: '点点' },
+  // labelKey 模式：模块常量不存文案，渲染时 t(m.titleKey)
+  const kindMeta: Record<string, { titleKey: TxKey }> = {
+    color: { titleKey: 'shell.kind.color' },
+    dot: { titleKey: 'shell.kind.dot' },
   }
 
   const onCreated = () => {
@@ -66,7 +69,7 @@ export function Sidebar({ layers, onToggle, countdown }: Props) {
 
   return (
     <aside className="w-60 bg-white border-r border-gray-200 p-4 overflow-y-auto flex flex-col">
-      <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">导航</h2>
+      <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('shell.navHeading')}</h2>
 
       <div className="flex flex-col gap-2 mb-4">
         {(['color', 'dot'] as const).map((kind) => {
@@ -81,7 +84,7 @@ export function Sidebar({ layers, onToggle, countdown }: Props) {
                 className="w-full flex items-center gap-1 px-1 py-1 text-[11px] font-semibold text-gray-500 hover:text-gray-700"
               >
                 {collapsed[kindId] ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
-                {kindMeta[kind].title}
+                {t(kindMeta[kind].titleKey)}
               </button>
               {!collapsed[kindId] && (
                 <div className="flex flex-col gap-1 ml-1">
@@ -95,7 +98,7 @@ export function Sidebar({ layers, onToggle, countdown }: Props) {
             const members = groups[grp]
             const hasGroup = grp !== ''
             const grpId = `group:${kind}:${grp}`
-            const grpTitle = hasGroup ? grp : '其他'
+            const grpTitle = hasGroup ? grp : t('shell.groupOther')
             return (
               <div key={grp}>
                 {hasGroup && (
@@ -125,7 +128,7 @@ export function Sidebar({ layers, onToggle, countdown }: Props) {
                 className="w-full flex items-center gap-1 px-1 py-0.5 text-[11px] text-gray-400 hover:text-gray-600"
               >
                 {collapsed[`subs:${kind}`] ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
-                订阅
+                {t('terms.subscription')}
                 <span className="text-[10px] text-gray-300">{subGroupKeys.reduce((n, g) => n + groups[g].length, 0)}</span>
               </button>
               {!collapsed[`subs:${kind}`] && (
@@ -169,13 +172,13 @@ export function Sidebar({ layers, onToggle, countdown }: Props) {
           onClick={() => setShowCreate(true)}
           className="flex items-center gap-1 px-2 py-1.5 text-sm text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md mt-0.5"
         >
-          <Plus size={14} /> 新建图层
+          <Plus size={14} /> {t('shell.createLayer')}
         </button>
       </div>
 
       <div className="mt-auto">
         <div className="rounded-lg bg-gray-100 p-3">
-          <p className="text-[11px] text-gray-400 mb-1">倒计时</p>
+          <p className="text-[11px] text-gray-400 mb-1">{t('shell.countdownLabel')}</p>
           <p className="text-sm text-gray-600 font-medium select-text">{countdown}</p>
         </div>
       </div>
@@ -213,11 +216,14 @@ function LayerRow({ layer, onToggle }: { layer: Layer; onToggle: (id: string) =>
 }
 
 function CreateLayerDialog({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const t = useT()
   const qc = useQueryClient()
   const [kind, setKind] = useState<'color' | 'dot'>('color')
   const [mode, setMode] = useState<'solid' | 'graded' | 'tag'>('solid')
   const [name, setName] = useState('')
   const [color, setColor] = useState<string | null>(COLOR_PRESETS[0])
+  // '绿' 是 GRADED_PALETTES 的中文 key（data.ts 逻辑键，非文案；data.ts 本批不动，显示原样）
+  // eslint-disable-next-line no-restricted-syntax
   const [paletteName, setPaletteName] = useState<keyof typeof GRADED_PALETTES>('绿')
   const [tag, setTag] = useState('')
   const [group, setGroup] = useState('')
@@ -231,14 +237,14 @@ function CreateLayerDialog({ onClose, onCreated }: { onClose: () => void; onCrea
         if (mode === 'graded') config.palette = GRADED_PALETTES[paletteName]
         if (mode === 'tag') {
           config.color = color
-          const t = tag.trim()
-          if (!t) throw new Error('请输入标签名')
-          config.tag = t
+          const tagValue = tag.trim()
+          if (!tagValue) throw new Error(t('shell.tagRequired'))
+          config.tag = tagValue
         }
       }
-      const defaultName = kind === 'color'
-        ? (mode === 'solid' ? '自定义涂色' : mode === 'graded' ? '分级涂色' : '标签涂色')
-        : '自定义图层'
+      // 默认图层名会作为 display_name 写入数据库（持久化数据，手册 §5.1），保持原样不抽词
+      // eslint-disable-next-line no-restricted-syntax
+      const defaultName = kind === 'color' ? (mode === 'solid' ? '自定义涂色' : mode === 'graded' ? '分级涂色' : '标签涂色') : '自定义图层'
       await createLayer({
         display_name: name.trim() || defaultName,
         color: kind === 'color' && mode === 'graded' ? null : color,
@@ -254,74 +260,74 @@ function CreateLayerDialog({ onClose, onCreated }: { onClose: () => void; onCrea
   })
 
   return (
-    <Modal title="新建图层" onClose={onClose} width={440}>
+    <Modal title={t('shell.createLayer')} onClose={onClose} width={440}>
       <div className="flex flex-col gap-4">
-        <Field label="图层类型">
+        <Field label={t('shell.field.layerKind')}>
           <div className="grid grid-cols-2 gap-2">
             {([
-              { k: 'color', label: '涂色图层', desc: '给日期格子涂色' },
-              { k: 'dot', label: '点点图层', desc: '显示色点+信息' },
-            ] as const).map((t) => (
+              { k: 'color', labelKey: 'shell.kindLayer.color', descKey: 'shell.kindLayer.colorDesc' },
+              { k: 'dot', labelKey: 'shell.kindLayer.dot', descKey: 'shell.kindLayer.dotDesc' },
+            ] as const).map((card) => (
               <button
-                key={t.k}
-                onClick={() => setKind(t.k)}
+                key={card.k}
+                onClick={() => setKind(card.k)}
                 className={clsx(
                   'flex flex-col items-center gap-0.5 px-2 py-2 rounded-lg border text-sm transition',
-                  kind === t.k ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                  kind === card.k ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50',
                 )}
               >
-                <span className="font-medium">{t.label}</span>
-                <span className="text-[10px] text-gray-400">{t.desc}</span>
+                <span className="font-medium">{t(card.labelKey)}</span>
+                <span className="text-[10px] text-gray-400">{t(card.descKey)}</span>
               </button>
             ))}
           </div>
         </Field>
 
-        <Field label="图层名称">
+        <Field label={t('shell.field.layerName')}>
           <input
             className="tt-input"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder={kind === 'dot' ? '如：朋友A约饭' : mode === 'solid' ? '如：早起打卡' : mode === 'graded' ? '如：项目进度' : '如：重要客户跟进'}
+            placeholder={kind === 'dot' ? t('shell.namePlaceholder.dot') : mode === 'solid' ? t('shell.namePlaceholder.solid') : mode === 'graded' ? t('shell.namePlaceholder.graded') : t('shell.namePlaceholder.tag')}
           />
         </Field>
 
-        <Field label="归类分组（可选）">
+        <Field label={t('shell.field.group')}>
           <input
             className="tt-input"
             value={group}
             onChange={(e) => setGroup(e.target.value)}
-            placeholder={kind === 'dot' ? '如：约饭（留空则不分组）' : '如：打卡（留空则不分组）'}
+            placeholder={kind === 'dot' ? t('shell.groupPlaceholder.dot') : t('shell.groupPlaceholder.color')}
           />
-          <p className="text-[11px] text-gray-400 mt-1">填相同的分组名会收纳到一起（如多个"约饭"图层都填"约饭"）。</p>
+          <p className="text-[11px] text-gray-400 mt-1">{t('shell.groupHint')}</p>
         </Field>
 
         {kind === 'color' && (
           <>
-            <Field label="涂色模板">
+            <Field label={t('shell.field.template')}>
               <div className="grid grid-cols-3 gap-2">
                 {([
-                  { k: 'solid', label: '习惯打卡', desc: '单色涂满' },
-                  { k: 'graded', label: '工作完成度', desc: '五档颜色' },
-                  { k: 'tag', label: '关联涂色', desc: '按待办标签' },
-                ] as const).map((t) => (
+                  { k: 'solid', labelKey: 'shell.template.solid', descKey: 'shell.template.solidDesc' },
+                  { k: 'graded', labelKey: 'shell.template.graded', descKey: 'shell.template.gradedDesc' },
+                  { k: 'tag', labelKey: 'shell.template.tag', descKey: 'shell.template.tagDesc' },
+                ] as const).map((card) => (
                   <button
-                    key={t.k}
-                    onClick={() => setMode(t.k)}
+                    key={card.k}
+                    onClick={() => setMode(card.k)}
                     className={clsx(
                       'flex flex-col items-center gap-0.5 px-2 py-2 rounded-lg border text-sm transition',
-                      mode === t.k ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                      mode === card.k ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50',
                     )}
                   >
-                    <span className="font-medium">{t.label}</span>
-                    <span className="text-[10px] text-gray-400">{t.desc}</span>
+                    <span className="font-medium">{t(card.labelKey)}</span>
+                    <span className="text-[10px] text-gray-400">{t(card.descKey)}</span>
                   </button>
                 ))}
               </div>
             </Field>
 
             {mode === 'graded' ? (
-              <Field label="五档颜色预设">
+              <Field label={t('shell.field.palette')}>
                 <div className="flex gap-2">
                   {(Object.keys(GRADED_PALETTES) as (keyof typeof GRADED_PALETTES)[]).map((pk) => (
                     <button
@@ -343,7 +349,7 @@ function CreateLayerDialog({ onClose, onCreated }: { onClose: () => void; onCrea
                 </div>
               </Field>
             ) : (
-              <Field label="颜色">
+              <Field label={t('shell.field.color')}>
                 <div className="flex gap-1.5 flex-wrap">
                   {COLOR_PRESETS.map((c) => (
                     <button
@@ -361,15 +367,15 @@ function CreateLayerDialog({ onClose, onCreated }: { onClose: () => void; onCrea
             )}
 
             {mode === 'tag' && (
-              <Field label="关联待办标签">
+              <Field label={t('shell.field.tag')}>
                 <input
                   className="tt-input"
                   value={tag}
                   onChange={(e) => setTag(e.target.value)}
-                  placeholder="输入标签名（如：客户）"
+                  placeholder={t('shell.tagPlaceholder')}
                 />
                 <p className="text-[11px] text-gray-400 mt-1">
-                  所有带该标签的待办，其计划日期 / 截止日期会自动染上图层颜色。
+                  {t('shell.tagHint')}
                 </p>
               </Field>
             )}
@@ -377,17 +383,17 @@ function CreateLayerDialog({ onClose, onCreated }: { onClose: () => void; onCrea
         )}
 
         <p className="text-[11px] text-gray-400">
-          ⚠️ 删除图层只能在「设置」页面进行，删除后该图层的标记数据不会保留。
+          {t('shell.deleteHint')}
         </p>
 
         <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg">取消</button>
+          <button onClick={onClose} className="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg">{t('common.cancel')}</button>
           <button
             onClick={() => mut.mutate()}
             disabled={mut.isPending}
             className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40"
           >
-            {mut.isPending ? '创建中…' : '创建'}
+            {mut.isPending ? t('shell.creating') : t('shell.create')}
           </button>
         </div>
       </div>
