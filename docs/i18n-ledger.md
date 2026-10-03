@@ -1,29 +1,49 @@
-# 老端 i18n 施工台账（20261003 夜开工）
+# 老端 i18n 施工台账（20261003 夜开工，20261004 凌晨续）
 
 > 施工手册：`E:\TT_Calendar_Neo\docs\i18n-handoff-tt-calendar.md`（已过 Neo 架构终审）。
 > 本文件是老端施工的**义务台账**：智者门的条件、承诺与禁令都落在这里，逐项核销。
+> Python 侧勘察全清单见 `docs/i18n-python-survey.md`（门2 条件1 要求的仓内实体）。
 
 ## 门记录
 
 | 门 | 内容 | 裁决 | 条件核销 |
 |---|---|---|---|
-| 智者门 1（P0 基建 320097c） | i18n 运行时移植+中文棘轮+白名单 28 文件 | **有条件放行**（20261003 夜） | 见下 ↓ |
+| 智者门 1（P0 基建 320097c） | i18n 运行时移植+中文棘轮+白名单 28 文件 | **有条件放行** | C1-C4 全核销（见下） |
+| 智者门 2（A2 抽词四批 055ec43） | 批①表单三大件/批②日历视图/批③杂项+双盲+lunar/批④todo 全视图，白名单 28→**0** | **有条件放行**（20261004 凌晨） | D1 已补（本台账+python-survey 文档）；D2/D3 登记↓ |
 
-### 门 1 条件核销
+### 门 1 条件核销（20261003 夜）
 
-- [x] **C1 口径更正**：白名单 28 vs grep 32 的差额 4 **不是**"豁免测试文件"（测试文件在两口径中均被排除）。真实差额：`src/main.tsx`、`src/types.ts`、`src/core/types.ts`（仅注释含中文，AST 级合法）+ **`src/data.ts`（代码级中文对象键，见 C2）**。申报口径失实一笔已认领，入晨报纪律自省。
-- [x] **C2 data.ts 双盲义务**：`src/data.ts:14-21` GRADED_PALETTES 的中文对象键（绿/蓝/橙/紫/红/青/靛/灰）对棘轮三 selector **不可见**（对象键是 Identifier 非 Literal），allowlist 脚本也**永不收录**该文件——**"白名单归零 ≠ 中文清零"**。裁决（手册 §5.2 已定）：改 ASCII key + 字典标签。持久化前提已核实：`Sidebar.tsx:231` 存入 config 的是**色值数组**非键名。→ **A2 批③执行**。
-- [x] **C3 golden lunarText 恢复承诺**：`src/i18n/__tests__/i18n-format-golden.test.tsx` 头注释所载"A2 恢复 lunarText 段"升格为本台账条目 → **A2 批③随 data.ts 映射层一并恢复**。
-- [x] **C4 禁令**：`common.daysAfter/daysBefore` 两个骨架复数键**仅限测试脚手架，禁止接入 UI 相对天数显示**（手册 §8.10：Intl.RelativeTimeFormat 自带介词与复数，唯一正路是 `format.ts` fmtRelativeDays；zh 输出无空格"3天后"，骨架键带空格会同时破 §8.10 与逐屏一致）。
+- [x] **C1 口径更正**：白名单 28 vs grep 32 差额=main.tsx/types.ts/core/types.ts（纯注释）+data.ts（代码级中文对象键）。
+- [x] **C2 data.ts 双盲义务**：→批③ 执行完毕（GRADED_PALETTES 键 绿/蓝/橙/紫/红/青/靛/灰→green/blue/orange/purple/red/cyan/indigo/gray + `palette.*` 字典标签；Sidebar.tsx:237 实证存色值数组；门2 复核"双盲死角已封"）。
+- [x] **C3 golden lunarText 恢复**：→批③ 执行（降级路线：Day.lunar 系后端拼好的中文串 aggregator.py:310，不改数据结构；golden 恢复为 lunarDisplay 回归钉——zh 三形态透传/非 CJK 决策#9 隐藏；门2 裁断接受，附条件 D3↓）。
+- [x] **C4 禁令**：common.daysAfter/daysBefore 仅测试脚手架，禁接入 UI（fmtRelativeDays 唯一正路）。
 
-## A2 批次计划（P1 抽词）
+### 门 2 条件（20261004）
 
-- **批①** 表单三大件：`dialogs.tsx`、`TodoDetailPanel.tsx`、`SettingsDialog.tsx`（对照 Neo fragments：dialogs/todoEditor/settings，zh 以老端原文为准）
-- **批②** 日历视图：`App.tsx`、`Sidebar.tsx`、`CountdownView.tsx`、`TopBar.tsx`、`DayCell/DayView/WeekView/YearView/MonthGrid`、`todo/*`（七视图）
-- **批③** 杂项+双盲：`StatsView/DetailPanel/NotesEditorModal/ReminderBanner/ErrorBoundary/SourceFields/TodoEditor`、`api/client.ts`、`utils/todoLogic.ts`、**`data.ts`（C2）**、index.css 若有 content 文案；恢复 lunarText golden（C3）；Python 侧分类法（db.py 种子→显示映射、routes 错误消息→结构化码、aggregator 结构化）
-- 每批验收四件套：eslint 0 错 + tsc 基线一致 + vitest 全绿 + allowlist 收窄；zh 逐屏一致红线全程有效。
+- [x] **D1 台账欠账（本文件+python-survey.md，批④后/A3 前补齐）**：A2 四批记录、C2/C3 核销、Python 侧勘察清单全部落仓内实体。**申报口径纪律（门2 警示，第二次）：凡"成文/已登记"类申报必须有仓内实体对应，再犯打回。**
+- [ ] **D2 SYNC_IN_PROGRESS_MARK 迁移**：`fragments/app.ts` 导出的 `'正在进行'` 子串匹配属协议逻辑键，Python 结构化错误码落地时迁出 i18n/** 并删子串匹配（现 TODO-REVIEW 在代码，暂不强制搬家）→列入 Python 批次范围。
+- [ ] **D3 lunar ja/ko 升格**：Python 侧 Day.lunar 结构化（{year,month,day,leap}）落地时，lunarDisplay 的 ja/ko 从透传升格为翻译档（旧暦/음력）→列入 Python 批次范围。
+
+## A2 批次记录（P1 抽词）
+
+| 批 | commit | 范围 | 白名单 |
+|---|---|---|---|
+| ① | b66c4f7 | dialogs/TodoDetailPanel/SettingsDialog（+fragments dialogs/todoDetail/settings） | 28→25 |
+| ② | 0d753ff | App/Sidebar/TopBar/CountdownView/日周月年视图（+terms/topbar/shell/countdown/calendar/app） | 25→16 |
+| ③ | ea8db5e | 杂项七组件+api/client+todoLogic+data.ts(C2)+lunar golden(C3)（+stats/detail/todoEditor/todo/palette/sourceFields/errors+adapt/labels） | 16→7 |
+| ④ | 055ec43 | TodoView+todo/ 六视图（+todoview/todoboards） | 7→**0** |
+
+- 行级豁免六处（门2 逐一核验全为持久化数据/逻辑键）：BUILTIN_CATEGORIES、`category || '其他'`、`日程待办`（todo_lists.display_name+查找键）、自动建待办 body 模板、Sidebar 图层默认名、`任务`（createTodoList）。
+- 有意 zh 差异登记：TopBar 标题 Intl 去空格（「2026 年」→「2026年」，唯一）；gantt 月份刻度保留手拼 `{n} 月`（Intl 会去空格，留 P5）；DayView 年周空格 `2023年 周六` Intl 恰好保留（门2 逐字节实证）。
+- 词表并存：todoview.imp/status/complexity 与 todoDetail 同文不同 key——手册 §4.2 抽词期禁合并，合并留抽词后独立任务。
+
+## 待办批次
+
+- **A3（P2 语言选择页）**：LanguagePickerScreen 老端适配+language fragment+AppGate（I18nProvider+hasChosenLang 门）→智者门 3。
+- **批⑤（Python 侧结构化，独立批次）**：按 `docs/i18n-python-survey.md` 清单实施（错误码化 ~33 条/协议键迁移 D2/lunar 结构化+D3 升格/db.py 种子显示映射/layerLabel 老端版）。开工前置=本台账 D1 已核销 ✅。
+- **A4（P3 翻译生产）**：en 已随批产出；ja/ko/fr/es/ru/zh-Hant 待时间窗（同文表可抄 Neo 字典）。
 
 ## 环境
 
-- node v22.22.2 便携版 `$HOME/node22/node-v22.22.2-win-x64`（node18 无法运行 vitest4/jsdom）。
-- tsc 存量基线 3 错误（TodoView.tsx:545 repeat 字段 + DayEntryDialog.test.tsx:67 + TodoDetailPanel.flush.test.tsx:27），i18n 施工不得新增。
+- node v22.22.2 便携版 `$HOME/node22/node-v22.22.2-win-x64`（**无 /bin 子目录**，export PATH 到该目录本身；node18 无法运行 vitest4/jsdom）。
+- tsc 存量基线 3 错误（TodoView.tsx repeat 字段——批④后行号 545→564 + 两个测试文件），i18n 施工不得新增。
