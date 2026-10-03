@@ -11,7 +11,14 @@
  *
  *  - 各命名空间：common 9/0 · dialogs 53/47 · todoDetail 45/4 · settings 48/22 · terms 4/0 · topbar 20/0 · shell 36/0 · countdown 35/5 · calendar 4/7 · app 5/0 · stats 16/7 · detail 27/3 · todoEditor 10/0 · todo 11/0 · palette 8/0 · sourceFields 0/2 · errors 1/0 · todoview 42/4 · todoboards 53/7 · language 4/0
  *
- * 术语沿用 Neo docs/i18n-translation-spec.md §2 冻结表（4 词×N 语言）：倒数日→カウントダウン / 图层→レイヤー / 待办→ToDo / 订阅→サブスクリプション；
+ * 术语沿用（出处更正，门4 条件2）：倒数日→カウントダウン / 图层→レイヤー / 待办→ToDo 三词
+ * 见 Neo docs/i18n-translation-spec.md §2 冻结表；「订阅」一行 §2 原表并无——其译名出处为
+ * Neo dict terms.subscription 的字典值（サブスクリプション/구독）+ 终审清单 4 词目录，特此更正引据。
+ *
+ * 「订阅」ja 术语裁决（门4 条件1，登记为正式分流）：标签位（弹窗标题/terms 徽章）=
+ * サブスクリプション（服务名形态，×2 处）；行文位（intro/pendingCount/toggleOn/toggleOff/
+ * deleteConfirm/fieldRules 等）= 購読（和语自然形，×9 处）——同词双译系有意分流而非失统一，
+ * 依 Neo spec §2 自带追加条款登记于此（Neo 仓只读，规范本体不回改）；ko 无分流（구독 全文统一）。
  * 其余沿用：日程→予定 / 事件→イベント / 涂色→クリップ / 充实度→充実度 / 点点→ドット / 农历→旧暦 / 纪念日→記念日。
  * 老端独有概念批次内首译定名（登记）：适配→アダプター対応、待适配→対応待ち、子动作→サブアクション、星级→星評価/星数、
  * 集思录→Jisilu（品牌名）、事件导入→イベント取り込み、
