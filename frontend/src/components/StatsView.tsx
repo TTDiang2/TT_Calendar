@@ -70,6 +70,7 @@ export function StatsView() {
         {/* 四象限 */}
         <section className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col min-h-0">
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">待办四象限</h3>
+          {/* eslint-disable-next-line no-irregular-whitespace -- 全角空格是文案的一部分（zh 逐屏一致红线，禁改字符） */}
           <p className="text-[11px] text-gray-400 mb-2">横轴：到期紧迫度 →　纵轴：重要性 ↑（点 = 未完成待办）</p>
           <div className="relative flex-1 min-h-[240px] border border-gray-100 rounded bg-gray-50/50">
             {/* 象限分割线 */}
