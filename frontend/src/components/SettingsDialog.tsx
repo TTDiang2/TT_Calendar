@@ -10,6 +10,7 @@ import {
   getSyncConfig, getSyncStatus, saveSyncConfig, testSync, syncNow, resolveSync,
   type SyncResult,
 } from '../api/client'
+import { useT, useTPlural, type I18n, type TxKey } from '../i18n'
 import type { Layer } from '../types'
 
 interface Props {
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd, onClose }: Props) {
+  const t = useT()
   const qc = useQueryClient()
   const [start, setStart] = useState(defaultStart)
   const [end, setEnd] = useState(defaultEnd)
@@ -30,7 +32,7 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
     mutationFn: () => importJisilu(start, end),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['view'] })
-      setResult(`导入 ${res.inserted} 条${res.error ? '；错误：' + res.error : ''}`)
+      setResult(res.error ? t('settings.import.resultError', { n: res.inserted, error: res.error }) : t('settings.import.resultOk', { n: res.inserted }))
     },
   })
 
@@ -38,12 +40,12 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
   const customLayers = layers.filter((l) => l.layer_id.startsWith('custom_'))
 
   return (
-    <Modal title="设置" onClose={onClose} width={720}>
+    <Modal title={t('settings.title')} onClose={onClose} width={720}>
       <div className="flex flex-col gap-5">
         <section>
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">事件导入</h3>
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.import.sectionTitle')}</h3>
           <div className="flex gap-2 mb-2">
-            <Field label="开始">
+            <Field label={t('settings.import.fieldStart')}>
               <input
                 type="date"
                 className="tt-input"
@@ -51,7 +53,7 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
                 onChange={(e) => setStart(e.target.value)}
               />
             </Field>
-            <Field label="结束">
+            <Field label={t('settings.import.fieldEnd')}>
               <input
                 type="date"
                 className="tt-input"
@@ -61,7 +63,7 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
             </Field>
           </div>
           <p className="text-xs text-gray-400 mb-2">
-            从集思录抓取该区间的新股/可转债/分红/期权等数据。已禁用的图层会跳过。
+            {t('settings.import.desc')}
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -69,7 +71,7 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
               disabled={importMut.isPending}
               className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40"
             >
-              {importMut.isPending ? '导入中…' : '开始导入'}
+              {importMut.isPending ? t('settings.import.running') : t('settings.import.start')}
             </button>
             {result && <span className="text-sm text-green-600">{result}</span>}
           </div>
@@ -77,7 +79,7 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
 
         {jisilu.length > 0 && (
           <section>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">集思录投资日历</h3>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.jisilu.sectionTitle')}</h3>
             <div className="flex flex-col gap-1">
               {jisilu.map((l) => (
                 <LayerAccordion key={l.layer_id} layer={l} onToggle={onToggleLayer} />
@@ -87,9 +89,9 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
         )}
 
         <section>
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">自定义图层</h3>
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.layers.sectionTitle')}</h3>
           {customLayers.length === 0 ? (
-            <p className="text-sm text-gray-400">暂无自定义图层。可在日历左侧边栏点「新建图层」创建。</p>
+            <p className="text-sm text-gray-400">{t('settings.layers.empty')}</p>
           ) : (
             <div className="flex flex-col gap-1">
               {customLayers.map((l) => (
@@ -111,6 +113,8 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
 }
 
 function BusyConfigSection() {
+  const t = useT()
+  const tPlural = useTPlural()
   const qc = useQueryClient()
   const { data: cfg } = useQuery({ queryKey: ['todoBusyConfig'], queryFn: getTodoBusyConfig, staleTime: 60_000 })
   const [local, setLocal] = useState<TodoBusyConfig | null>(null)
@@ -129,7 +133,7 @@ function BusyConfigSection() {
     onSuccess: (days) => {
       qc.invalidateQueries({ queryKey: ['todoBusyConfig'] })
       qc.invalidateQueries({ queryKey: ['view'] })
-      setMsg(`已保存并重算 ${days} 天的忙度快照`)
+      setMsg(tPlural('settings.busy.savedDays', days ?? 0))
     },
   })
 
@@ -151,26 +155,26 @@ function BusyConfigSection() {
 
   return (
     <section>
-      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">待办忙度</h3>
+      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.busy.sectionTitle')}</h3>
       <p className="text-xs text-gray-400 mb-2">
-        预测层：未完成待办按「截止×5 + 计划×3 + 重要度 + 复杂度」加权，用于未来日期；实际层：勾选当天计分，用于过去日期。
+        {t('settings.busy.desc')}
       </p>
       {!local ? (
-        <p className="text-sm text-gray-400">加载中…</p>
+        <p className="text-sm text-gray-400">{t('settings.loading')}</p>
       ) : (
         <div className="flex flex-col gap-3">
           <div className="flex gap-2">
-            <Field label="截止权重">
+            <Field label={t('settings.busy.fieldDue')}>
               <input type="number" step="0.5" className="tt-input w-full" value={local.weights.due_date}
                 onChange={(e) => setNum(['weights', 'due_date'], e.target.value)} />
             </Field>
-            <Field label="计划权重">
+            <Field label={t('settings.busy.fieldPlanned')}>
               <input type="number" step="0.5" className="tt-input w-full" value={local.weights.planned_date}
                 onChange={(e) => setNum(['weights', 'planned_date'], e.target.value)} />
             </Field>
           </div>
           <div className="flex gap-2">
-            <Field label="重要度 高/中/低">
+            <Field label={t('settings.busy.fieldImportance')}>
               <div className="flex gap-1">
                 {(['high', 'medium', 'low'] as const).map((k) => (
                   <input key={k} type="number" step="0.5" className="tt-input w-14" value={local.weights.importance[k]}
@@ -178,7 +182,7 @@ function BusyConfigSection() {
                 ))}
               </div>
             </Field>
-            <Field label="复杂度 高/中/低">
+            <Field label={t('settings.busy.fieldComplexity')}>
               <div className="flex gap-1">
                 {(['high', 'medium', 'low'] as const).map((k) => (
                   <input key={k} type="number" step="0.5" className="tt-input w-14" value={local.weights.complexity[k]}
@@ -187,10 +191,10 @@ function BusyConfigSection() {
               </div>
             </Field>
           </div>
-          <Field label="分档阈值（5 个）">
+          <Field label={t('settings.busy.fieldThresholds')}>
             <div className="flex gap-1">
-              {local.thresholds.map((t, i) => (
-                <input key={i} type="number" className="tt-input w-12" value={t}
+              {local.thresholds.map((th, i) => (
+                <input key={i} type="number" className="tt-input w-12" value={th}
                   onChange={(e) => {
                     const n = Number(e.target.value)
                     if (Number.isNaN(n)) return
@@ -202,10 +206,10 @@ function BusyConfigSection() {
             </div>
           </Field>
           <div className="flex items-center gap-3">
-            <span className="text-[11px] text-gray-500 flex-shrink-0">预测层</span>
+            <span className="text-[11px] text-gray-500 flex-shrink-0">{t('settings.busy.predictLayer')}</span>
             <div className="flex gap-1">
               {local.predict_colors.map((c, i) => (
-                <input key={i} type="color" value={c} title={`档位 ${i + 1}`}
+                <input key={i} type="color" value={c} title={t('settings.busy.levelTitle', { n: i + 1 })}
                   onChange={(e) => {
                     const next = structuredClone(local)
                     next.predict_colors[i] = e.target.value
@@ -215,10 +219,10 @@ function BusyConfigSection() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-[11px] text-gray-500 flex-shrink-0">实际层</span>
+            <span className="text-[11px] text-gray-500 flex-shrink-0">{t('settings.busy.actualLayer')}</span>
             <div className="flex gap-1">
               {local.done_colors.map((c, i) => (
-                <input key={i} type="color" value={c} title={`档位 ${i + 1}`}
+                <input key={i} type="color" value={c} title={t('settings.busy.levelTitle', { n: i + 1 })}
                   onChange={(e) => {
                     const next = structuredClone(local)
                     next.done_colors[i] = e.target.value
@@ -233,7 +237,7 @@ function BusyConfigSection() {
               disabled={saveMut.isPending}
               className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40"
             >
-              {saveMut.isPending ? '保存中…' : '保存并重算'}
+              {saveMut.isPending ? t('settings.saving') : t('settings.busy.save')}
             </button>
             {msg && <span className="text-sm text-green-600">{msg}</span>}
           </div>
@@ -243,11 +247,13 @@ function BusyConfigSection() {
   )
 }
 
-function reportText(r: SyncResult): string {
-  return `拉取 ${r.pulled ?? 0} · 推送 ${r.pushed ?? 0} · 冲突 ${r.conflicts ?? 0} · 删除 ${r.deleted ?? 0}` + (r.warning ? `（${r.warning}）` : '')
+function reportText(r: SyncResult, t: I18n['t']): string {
+  return t('settings.sync.report', { pulled: r.pulled ?? 0, pushed: r.pushed ?? 0, conflicts: r.conflicts ?? 0, deleted: r.deleted ?? 0 })
+    + (r.warning ? t('settings.sync.reportWarning', { warning: r.warning }) : '')
 }
 
 function ReminderConfigSection() {
+  const t = useT()
   const qc = useQueryClient()
   const { data: cfg } = useQuery({
     queryKey: ['todoReminderConfig'],
@@ -270,17 +276,17 @@ function ReminderConfigSection() {
   if (!local) {
     return (
       <section>
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">每日提醒</h3>
-        <p className="text-sm text-gray-400">加载中…</p>
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.reminder.sectionTitle')}</h3>
+        <p className="text-sm text-gray-400">{t('settings.loading')}</p>
       </section>
     )
   }
 
   return (
     <section>
-      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">每日提醒</h3>
+      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.reminder.sectionTitle')}</h3>
       <p className="text-xs text-gray-400 mb-2">
-        到了设定时间，若今日仍有计划未完成的待办，应用顶部会出现一条安静横幅。默认关。
+        {t('settings.reminder.desc')}
       </p>
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -291,9 +297,9 @@ function ReminderConfigSection() {
             disabled={saveMut.isPending}
             className="rounded border-gray-300 text-blue-500 focus:ring-blue-400"
           />
-          <span className="text-sm text-gray-700">启用每日提醒</span>
+          <span className="text-sm text-gray-700">{t('settings.reminder.enable')}</span>
         </label>
-        <Field label="提醒时间">
+        <Field label={t('settings.reminder.fieldTime')}>
           <input
             type="time"
             value={local.time}
@@ -311,6 +317,8 @@ function ReminderConfigSection() {
 }
 
 function SyncConfigSection() {
+  const t = useT()
+  const tPlural = useTPlural()
   const qc = useQueryClient()
   const { data: cfg } = useQuery({ queryKey: ['syncConfig'], queryFn: getSyncConfig })
   const { data: status } = useQuery({ queryKey: ['syncStatus'], queryFn: getSyncStatus })
@@ -344,7 +352,7 @@ function SyncConfigSection() {
       await persist()
       setToken('')
       qc.invalidateQueries({ queryKey: ['syncConfig'] })
-      setMsg({ ok: true, text: '已保存' })
+      setMsg({ ok: true, text: t('settings.sync.savedMsg') })
     } catch (e) { setMsg({ ok: false, text: String(e) }) } finally { setBusy(null) }
   }
 
@@ -366,9 +374,9 @@ function SyncConfigSection() {
       if (r.result === 'needs_decision') {
         setDecision(r.remote_rows ?? 0)
       } else if (r.result === 'initialized') {
-        setMsg({ ok: true, text: `首次初始化完成：已上传 ${r.pushed} 行` })
+        setMsg({ ok: true, text: tPlural('settings.sync.initDone', r.pushed ?? 0) })
       } else {
-        setMsg({ ok: true, text: reportText(r) })
+        setMsg({ ok: true, text: reportText(r, t) })
       }
       qc.invalidateQueries()
     } catch (e) { setMsg({ ok: false, text: String(e) }) } finally { setBusy(null) }
@@ -379,73 +387,73 @@ function SyncConfigSection() {
     try {
       const r = await resolveSync(mode)
       setDecision(null)
-      setMsg({ ok: true, text: `绑定完成：${reportText(r)}` })
+      setMsg({ ok: true, text: t('settings.sync.resolvedDone', { report: reportText(r, t) }) })
       qc.invalidateQueries()
     } catch (e) { setMsg({ ok: false, text: String(e) }) } finally { setBusy(null) }
   }
 
   const lastLine = status?.at
-    ? `${status.ok ? '✓' : '⚠'} 上次同步 ${status.at.slice(11, 19)}`
-    : '尚未同步过'
+    ? t(status.ok ? 'settings.sync.lastSyncOk' : 'settings.sync.lastSyncWarn', { time: status.at.slice(11, 19) })
+    : t('settings.sync.lastSyncNever')
 
   return (
     <section>
-      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">数据同步</h3>
+      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.sync.sectionTitle')}</h3>
       <p className="text-xs text-gray-400 mb-2">
-        通过你的 GitHub 私有仓库在多台电脑间同步全部数据（待办、涂色、纪念日、配置）。数据明文存于你的仓库；PAT 用 Windows 加密保存、永不上传。配置步骤见 docs/SYNC_SETUP.md。
+        {t('settings.sync.desc')}
       </p>
       {decision !== null && (
         <div className="mb-3 p-3 rounded-md bg-amber-50 border border-amber-200 text-sm">
-          <p className="mb-2">远端仓库已有 {decision} 行数据，本地是首次绑定。如何处理？</p>
+          <p className="mb-2">{t('settings.sync.decisionPrompt', { n: decision })}</p>
           <div className="flex gap-2">
             <button disabled={busy !== null} onClick={() => onResolve('merge_push')}
               className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40">
-              合并两边并上传（推荐）
+              {t('settings.sync.resolveMerge')}
             </button>
             <button disabled={busy !== null} onClick={() => onResolve('pull_overwrite')}
               className="px-3 py-1.5 text-sm bg-white border border-red-300 text-red-600 rounded-lg hover:bg-red-50 disabled:opacity-40">
-              用远端覆盖本地
+              {t('settings.sync.resolveOverwrite')}
             </button>
           </div>
         </div>
       )}
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500 w-20 flex-shrink-0">{status?.configured ? lastLine : '未配置'}</span>
+          <span className="text-xs text-gray-500 w-20 flex-shrink-0">{status?.configured ? lastLine : t('settings.sync.notConfigured')}</span>
         </div>
         <div className="flex gap-2">
-          <Field label="仓库（owner/repo）">
+          <Field label={t('settings.sync.fieldRepo')}>
             <input className="tt-input w-full" placeholder="TTDiang2/tt-calendar-data"
               value={repo} onChange={(e) => setRepo(e.target.value)} />
           </Field>
-          <Field label="分支">
+          <Field label={t('settings.sync.fieldBranch')}>
             <input className="tt-input w-24" value={branch} onChange={(e) => setBranch(e.target.value)} />
           </Field>
         </div>
-        <Field label={`PAT（${cfg?.has_token ? '已存储，留空则不修改' : 'fine-grained，见操作指引'}）`}>
+        <Field label={t('settings.sync.patLabel', { state: cfg?.has_token ? t('settings.sync.patStored') : t('settings.sync.patMissing') })}>
           <input type="password" className="tt-input w-full" placeholder={cfg?.has_token ? '••••••••' : 'github_pat_...'}
             value={token} onChange={(e) => setToken(e.target.value)} />
         </Field>
         <label className="flex items-center gap-2 text-sm text-gray-700 select-none">
           <input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} />
-          启动时自动同步一次
+          {t('settings.sync.autoOnStart')}
         </label>
         <label className="flex items-center gap-2 text-sm text-gray-700 select-none">
           <input type="checkbox" checked={closeSync} onChange={(e) => setCloseSync(e.target.checked)} />
-          关闭前自动同步（点窗口 ✕ 时先同步再退出）
+          {t('settings.sync.syncOnClose')}
         </label>
         <div className="flex items-center gap-2">
           <button onClick={onSave} disabled={busy !== null || !repo}
             className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-40">
-            {busy === 'save' ? '保存中…' : '保存'}
+            {busy === 'save' ? t('settings.saving') : t('common.save')}
           </button>
           <button onClick={onTest} disabled={busy !== null || !repo || (!token && !cfg?.has_token)}
             className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-40">
-            {busy === 'test' ? '测试中…' : '测试连接'}
+            {busy === 'test' ? t('settings.sync.testing') : t('settings.sync.test')}
           </button>
           <button onClick={onSync} disabled={busy !== null || !repo || !cfg?.has_token}
             className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40">
-            {busy === 'sync' ? '同步中…' : '立即同步'}
+            {busy === 'sync' ? t('settings.sync.syncing') : t('settings.sync.syncNow')}
           </button>
           {msg && <span className={`text-sm ${msg.ok ? 'text-green-600' : 'text-red-500'}`}>{msg.text}</span>}
         </div>
@@ -455,6 +463,7 @@ function SyncConfigSection() {
 }
 
 function CustomLayerRow({ layer, onToggle }: { layer: Layer; onToggle: (id: string) => void }) {
+  const t = useT()
   const qc = useQueryClient()
   const [confirming, setConfirming] = useState(false)
   const delMut = useMutation({
@@ -489,13 +498,13 @@ function CustomLayerRow({ layer, onToggle }: { layer: Layer; onToggle: (id: stri
           onClick={() => delMut.mutate()}
           className="text-[11px] text-red-600 bg-red-50 px-2 py-0.5 rounded hover:bg-red-100"
         >
-          确认删除
+          {t('settings.layers.confirmDelete')}
         </button>
       ) : (
         <button
           onClick={() => setConfirming(true)}
           className="text-gray-300 hover:text-red-500 p-1"
-          title="删除图层（标记数据不会保留）"
+          title={t('settings.layers.deleteTitle')}
         >
           <Trash2 size={13} />
         </button>
@@ -504,7 +513,9 @@ function CustomLayerRow({ layer, onToggle }: { layer: Layer; onToggle: (id: stri
   )
 }
 
-function LayerAccordion({ layer, onToggle }: { layer: Layer; onToggle: (id: string) => void }) {  const [open, setOpen] = useState(false)
+function LayerAccordion({ layer, onToggle }: { layer: Layer; onToggle: (id: string) => void }) {
+  const t = useT()
+  const [open, setOpen] = useState(false)
   const hasMinImportance = layer.config?.min_importance !== undefined
   return (
     <div className="border border-gray-200 rounded-md">
@@ -518,7 +529,7 @@ function LayerAccordion({ layer, onToggle }: { layer: Layer; onToggle: (id: stri
           onClick={() => setOpen((v) => !v)}
           className="text-[11px] text-blue-600 hover:text-blue-700 px-2"
         >
-          {open ? '收起' : hasMinImportance ? '展开星级过滤' : '展开子动作'}
+          {open ? t('settings.jisilu.collapse') : hasMinImportance ? t('settings.jisilu.expandStar') : t('settings.jisilu.expandSub')}
         </button>
         <button
           onClick={() => onToggle(layer.layer_id)}
@@ -542,6 +553,7 @@ function LayerAccordion({ layer, onToggle }: { layer: Layer; onToggle: (id: stri
 }
 
 function LayerMinImportance({ layer }: { layer: Layer }) {
+  const t = useT()
   const qc = useQueryClient()
   // 本地乐观 state：点击立即反馈（同 LayerSubActions 模式，不依赖 props 快照刷新）
   const [current, setCurrent] = useState<number>(Number(layer.config?.min_importance ?? 0))
@@ -556,16 +568,16 @@ function LayerMinImportance({ layer }: { layer: Layer }) {
       setCurrent(Number(layer.config?.min_importance ?? 0))
     },
   })
-  const options: { v: number; label: string }[] = [
-    { v: 0, label: '全部' },
-    { v: 1, label: '1★ 以上' },
-    { v: 2, label: '2★ 以上' },
-    { v: 3, label: '3★' },
+  const options: { v: number; labelKey: TxKey }[] = [
+    { v: 0, labelKey: 'settings.jisilu.starAll' },
+    { v: 1, labelKey: 'settings.jisilu.star1' },
+    { v: 2, labelKey: 'settings.jisilu.star2' },
+    { v: 3, labelKey: 'settings.jisilu.star3' },
   ]
   return (
     <div className="border-t border-gray-200 bg-gray-50 px-3 py-2">
       <div className="flex items-center gap-1.5 flex-wrap">
-        <span className="text-[11px] text-gray-500">最低星级</span>
+        <span className="text-[11px] text-gray-500">{t('settings.jisilu.minStar')}</span>
         {options.map((o) => (
           <button
             key={o.v}
@@ -580,7 +592,7 @@ function LayerMinImportance({ layer }: { layer: Layer }) {
                 : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300',
             )}
           >
-            {o.label}
+            {t(o.labelKey)}
           </button>
         ))}
       </div>
@@ -589,6 +601,7 @@ function LayerMinImportance({ layer }: { layer: Layer }) {
 }
 
 function LayerSubActions({ layer }: { layer: Layer }) {
+  const t = useT()
   const qc = useQueryClient()
   const { data: pairs = [], isLoading } = useQuery({
     queryKey: ['subActions', layer.layer_id],
@@ -638,16 +651,16 @@ function LayerSubActions({ layer }: { layer: Layer }) {
 
   return (
     <div className="border-t border-gray-200 bg-gray-50 px-3 py-2">
-      {isLoading && <p className="text-xs text-gray-400">读取子动作中…</p>}
+      {isLoading && <p className="text-xs text-gray-400">{t('settings.jisilu.subLoading')}</p>}
       {!isLoading && pairs.length === 0 && (
-        <p className="text-xs text-gray-400">该图层暂无事件数据，无法列出子动作。请先在「事件导入」拉取一次。</p>
+        <p className="text-xs text-gray-400">{t('settings.jisilu.subEmpty')}</p>
       )}
       {!isLoading && pairs.length > 0 && (
         <>
           <div className="flex items-center justify-between mb-1.5">
-            <p className="text-[11px] text-gray-500">{isAllOn ? '当前全部显示' : `已过滤 ${current.length}/${pairs.length}`}</p>
+            <p className="text-[11px] text-gray-500">{isAllOn ? t('settings.jisilu.subAllOn') : t('settings.jisilu.subFiltered', { n: current.length, total: pairs.length })}</p>
             {!isAllOn && (
-              <button onClick={resetAll} className="text-[11px] text-blue-600 hover:text-blue-700">恢复全部</button>
+              <button onClick={resetAll} className="text-[11px] text-blue-600 hover:text-blue-700">{t('settings.jisilu.subReset')}</button>
             )}
           </div>
           <div className="flex flex-wrap gap-1.5">

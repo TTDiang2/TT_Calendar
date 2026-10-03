@@ -26,11 +26,19 @@ import {
   getTodoLists,
   createTodoList,
 } from '../api/client'
+import { useT, type TxKey } from '../i18n'
 import { Plus, Trash2 } from 'lucide-react'
 import { COLORING_COLORS, dateRange } from '../data'
 import type { CalEvent, Layer, Schedule, ScheduleItem } from '../types'
 
-const COLORING_LABELS = ['放松', '轻松', '适中', '充实', '高产']
+/** 充实度 5 档的字典 key（labelKey 模式：渲染时 t(m.labelKey)，模块常量不存文案） */
+const COLORING_LABELS: { key: string; labelKey: TxKey }[] = [
+  { key: 'relaxed', labelKey: 'dialogs.coloringLevel.relaxed' },
+  { key: 'mild', labelKey: 'dialogs.coloringLevel.mild' },
+  { key: 'moderate', labelKey: 'dialogs.coloringLevel.moderate' },
+  { key: 'busy', labelKey: 'dialogs.coloringLevel.busy' },
+  { key: 'productive', labelKey: 'dialogs.coloringLevel.productive' },
+]
 
 // ===========================================================================
 // 事件编辑器（新建 / 编辑）
@@ -49,6 +57,7 @@ export function EventEditor({
   onClose: () => void
   fixedLayerId?: string
 }) {
+  const t = useT()
   const qc = useQueryClient()
   const isEdit = !!event
   const builtinLayers = layers.filter((l) => l.sort_order < 10)
@@ -93,13 +102,13 @@ export function EventEditor({
   })
 
   return (
-    <Modal title={isEdit ? '编辑事件' : '新建事件'} onClose={onClose}>
+    <Modal title={isEdit ? t('dialogs.event.titleEdit') : t('dialogs.event.titleNew')} onClose={onClose}>
       <div className="flex flex-col gap-3">
-        <Field label="标题">
+        <Field label={t('dialogs.event.fieldTitle')}>
           <input className="tt-input" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
         </Field>
         <div className="flex gap-2">
-          <Field label="日期">
+          <Field label={t('dialogs.event.fieldDate')}>
             <input
               type="date"
               className="tt-input"
@@ -108,7 +117,7 @@ export function EventEditor({
             />
           </Field>
           {!fixedLayerId && (
-            <Field label="图层">
+            <Field label={t('dialogs.event.fieldLayer')}>
               <select className="tt-input" value={layerId} onChange={(e) => setLayerId(e.target.value)}>
                 {builtinLayers.map((l) => (
                   <option key={l.layer_id} value={l.layer_id}>
@@ -119,7 +128,7 @@ export function EventEditor({
             </Field>
           )}
         </div>
-        <Field label="描述（可选）">
+        <Field label={t('dialogs.event.fieldDesc')}>
           <textarea
             className="tt-input"
             rows={2}
@@ -127,7 +136,7 @@ export function EventEditor({
             onChange={(e) => setDescription(e.target.value)}
           />
         </Field>
-        <Field label="颜色（可选，#RRGGBB）">
+        <Field label={t('dialogs.event.fieldColor')}>
           <input
             className="tt-input"
             value={color}
@@ -141,7 +150,7 @@ export function EventEditor({
               onClick={() => delMut.mutate()}
               className="text-sm text-red-500 hover:underline"
             >
-              删除
+              {t('common.delete')}
             </button>
           ) : (
             <span />
@@ -151,14 +160,14 @@ export function EventEditor({
               onClick={onClose}
               className="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg"
             >
-              取消
+              {t('common.cancel')}
             </button>
             <button
               onClick={() => saveMut.mutate()}
               disabled={!title.trim() || saveMut.isPending}
               className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40"
             >
-              保存
+              {t('common.save')}
             </button>
           </div>
         </div>
@@ -178,6 +187,7 @@ export function ScheduleEditor({
   date: string
   onClose: () => void
 }) {
+  const t = useT()
   const qc = useQueryClient()
   const { data: items = [] } = useQuery({
     queryKey: ['scheduleItems', date],
@@ -232,10 +242,10 @@ export function ScheduleEditor({
   }
 
   return (
-    <Modal title={`日程 ${date}`} onClose={onClose} width={560}>
+    <Modal title={t('dialogs.schedule.titleWithDate', { date })} onClose={onClose} width={560}>
       <div className="flex flex-col gap-2">
         {effective.length === 0 && (
-          <p className="text-sm text-gray-400 text-center py-4">当天没有日程，点「添加日程」开始</p>
+          <p className="text-sm text-gray-400 text-center py-4">{t('dialogs.schedule.empty')}</p>
         )}
         {effective.map((r, i) => {
           const spanBad = !!r.end_date && r.end_date < r.date
@@ -249,7 +259,7 @@ export function ScheduleEditor({
                   value={r.start_time ?? ''}
                   onChange={(e) => setRow(i, { start_time: e.target.value || null })}
                 />
-                <span className="text-gray-400 text-xs">至</span>
+                <span className="text-gray-400 text-xs">{t('dialogs.toTime')}</span>
                 <input
                   type="time"
                   className="tt-input w-[90px] text-sm"
@@ -261,45 +271,45 @@ export function ScheduleEditor({
                   value={r.category ?? 'work'}
                   onChange={(e) => setRow(i, { category: e.target.value })}
                 >
-                  <option value="work">工作</option>
-                  <option value="course">课程</option>
-                  <option value="sport">运动</option>
-                  <option value="play">玩耍</option>
-                  <option value="other">其他</option>
+                  <option value="work">{t('dialogs.schedule.cat.work')}</option>
+                  <option value="course">{t('dialogs.schedule.cat.course')}</option>
+                  <option value="sport">{t('dialogs.schedule.cat.sport')}</option>
+                  <option value="play">{t('dialogs.schedule.cat.play')}</option>
+                  <option value="other">{t('dialogs.schedule.cat.misc')}</option>
                 </select>
                 <input
                   className="tt-input flex-1 text-sm py-1.5"
-                  placeholder="做什么"
+                  placeholder={t('dialogs.schedule.what')}
                   value={r.title}
                   onChange={(e) => setRow(i, { title: e.target.value })}
                 />
                 <button
                   onClick={() => removeRow(i)}
                   className="text-gray-400 hover:text-red-500 p-1"
-                  title="删除这条日程"
+                  title={t('dialogs.deleteScheduleItem')}
                 >
                   <Trash2 size={14} />
                 </button>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] text-gray-400 flex-shrink-0">日期</span>
+                <span className="text-[11px] text-gray-400 flex-shrink-0">{t('dialogs.schedule.dateLabel')}</span>
                 <input
                   type="date"
                   className="tt-input w-[132px] text-sm"
                   value={r.date}
                   onChange={(e) => setRow(i, { date: e.target.value })}
                 />
-                <span className="text-gray-400 text-xs">至</span>
+                <span className="text-gray-400 text-xs">{t('dialogs.toTime')}</span>
                 <input
                   type="date"
                   className="tt-input w-[132px] text-sm"
                   value={r.end_date ?? ''}
                   min={r.date}
                   onChange={(e) => setRow(i, { end_date: e.target.value || null })}
-                  title="留空 = 单日；填了就是多日日程，每天都显示"
+                  title={t('dialogs.schedule.endDateHint')}
                 />
                 <span className={clsx('text-[11px]', spanBad ? 'text-red-500' : 'text-gray-400')}>
-                  {spanBad ? '结束日期早于开始日期' : spanDays > 1 ? `多日 · 共 ${spanDays} 天` : '单日'}
+                  {spanBad ? t('dialogs.schedule.spanBad') : spanDays > 1 ? t('dialogs.schedule.multiDay', { n: spanDays }) : t('dialogs.schedule.singleDay')}
                 </span>
               </div>
             </div>
@@ -310,18 +320,18 @@ export function ScheduleEditor({
             onClick={addRow}
             className="flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg"
           >
-            <Plus size={14} /> 添加日程
+            <Plus size={14} /> {t('dialogs.schedule.add')}
           </button>
           <div className="flex gap-2">
             <button onClick={onClose} className="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg">
-              取消
+              {t('common.cancel')}
             </button>
             <button
               onClick={() => saveMut.mutate()}
               disabled={saveMut.isPending || effective.some((r) => !r.title.trim() || (!!r.end_date && r.end_date < r.date))}
               className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40"
             >
-              保存
+              {t('common.save')}
             </button>
           </div>
         </div>
@@ -343,6 +353,7 @@ export function ColoringPicker({
   current: number | null
   onClose: () => void
 }) {
+  const t = useT()
   const qc = useQueryClient()
   const setMut = useMutation({
     mutationFn: (lvl: number) => upsertColoring(date, lvl),
@@ -360,9 +371,9 @@ export function ColoringPicker({
   })
 
   return (
-    <Modal title={`充实度 ${date}`} onClose={onClose} width={380}>
+    <Modal title={t('dialogs.coloring.titleWithDate', { date })} onClose={onClose} width={380}>
       <p className="text-xs text-gray-500 mb-2">
-        当前：{current != null ? COLORING_LABELS[current] : '未设'}
+        {t('dialogs.coloring.current', { level: current != null ? t(COLORING_LABELS[current].labelKey) : t('dialogs.coloring.notSet') })}
       </p>
       <div className="grid grid-cols-5 gap-2">
         {COLORING_COLORS.map((c, i) => (
@@ -374,7 +385,7 @@ export function ColoringPicker({
               i >= 3 ? 'text-white' : 'text-gray-700'
             } ${current === i ? 'ring-2 ring-blue-400' : ''}`}
           >
-            {COLORING_LABELS[i]}
+            {t(COLORING_LABELS[i].labelKey)}
           </button>
         ))}
       </div>
@@ -384,10 +395,10 @@ export function ColoringPicker({
           disabled={current == null}
           className="text-sm text-gray-500 hover:underline disabled:opacity-40"
         >
-          清除
+          {t('dialogs.coloring.clear')}
         </button>
         <button onClick={onClose} className="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg">
-          关闭
+          {t('common.close')}
         </button>
       </div>
     </Modal>
@@ -405,6 +416,7 @@ export function SearchDialog({
   onClose: () => void
   onJump: (ev: CalEvent) => void
 }) {
+  const t = useT()
   const [q, setQ] = useState('')
   const { data, isFetching } = useQuery({
     queryKey: ['search', q],
@@ -413,17 +425,17 @@ export function SearchDialog({
   })
 
   return (
-    <Modal title="搜索事件" onClose={onClose} width={520}>
+    <Modal title={t('dialogs.search.title')} onClose={onClose} width={520}>
       <input
         className="tt-input mb-3"
-        placeholder="输入关键词…"
+        placeholder={t('dialogs.search.placeholder')}
         value={q}
         onChange={(e) => setQ(e.target.value)}
         autoFocus
       />
       <div className="max-h-72 overflow-y-auto -mx-1">
         {q.trim() && !isFetching && data && data.length === 0 && (
-          <p className="text-sm text-gray-400 px-1 py-2">未找到匹配「{q}」的事件</p>
+          <p className="text-sm text-gray-400 px-1 py-2">{t('dialogs.search.nothing', { q })}</p>
         )}
         {data?.map((ev, i) => (
           <button
@@ -449,6 +461,7 @@ export function SearchDialog({
 // ===========================================================================
 
 export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
+  const t = useT()
   const qc = useQueryClient()
   const { data: subs = [], isLoading } = useQuery({
     queryKey: ['subscriptions'],
@@ -491,34 +504,33 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
     setRefreshing(s.id); setMsg(null)
     try {
       const r = await refreshSubscription(s.id)
-      setMsg(r.ok ? `「${s.display_name}」已更新（新增 ${r.inserted ?? 0} 条）` : `「${s.display_name}」更新失败：${r.error}`)
+      setMsg(r.ok ? t('dialogs.subscription.updatedMsg', { name: s.display_name, n: r.inserted ?? 0 }) : t('dialogs.subscription.updateFailed', { name: s.display_name, error: r.error ?? '' }))
       invalidate()
     } catch (e) {
-      setMsg(`「${s.display_name}」更新失败：${e instanceof Error ? e.message : '未知错误'}`)
+      setMsg(t('dialogs.subscription.updateFailed', { name: s.display_name, error: e instanceof Error ? e.message : t('dialogs.unknownError') }))
     } finally { setRefreshing(null) }
   }
 
   const pending = subs.filter((s) => s.status === 'pending')
 
   return (
-    <Modal title="订阅" onClose={onClose} width={560}>
+    <Modal title={t('dialogs.subscription.title')} onClose={onClose} width={560}>
       <div className="flex flex-col gap-3">
         <p className="text-xs text-gray-400">
-          订阅外部日历数据源，打开日历时自动保持最新。新增自定义订阅后需由你的 agent 完成适配（应用内会提示）。
+          {t('dialogs.subscription.intro')}
         </p>
 
         {pending.length > 0 && (
           <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800">
-            <p className="font-medium mb-1">有 {pending.length} 个订阅待适配</p>
+            <p className="font-medium mb-1">{t('dialogs.subscription.pendingCount', { n: pending.length })}</p>
             <p className="text-xs leading-relaxed">
-              请把 TT_Calendar 文件夹用您的 agent 软件打开，并提醒 agent 有新的订阅要做适配
-              （agent 将读取下方「待适配」卡片里的登记信息，按 docs/SUBSCRIPTION_SPEC.md 完成适配）。
+              {t('dialogs.subscription.pendingHint')}
             </p>
           </div>
         )}
 
         {isLoading ? (
-          <p className="text-sm text-gray-400 py-4 text-center">加载中…</p>
+          <p className="text-sm text-gray-400 py-4 text-center">{t('common.loading')}</p>
         ) : (
           <div className="flex flex-col gap-2">
             {subs.map((s) => (
@@ -531,7 +543,7 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
                       'relative inline-flex items-center w-8 h-[18px] rounded-full transition-colors flex-shrink-0',
                       s.enabled ? 'bg-blue-500' : 'bg-gray-300',
                     )}
-                    title={s.enabled ? '关闭订阅' : '开启订阅'}
+                    title={s.enabled ? t('dialogs.subscription.toggleOff') : t('dialogs.subscription.toggleOn')}
                   >
                     <span className={clsx(
                       'inline-block w-3.5 h-3.5 rounded-full bg-white shadow transition-transform duration-200',
@@ -539,10 +551,10 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
                     )} />
                   </button>
                   <span className="text-sm text-gray-800 font-medium flex-1 truncate">{s.display_name}</span>
-                  {s.status === 'pending' && <Badge className="bg-amber-100 text-amber-700">待适配</Badge>}
-                  {s.status === 'error' && <Badge className="bg-red-100 text-red-600">出错</Badge>}
+                  {s.status === 'pending' && <Badge className="bg-amber-100 text-amber-700">{t('dialogs.subscription.pendingBadge')}</Badge>}
+                  {s.status === 'error' && <Badge className="bg-red-100 text-red-600">{t('dialogs.subscription.errorBadge')}</Badge>}
                   {s.status === 'active' && s.last_synced_at && (
-                    <span className="text-[11px] text-gray-400">更新于 {s.last_synced_at.slice(5, 16)}</span>
+                    <span className="text-[11px] text-gray-400">{t('dialogs.subscription.updatedAt', { time: s.last_synced_at.slice(5, 16) })}</span>
                   )}
                 </div>
                 {s.status === 'error' && s.last_error && (
@@ -550,8 +562,8 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
                 )}
                 {s.status === 'pending' && (
                   <div className="mt-2 text-[11px] text-gray-500 bg-white/60 rounded p-2 space-y-0.5">
-                    <p><span className="text-gray-400">网址：</span>{s.url ?? '（无）'}</p>
-                    <p className="whitespace-pre-wrap"><span className="text-gray-400">规则：</span>{s.rules_text ?? '（无）'}</p>
+                    <p><span className="text-gray-400">{t('dialogs.subscription.urlLabel')}</span>{s.url ?? t('dialogs.subscription.emptyValue')}</p>
+                    <p className="whitespace-pre-wrap"><span className="text-gray-400">{t('dialogs.subscription.rulesLabel')}</span>{s.rules_text ?? t('dialogs.subscription.emptyValue')}</p>
                   </div>
                 )}
 <div className="mt-2 flex items-center gap-3">
@@ -561,7 +573,7 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
                       checked={s.auto_update}
                       onChange={(e) => toggleMut.mutate({ id: s.id, data: { auto_update: e.target.checked } })}
                     />
-                    打开时自动更新
+                    {t('dialogs.subscription.autoUpdate')}
                   </label>
                   {s.status !== 'pending' && (
                     <button
@@ -569,15 +581,15 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
                       disabled={refreshing === s.id}
                       className="text-[11px] text-blue-600 hover:text-blue-700 disabled:opacity-40"
                     >
-                      {refreshing === s.id ? '更新中…' : '立即更新'}
+                      {refreshing === s.id ? t('dialogs.subscription.refreshing') : t('dialogs.subscription.refresh')}
                     </button>
                   )}
                   {s.id !== 'builtin:jisilu' && (
                     <button
-                      onClick={() => { if (confirm(`删除订阅「${s.display_name}」？（已抓取的事件数据保留）`)) delMut.mutate(s.id) }}
+                      onClick={() => { if (confirm(t('dialogs.subscription.deleteConfirm', { name: s.display_name }))) delMut.mutate(s.id) }}
                       className="text-[11px] text-gray-400 hover:text-red-500 ml-auto"
                     >
-                      删除
+                      {t('common.delete')}
                     </button>
                   )}
                 </div>
@@ -590,28 +602,28 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
 
         {adding ? (
           <div className="p-3 rounded-lg border border-blue-100 bg-blue-50/40 space-y-2">
-            <Field label="标题">
-              <input className="tt-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="如：高金讲座日历" />
+            <Field label={t('dialogs.subscription.fieldTitle')}>
+              <input className="tt-input" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('dialogs.subscription.namePlaceholder')} />
             </Field>
-            <Field label="网址">
+            <Field label={t('dialogs.subscription.fieldUrl')}>
               <input className="tt-input" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" />
             </Field>
-            <Field label="订阅规则（自然语言，给你的 agent 读）">
+            <Field label={t('dialogs.subscription.fieldRules')}>
               <textarea
                 className="tt-input min-h-[72px] text-sm"
                 value={rules}
                 onChange={(e) => setRules(e.target.value)}
-                placeholder="描述这个日历在哪、怎么抓、哪些字段、什么频率更新……"
+                placeholder={t('dialogs.subscription.rulesPlaceholder')}
               />
             </Field>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setAdding(false)} className="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg">取消</button>
+              <button onClick={() => setAdding(false)} className="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg">{t('common.cancel')}</button>
               <button
                 onClick={() => createMut.mutate()}
                 disabled={!name.trim() || createMut.isPending}
                 className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40"
               >
-                {createMut.isPending ? '提交中…' : '确认订阅'}
+                {createMut.isPending ? t('dialogs.subscription.submitting') : t('dialogs.subscription.confirmAdd')}
               </button>
             </div>
           </div>
@@ -620,7 +632,7 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
             onClick={() => setAdding(true)}
             className="flex items-center justify-center gap-1 px-3 py-2 text-sm text-gray-500 border border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:text-blue-600"
           >
-            <Plus size={14} /> 新增订阅
+            <Plus size={14} /> {t('dialogs.subscription.addNew')}
           </button>
         )}
       </div>
@@ -653,10 +665,11 @@ export function ContextMenu({
   onColoring: () => void
   onClose: () => void
 }) {
-  const items = [
-    { label: '新建事件', action: onNew },
-    { label: '编辑日程', action: onSchedule },
-    { label: '设置充实度', action: onColoring },
+  const t = useT()
+  const items: { labelKey: TxKey; action: () => void }[] = [
+    { labelKey: 'dialogs.menu.newEvent', action: onNew },
+    { labelKey: 'dialogs.menu.editSchedule', action: onSchedule },
+    { labelKey: 'dialogs.menu.setColoring', action: onColoring },
   ]
   return (
     <>
@@ -668,11 +681,11 @@ export function ContextMenu({
         <div className="px-3 py-1 text-[11px] text-gray-400 border-b border-gray-100 mb-1">{date}</div>
         {items.map((it) => (
           <button
-            key={it.label}
+            key={it.labelKey}
             onClick={it.action}
             className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
           >
-            {it.label}
+            {t(it.labelKey)}
           </button>
         ))}
       </div>
@@ -685,7 +698,10 @@ export function ContextMenu({
 // ===========================================================================
 
 const SCHEDULE_CATEGORIES = ['work', 'course', 'sport', 'play', 'other']
-/** 自动创建待办时使用的列表名；不存在则自动建（见 ensureScheduleTodoList） */
+/** 自动创建待办时使用的列表名；不存在则自动建（见 ensureScheduleTodoList）。
+ * 持久化数据（写入 todo_lists.display_name），非 UI 文案——手册 §5.1：数据保持原样，
+ * 故带行级棘轮豁免（该字面量不随抽词清除）。 */
+// eslint-disable-next-line no-restricted-syntax
 const SCHEDULE_TODO_LIST = '日程待办'
 const AUTO_TODO_PREF_KEY = 'day-entry:auto-todo'
 
@@ -712,6 +728,7 @@ export function DayEntryDialog({
   initialKind?: 'dot' | 'color'
   onClose: () => void
 }) {
+  const t = useT()
   const qc = useQueryClient()
   const [kind, setKind] = useState<'dot' | 'color'>(initialKind)
 
@@ -778,8 +795,11 @@ export function DayEntryDialog({
     setAutoTodo(v)
     localStorage.setItem(AUTO_TODO_PREF_KEY, v ? '1' : '0')
   }
-  const todoTitle = kind === 'dot' ? title.trim() : (colorCfg?.display_name ?? '涂色')
+  const todoTitle = kind === 'dot' ? title.trim() : (colorCfg?.display_name ?? t('dialogs.dayEntry.coloringWord'))
   const todoBodyParts: string[] = []
+  // 自动建待办的 body 是持久化数据（写入 todos.body，展示于待办列表），非渲染期文案——
+  // 手册 §5.1/§5.2 同步提示同款边界：结构化改版涉及数据面，不在 i18n 轮内做，原样保留。
+  // eslint-disable-next-line no-restricted-syntax
   if (isMulti) todoBodyParts.push(`${startDate} ~ ${lastDate}（${dates.length} 天）`)
   if (kind === 'dot' && !allDay) todoBodyParts.push(`${startTime}-${endTime}`)
 
@@ -794,7 +814,7 @@ export function DayEntryDialog({
   const saveMut = useMutation({
     mutationFn: async () => {
       if (kind === 'dot') {
-        if (!title.trim()) throw new Error('请填写内容')
+        if (!title.trim()) throw new Error(t('dialogs.dayEntry.contentRequired'))
         if (isScheduleItem) {
           // 多日日程：库里只存一行（date=起始日 + end_date），由后端聚合层展开到每一天
           await createScheduleItem({
@@ -828,7 +848,7 @@ export function DayEntryDialog({
         const list = await ensureScheduleTodoList()
         await createTodo({
           list_id: list.id,
-          title: todoTitle || '日程',
+          title: todoTitle || t('dialogs.dayEntry.scheduleWord'),
           body: todoBodyParts.join(' · ') || null,
           planned_date: startDate,
           due_date: lastDate,
@@ -845,12 +865,18 @@ export function DayEntryDialog({
   const dotSaveDisabled = saveMut.isPending || !canSave || rangeInvalid || !dotLayerId
   const colorSaveDisabled = saveMut.isPending || !colorLayerId || rangeInvalid
 
+  const colorGroups: { labelKey: TxKey; items: Layer[] }[] = [
+    { labelKey: 'dialogs.dayEntry.groupHabit', items: colorLayers.filter((l) => l.layer_id !== 'coloring' && (cfgOf(l).mode === 'solid' || !cfgOf(l).mode)) },
+    { labelKey: 'dialogs.dayEntry.groupProgress', items: colorLayers.filter((l) => l.layer_id === 'coloring' || cfgOf(l).mode === 'graded') },
+    { labelKey: 'dialogs.dayEntry.groupLinked', items: colorLayers.filter((l) => cfgOf(l).mode === 'tag') },
+  ]
+
   return (
-    <Modal title={`新建 ${date}`} onClose={onClose} width={520}>
+    <Modal title={t('dialogs.dayEntry.titleWithDate', { date })} onClose={onClose} width={520}>
       <div className="flex flex-col gap-3">
         {/* 呈现方式：决定这条内容在日历上是「涂色」还是「点点/日程」 */}
         <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
-          {([['dot', '点点 / 日程'], ['color', '涂色']] as const).map(([k, label]) => (
+          {([['dot', 'dialogs.dayEntry.tabDot'], ['color', 'dialogs.dayEntry.tabColor']] as const).map(([k, labelKey]) => (
             <button
               key={k}
               onClick={() => setKind(k)}
@@ -859,13 +885,13 @@ export function DayEntryDialog({
                 kind === k ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700',
               )}
             >
-              {label}
+              {t(labelKey)}
             </button>
           ))}
         </div>
 
         <div className="flex gap-2">
-          <Field label="开始日期">
+          <Field label={t('dialogs.dayEntry.fieldStart')}>
             <input
               type="date"
               className="tt-input"
@@ -873,7 +899,7 @@ export function DayEntryDialog({
               onChange={(e) => setStartDate(e.target.value)}
             />
           </Field>
-          <Field label="结束日期（可选，填了就是多日）">
+          <Field label={t('dialogs.dayEntry.fieldEnd')}>
             <input
               type="date"
               className="tt-input"
@@ -884,32 +910,32 @@ export function DayEntryDialog({
           </Field>
         </div>
         {rangeInvalid && (
-          <p className="text-[11px] text-red-500 -mt-1">结束日期不能早于开始日期</p>
+          <p className="text-[11px] text-red-500 -mt-1">{t('dialogs.dayEntry.rangeInvalid')}</p>
         )}
         {isMulti && (
           <p className="text-[11px] text-blue-600 -mt-1">
-            共 {dates.length} 天（{startDate} ~ {lastDate}）
-            {kind === 'dot' && isScheduleItem && ' · 存为 1 条多日日程，每天都可见'}
-            {kind === 'dot' && !isScheduleItem && ` · 按天建 ${dates.length} 条事件`}
-            {kind === 'color' && ` · 连续 ${dates.length} 天都做标记`}
+            {t('dialogs.dayEntry.multiCount', { n: dates.length, range: `${startDate} ~ ${lastDate}` })}
+            {kind === 'dot' && isScheduleItem && t('dialogs.dayEntry.suffixSchedule')}
+            {kind === 'dot' && !isScheduleItem && t('dialogs.dayEntry.suffixEvents', { n: dates.length })}
+            {kind === 'color' && t('dialogs.dayEntry.suffixColor', { n: dates.length })}
           </p>
         )}
 
         {kind === 'dot' ? (
           <>
-            <Field label="选择图层">
+            <Field label={t('dialogs.dayEntry.pickLayer')}>
               <select className="tt-input" value={dotLayerId} onChange={(e) => setDotLayerId(e.target.value)}>
                 {scheduleCatLayers.length > 0 && (
-                  <optgroup label="日程">
+                  <optgroup label={t('dialogs.dayEntry.groupSchedule')}>
                     {scheduleCatLayers.map((l) => (
-                      <option key={l.layer_id} value={l.layer_id}>{l.display_name}{l.enabled ? '' : '（隐藏）'}</option>
+                      <option key={l.layer_id} value={l.layer_id}>{l.display_name}{l.enabled ? '' : t('dialogs.hiddenSuffix')}</option>
                     ))}
                   </optgroup>
                 )}
                 {otherDotLayers.length > 0 && (
-                  <optgroup label="其他">
+                  <optgroup label={t('dialogs.dayEntry.groupOther')}>
                     {otherDotLayers.map((l) => (
-                      <option key={l.layer_id} value={l.layer_id}>{l.display_name}{l.enabled ? '' : '（隐藏）'}</option>
+                      <option key={l.layer_id} value={l.layer_id}>{l.display_name}{l.enabled ? '' : t('dialogs.hiddenSuffix')}</option>
                     ))}
                   </optgroup>
                 )}
@@ -919,22 +945,22 @@ export function DayEntryDialog({
             <div className="flex items-center gap-2">
               <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none">
                 <input type="checkbox" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} />
-                全天
+                {t('dialogs.dayEntry.allDay')}
               </label>
               {!allDay && (
                 <>
                   <input type="time" className="tt-input w-[104px]" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
-                  <span className="text-gray-400 text-xs">至</span>
+                  <span className="text-gray-400 text-xs">{t('dialogs.toTime')}</span>
                   <input type="time" className="tt-input w-[104px]" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
                 </>
               )}
-              <span className="w-3 h-3 rounded-full flex-shrink-0 ml-auto" style={{ backgroundColor: dotColor }} title="图层颜色" />
+              <span className="w-3 h-3 rounded-full flex-shrink-0 ml-auto" style={{ backgroundColor: dotColor }} title={t('dialogs.dayEntry.layerColorTitle')} />
             </div>
 
-            <Field label="内容">
+            <Field label={t('dialogs.dayEntry.fieldContent')}>
               <textarea
                 className="tt-input min-h-[72px] resize-y"
-                placeholder="做什么"
+                placeholder={t('dialogs.dayEntry.contentPlaceholder')}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 autoFocus
@@ -943,16 +969,12 @@ export function DayEntryDialog({
           </>
         ) : (
           <>
-            <Field label="选择涂色图层">
+            <Field label={t('dialogs.dayEntry.pickColorLayer')}>
               <select className="tt-input" value={colorLayerId} onChange={(e) => setColorLayerId(e.target.value)}>
-                {[
-                  { label: '习惯打卡', items: colorLayers.filter((l) => l.layer_id !== 'coloring' && (cfgOf(l).mode === 'solid' || !cfgOf(l).mode)) },
-                  { label: '工作完成度', items: colorLayers.filter((l) => l.layer_id === 'coloring' || cfgOf(l).mode === 'graded') },
-                  { label: '关联涂色', items: colorLayers.filter((l) => cfgOf(l).mode === 'tag') },
-                ].map((g) => g.items.length > 0 ? (
-                  <optgroup key={g.label} label={g.label}>
+                {colorGroups.map((g) => g.items.length > 0 ? (
+                  <optgroup key={g.labelKey} label={t(g.labelKey)}>
                     {g.items.map((l) => (
-                      <option key={l.layer_id} value={l.layer_id}>{l.display_name}{l.enabled ? '' : '（隐藏）'}</option>
+                      <option key={l.layer_id} value={l.layer_id}>{l.display_name}{l.enabled ? '' : t('dialogs.hiddenSuffix')}</option>
                     ))}
                   </optgroup>
                 ) : null)}
@@ -960,7 +982,7 @@ export function DayEntryDialog({
             </Field>
 
             {isColoring ? (
-              <Field label="充实度档位">
+              <Field label={t('dialogs.dayEntry.levelFullness')}>
                 <div className="grid grid-cols-5 gap-2">
                   {COLORING_COLORS.map((c, i) => (
                     <button
@@ -969,13 +991,13 @@ export function DayEntryDialog({
                       style={{ backgroundColor: c }}
                       className={clsx('h-12 rounded-lg text-xs font-medium', i >= 3 ? 'text-white' : 'text-gray-700', level === i && 'ring-2 ring-blue-400')}
                     >
-                      {COLORING_LABELS[i]}
+                      {t(COLORING_LABELS[i].labelKey)}
                     </button>
                   ))}
                 </div>
               </Field>
             ) : isGraded && palette ? (
-              <Field label="档位">
+              <Field label={t('dialogs.dayEntry.level')}>
                 <div className="grid grid-cols-5 gap-2">
                   {palette.map((c, i) => (
                     <button
@@ -988,10 +1010,10 @@ export function DayEntryDialog({
                 </div>
               </Field>
             ) : (
-              <Field label="图层颜色（固定）">
+              <Field label={t('dialogs.dayEntry.fixedColor')}>
                 <div className="flex items-center gap-2">
                   <span className="w-8 h-8 rounded-lg flex-shrink-0" style={{ backgroundColor: colorValue }} />
-                  <p className="text-[11px] text-gray-400">标记使用图层预设颜色，如需改色请到设置页编辑图层。</p>
+                  <p className="text-[11px] text-gray-400">{t('dialogs.dayEntry.fixedColorHint')}</p>
                 </div>
               </Field>
             )}
@@ -1006,28 +1028,26 @@ export function DayEntryDialog({
             onChange={(e) => setAutoTodoPersist(e.target.checked)}
           />
           <span className="text-sm text-gray-700">
-            同时创建对应待办
+            {t('dialogs.dayEntry.autoTodo')}
             <span className="block text-[11px] text-gray-500 mt-0.5">
-              放入「{SCHEDULE_TODO_LIST}」列表（没有会自动创建）；
-              计划日期 {startDate}
-              {isMulti ? `、截止日期 ${lastDate}` : `、截止日期 ${startDate}`}
-              {autoTodo && !todoTitle && ' · 标题将用「日程」'}
+              {t('dialogs.dayEntry.autoTodoDetail', { list: SCHEDULE_TODO_LIST, start: startDate, end: isMulti ? lastDate : startDate })}
+              {autoTodo && !todoTitle && t('dialogs.dayEntry.autoTodoTitleHint', { title: t('dialogs.dayEntry.scheduleWord') })}
             </span>
           </span>
         </label>
 
         <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg">取消</button>
+          <button onClick={onClose} className="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg">{t('common.cancel')}</button>
           <button
             onClick={() => saveMut.mutate()}
             disabled={kind === 'dot' ? dotSaveDisabled : colorSaveDisabled}
             className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40"
           >
-            {saveMut.isPending ? '保存中…' : '添加'}
+            {saveMut.isPending ? t('dialogs.dayEntry.saving') : t('dialogs.dayEntry.submit')}
           </button>
         </div>
         {saveMut.isError && (
-          <p className="text-[11px] text-red-500">保存失败：{saveMut.error instanceof Error ? saveMut.error.message : '未知错误'}</p>
+          <p className="text-[11px] text-red-500">{t('dialogs.dayEntry.saveFailed', { msg: saveMut.error instanceof Error ? saveMut.error.message : t('dialogs.unknownError') })}</p>
         )}
       </div>
     </Modal>

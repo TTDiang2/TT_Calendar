@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 're
 import { Trash2, X } from 'lucide-react'
 import clsx from 'clsx'
 import type { Todo, TodoList } from '../types'
+import { useT, type TxKey } from '../i18n'
 import { NotesEditorModal } from './NotesEditorModal'
 
 interface Props {
@@ -16,37 +17,38 @@ export interface TodoDetailPanelRef {
   openNotes: () => void
 }
 
-const IMPORTANCE_OPTIONS: { key: string; label: string }[] = [
-  { key: 'high', label: '高' },
-  { key: 'normal', label: '普通' },
-  { key: 'low', label: '低' },
+const IMPORTANCE_OPTIONS: { key: string; labelKey: TxKey }[] = [
+  { key: 'high', labelKey: 'todoDetail.importance.high' },
+  { key: 'normal', labelKey: 'todoDetail.importance.normal' },
+  { key: 'low', labelKey: 'todoDetail.importance.low' },
 ]
 
-const STATUS_OPTIONS: { key: string; label: string }[] = [
-  { key: 'notStarted', label: '未开始' },
-  { key: 'inProgress', label: '进行中' },
-  { key: 'completed', label: '已完成' },
-  { key: 'waitingOnOthers', label: '等待他人' },
-  { key: 'deferred', label: '已推迟' },
+const STATUS_OPTIONS: { key: string; labelKey: TxKey }[] = [
+  { key: 'notStarted', labelKey: 'todoDetail.status.notStarted' },
+  { key: 'inProgress', labelKey: 'todoDetail.status.inProgress' },
+  { key: 'completed', labelKey: 'todoDetail.status.completed' },
+  { key: 'waitingOnOthers', labelKey: 'todoDetail.status.waitingOnOthers' },
+  { key: 'deferred', labelKey: 'todoDetail.status.deferred' },
 ]
 
-const COMPLEXITY_OPTIONS: { key: string; label: string }[] = [
-  { key: 'simple', label: '简单' },
-  { key: 'medium', label: '中等' },
-  { key: 'hard', label: '复杂' },
+const COMPLEXITY_OPTIONS: { key: string; labelKey: TxKey }[] = [
+  { key: 'simple', labelKey: 'todoDetail.complexity.simple' },
+  { key: 'medium', labelKey: 'todoDetail.complexity.medium' },
+  { key: 'hard', labelKey: 'todoDetail.complexity.hard' },
 ]
 
-const REPEAT_OPTIONS: { key: string; label: string }[] = [
-  { key: 'none', label: '不重复' },
-  { key: 'daily', label: '每日重复' },
-  { key: 'weekdays', label: '每工作日重复' },
-  { key: 'weekly', label: '每周重复' },
+const REPEAT_OPTIONS: { key: string; labelKey: TxKey }[] = [
+  { key: 'none', labelKey: 'todoDetail.repeat.none' },
+  { key: 'daily', labelKey: 'todoDetail.repeat.daily' },
+  { key: 'weekdays', labelKey: 'todoDetail.repeat.weekdays' },
+  { key: 'weekly', labelKey: 'todoDetail.repeat.weekly' },
 ]
 
 export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function TodoDetailPanel(
   { todo, lists, onClose, onSave, onDelete },
   ref,
 ) {
+  const t = useT()
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [importance, setImportance] = useState('normal')
@@ -89,7 +91,7 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
     const title = f.title.trim()
     // 空标题 / 无归属列表 = 用户放弃编辑，不落盘（否则会建出空任务或 list_id 为空的脏数据）
     if (!title || !f.listId) return
-    const tags = f.tagsText.split(/[,，]/).map((t) => t.trim()).filter(Boolean)
+    const tags = f.tagsText.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean)
     const isPhantom = target.id === '' || target.id === '__NEW__'
     if (!isPhantom) {
       const changed =
@@ -187,12 +189,12 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
   if (!todo) {
     return (
       <aside className="w-72 bg-white border-l border-gray-200 p-4">
-        <p className="text-sm text-gray-400">点击待办查看详情</p>
+        <p className="text-sm text-gray-400">{t('todoDetail.emptyPanel')}</p>
       </aside>
     )
   }
 
-  const tags = tagsText.split(/[,，]/).map((t) => t.trim()).filter(Boolean)
+  const tags = tagsText.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean)
 
   // 构造完整保存数据（与 useEffect 自动保存的字段一一对应）
   const buildData = (): Todo => ({
@@ -233,8 +235,8 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
       }}
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <p className="text-xs text-gray-400 uppercase tracking-wide">待办详情</p>
-        <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600" title="关闭">
+        <p className="text-xs text-gray-400 uppercase tracking-wide">{t('todoDetail.title')}</p>
+        <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600" title={t('todoDetail.action.close')}>
           <X size={16} />
         </button>
       </div>
@@ -246,7 +248,7 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
           className="w-full text-base font-medium border-0 border-b border-transparent hover:border-gray-200 focus:border-blue-400 focus:outline-none py-1 resize-none break-words whitespace-pre-wrap"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="标题"
+          placeholder={t('todoDetail.field.title')}
         />
 
         <textarea
@@ -254,13 +256,13 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
           value={body}
           onChange={(e) => setBody(e.target.value)}
           onDoubleClick={() => setNotesModalOpen(true)}
-          title="双击放大编辑"
-          placeholder="备注（可选）"
+          title={t('todoDetail.dblClickEdit')}
+          placeholder={t('todoDetail.field.bodyOptional')}
         />
 
         <div className="grid grid-cols-2 gap-2">
           <label className="text-xs text-gray-500">
-            <span className="block mb-1">列表</span>
+            <span className="block mb-1">{t('todoDetail.field.list')}</span>
             <select className="tt-input" value={listId} onChange={(e) => setListId(e.target.value)}>
               {lists.map((l) => (
                 <option key={l.id} value={l.id}>{l.display_name}</option>
@@ -268,10 +270,10 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
             </select>
           </label>
           <label className="text-xs text-gray-500">
-            <span className="block mb-1">重要性</span>
+            <span className="block mb-1">{t('todoDetail.field.importance')}</span>
             <select className="tt-input" value={importance} onChange={(e) => setImportance(e.target.value)}>
               {IMPORTANCE_OPTIONS.map((o) => (
-                <option key={o.key} value={o.key}>{o.label}</option>
+                <option key={o.key} value={o.key}>{t(o.labelKey)}</option>
               ))}
             </select>
           </label>
@@ -279,25 +281,25 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
 
         <div className="grid grid-cols-2 gap-2">
           <label className={clsx('text-xs text-gray-500', dueExpanded && 'col-span-2', plannedExpanded && 'hidden')}>
-            <span className="block mb-1">截止日期</span>
+            <span className="block mb-1">{t('todoDetail.field.dueDate')}</span>
             <DueDateQuickPicker value={dueDate} onChange={setDueDate} expanded={dueExpanded} setExpanded={setDueExpanded} />
           </label>
           <label className={clsx('text-xs text-gray-500', plannedExpanded && 'col-span-2', dueExpanded && 'hidden')}>
-            <span className="block mb-1">计划日期</span>
+            <span className="block mb-1">{t('todoDetail.field.plannedDate')}</span>
             <DueDateQuickPicker value={plannedDate} onChange={setPlannedDate} expanded={plannedExpanded} setExpanded={setPlannedExpanded} />
           </label>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           <label className="text-xs text-gray-500">
-            <span className="block mb-1">开始日</span>
+            <span className="block mb-1">{t('todoDetail.field.startDate')}</span>
             <input type="date" className="tt-input" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </label>
           <label className="text-xs text-gray-500">
-            <span className="block mb-1">复杂度</span>
+            <span className="block mb-1">{t('todoDetail.field.complexity')}</span>
             <select className="tt-input" value={complexity} onChange={(e) => setComplexity(e.target.value)}>
               {COMPLEXITY_OPTIONS.map((o) => (
-                <option key={o.key} value={o.key}>{o.label}</option>
+                <option key={o.key} value={o.key}>{t(o.labelKey)}</option>
               ))}
             </select>
           </label>
@@ -305,35 +307,35 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
 
         <div className="grid grid-cols-2 gap-2">
           <label className="text-xs text-gray-500">
-            <span className="block mb-1">状态</span>
+            <span className="block mb-1">{t('todoDetail.field.status')}</span>
             <select className="tt-input" value={status} onChange={(e) => setStatus(e.target.value)}>
               {STATUS_OPTIONS.map((o) => (
-                <option key={o.key} value={o.key}>{o.label}</option>
+                <option key={o.key} value={o.key}>{t(o.labelKey)}</option>
               ))}
             </select>
           </label>
           <label className="text-xs text-gray-500">
-            <span className="block mb-1">重复</span>
-            <select className="tt-input" value={repeat} onChange={(e) => setRepeat(e.target.value)} title="完成后自动生成下一期">
+            <span className="block mb-1">{t('todoDetail.field.repeat')}</span>
+            <select className="tt-input" value={repeat} onChange={(e) => setRepeat(e.target.value)} title={t('todoDetail.field.repeatHint')}>
               {REPEAT_OPTIONS.map((o) => (
-                <option key={o.key} value={o.key}>{o.label}</option>
+                <option key={o.key} value={o.key}>{t(o.labelKey)}</option>
               ))}
             </select>
           </label>
         </div>
 
         <label className="text-xs text-gray-500 block">
-          <span className="block mb-1">标签（逗号分隔，自定义）</span>
+          <span className="block mb-1">{t('todoDetail.field.tags')}</span>
           <input
             className="tt-input"
             value={tagsText}
             onChange={(e) => setTagsText(e.target.value)}
-            placeholder="工作, 学习, 家庭…"
+            placeholder={t('todoDetail.tagsPlaceholder')}
           />
           {tags.length > 0 && (
             <span className="flex flex-wrap gap-1 mt-1.5">
-              {tags.map((t) => (
-                <span key={t} className="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{t}</span>
+              {tags.map((tag) => (
+                <span key={tag} className="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{tag}</span>
               ))}
             </span>
           )}
@@ -345,31 +347,31 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
           <button
             onClick={() => {
               // 删除后面板会关闭，必须阻止 cleanup 把这条刚删掉的记录又 flush 回去
-              if (confirm(`删除待办「${todo.title}」？`)) {
+              if (confirm(t('todoDetail.deleteConfirm', { title: todo.title }))) {
                 skipFlushRef.current = true
                 onDelete(todo.id)
               }
             }}
             className="flex items-center gap-1 text-sm text-red-500 hover:text-red-600 whitespace-nowrap"
           >
-            <Trash2 size={14} /> 删除
+            <Trash2 size={14} /> {t('todoDetail.action.delete')}
           </button>
           <button
             onClick={save}
             disabled={!title.trim() || !listId || saving}
             className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40 whitespace-nowrap"
           >
-            {saving ? '保存中…' : '保存'}
+            {saving ? t('todoDetail.action.saving') : t('todoDetail.action.save')}
           </button>
         </div>
         <p className="text-[11px] text-gray-400 text-right leading-none whitespace-nowrap">
-          切换页面自动保存 · <span className="font-medium text-gray-500">Ctrl+Enter</span> 直接保存
+          {t('todoDetail.autosavePrefix')}<span className="font-medium text-gray-500">Ctrl+Enter</span>{t('todoDetail.autosaveSuffix')}
         </p>
       </div>
       <NotesEditorModal
         open={notesModalOpen}
         initialValue={body}
-        title={title || '备注'}
+        title={title || t('todoDetail.notesFallbackTitle')}
         onClose={(next) => {
           setBody(next)
           setNotesModalOpen(false)
@@ -402,6 +404,7 @@ function DueDateQuickPicker({
   expanded: boolean
   setExpanded: (v: boolean) => void
 }) {
+  const t = useT()
   const today = fmtDate(new Date())
   const tomorrow = fmtDate(new Date(Date.now() + 86400000))
   const monday = fmtDate(nextMonday())
@@ -415,19 +418,19 @@ function DueDateQuickPicker({
           onClick={() => setExpanded(false)}
           className="px-2 text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded-md"
         >
-          返回
+          {t('todoDetail.due.back')}
         </button>
       </div>
     )
   }
 
-  const presets = [
-    { key: 'today', label: '今天', val: today },
-    { key: 'tomorrow', label: '明天', val: tomorrow },
-    { key: 'monday', label: '下周一', val: monday },
+  const presets: { key: string; labelKey: TxKey; val: string }[] = [
+    { key: 'today', labelKey: 'todoDetail.due.today', val: today },
+    { key: 'tomorrow', labelKey: 'todoDetail.due.tomorrow', val: tomorrow },
+    { key: 'monday', labelKey: 'todoDetail.due.nextMonday', val: monday },
   ]
   const matched = presets.find((p) => p.val === value)
-  const label = value ? (matched ? matched.label : value.slice(5)) : '无'
+  const label = value ? (matched ? t(matched.labelKey) : value.slice(5)) : t('todoDetail.due.none')
 
   return (
     <select
@@ -441,12 +444,12 @@ function DueDateQuickPicker({
         }
       }}
     >
-      {!matched && value && <option value={value}>{value}（自定义）</option>}
-      <option value="__none__">无</option>
-      <option value="today">今天（{today.slice(5)}）</option>
-      <option value="tomorrow">明天（{tomorrow.slice(5)}）</option>
-      <option value="monday">下周一（{monday.slice(5)}）</option>
-      <option value="__custom__">选择日期…</option>
+      {!matched && value && <option value={value}>{t('todoDetail.due.customValue', { value })}</option>}
+      <option value="__none__">{t('todoDetail.due.none')}</option>
+      <option value="today">{t('todoDetail.due.todayWithDate', { date: today.slice(5) })}</option>
+      <option value="tomorrow">{t('todoDetail.due.tomorrowWithDate', { date: tomorrow.slice(5) })}</option>
+      <option value="monday">{t('todoDetail.due.nextMondayWithDate', { date: monday.slice(5) })}</option>
+      <option value="__custom__">{t('todoDetail.due.pickDate')}</option>
     </select>
   )
 }
