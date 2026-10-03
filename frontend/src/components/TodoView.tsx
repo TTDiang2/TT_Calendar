@@ -3,8 +3,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, ChevronDown, ChevronUp, Inbox, ListPlus, Pencil, Plus, Repeat, Star, Trash2, Upload } from 'lucide-react'
 import clsx from 'clsx'
 import { getTodoLists, getTodos, getTodoStats, createTodo, updateTodo, deleteTodo, createTodoList, updateTodoList, deleteTodoList, importTodosCsv, reorderTodoLists, reorderTodos } from '../api/client'
-import { todayStr } from '../utils/todoLogic'
+import { todayStr, labelOf } from '../utils/todoLogic'
 import type { Todo, TodoList, TodoSort, TodoViewMode } from '../types'
+import { useT, type TxKey } from '../i18n'
 import { TodoDetailPanel, type TodoDetailPanelRef } from './TodoDetailPanel'
 import { TodoMatrixView } from './todo/TodoMatrixView'
 import { TodoKanbanView } from './todo/TodoKanbanView'
@@ -12,20 +13,22 @@ import { TodoGanttView } from './todo/TodoGanttView'
 import { TodoJarView } from './todo/TodoJarView'
 import { TodoStickiesView } from './todo/TodoStickiesView'
 
-const SORT_OPTIONS: { key: TodoSort; label: string }[] = [
-  { key: 'manual', label: '手动排序' },
-  { key: 'due_importance', label: '截止+重要性' },
-  { key: 'due_planned_importance', label: '截止+计划+重要性' },
-  { key: 'due', label: '截止日' },
-  { key: 'planned', label: '计划日' },
-  { key: 'importance', label: '重要性' },
-  { key: 'created', label: '创建时间' },
+/** 排序下拉（labelKey 模式：模块常量不存文案，渲染时 t(o.labelKey)） */
+const SORT_OPTIONS: { key: TodoSort; labelKey: TxKey }[] = [
+  { key: 'manual', labelKey: 'todoview.sort.manual' },
+  { key: 'due_importance', labelKey: 'todoview.sort.dueImportance' },
+  { key: 'due_planned_importance', labelKey: 'todoview.sort.duePlannedImportance' },
+  { key: 'due', labelKey: 'todoview.sort.due' },
+  { key: 'planned', labelKey: 'todoview.sort.planned' },
+  { key: 'importance', labelKey: 'todoview.sort.importance' },
+  { key: 'created', labelKey: 'todoview.sort.created' },
 ]
 
-const IMPORTANCE_LABEL: Record<string, string> = {
-  high: '重要',
-  normal: '普通',
-  low: '次要',
+/** 行徽标词表（labelKey 模式，同 utils/todoLogic 三张旧表；落点 todoview.imp/status/complexity） */
+const IMPORTANCE_KEYS: Record<string, TxKey> = {
+  high: 'todoview.imp.high',
+  normal: 'todoview.imp.normal',
+  low: 'todoview.imp.low',
 }
 const IMPORTANCE_TAG_CLS: Record<string, string> = {
   high: 'bg-red-50 text-red-600',
@@ -33,12 +36,12 @@ const IMPORTANCE_TAG_CLS: Record<string, string> = {
   low: 'bg-green-50 text-green-600',
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  notStarted: '未开始',
-  inProgress: '进行中',
-  completed: '已完成',
-  waitingOnOthers: '等待他人',
-  deferred: '已推迟',
+const STATUS_KEYS: Record<string, TxKey> = {
+  notStarted: 'todoview.status.notStarted',
+  inProgress: 'todoview.status.inProgress',
+  completed: 'todoview.status.completed',
+  waitingOnOthers: 'todoview.status.waitingOnOthers',
+  deferred: 'todoview.status.deferred',
 }
 const STATUS_TAG_CLS: Record<string, string> = {
   notStarted: 'bg-gray-100 text-gray-500',
@@ -48,10 +51,10 @@ const STATUS_TAG_CLS: Record<string, string> = {
   deferred: 'bg-purple-50 text-purple-600',
 }
 
-const COMPLEXITY_LABEL: Record<string, string> = {
-  simple: '简单',
-  medium: '中等',
-  hard: '复杂',
+const COMPLEXITY_KEYS: Record<string, TxKey> = {
+  simple: 'todoview.complexity.simple',
+  medium: 'todoview.complexity.medium',
+  hard: 'todoview.complexity.hard',
 }
 const COMPLEXITY_TAG_CLS: Record<string, string> = {
   simple: 'bg-green-50 text-green-600',
@@ -59,9 +62,17 @@ const COMPLEXITY_TAG_CLS: Record<string, string> = {
   hard: 'bg-purple-50 text-purple-600',
 }
 
+/** 重复档位徽标（none 不显示，未知枚举回落原值） */
+const REPEAT_KEYS: Record<string, TxKey> = {
+  daily: 'todoview.repeat.daily',
+  weekdays: 'todoview.repeat.weekdays',
+  weekly: 'todoview.repeat.weekly',
+}
+
 const DEFAULT_LIST_KEY = 'tt_default_todo_list'
 
 export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
+  const t = useT()
   const qc = useQueryClient()
   const [selectedList, setSelectedList] = useState<string | null>(() => localStorage.getItem(DEFAULT_LIST_KEY))
   const [sort, setSort] = useState<TodoSort>('due_planned_importance')
@@ -183,9 +194,13 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
     mutationFn: importTodosCsv,
     onSuccess: (r: { inserted: number; lists_created: number; errors: string[] }) => {
       invalidate()
-      setCsvResult(`导入 ${r.inserted} 条，新建 ${r.lists_created} 个列表${r.errors.length ? `，${r.errors.length} 行错误` : ''}`)
+      setCsvResult(
+        r.errors.length
+          ? t('todoview.csv.doneWithErrors', { inserted: r.inserted, lists: r.lists_created, n: r.errors.length })
+          : t('todoview.csv.done', { inserted: r.inserted, lists: r.lists_created }),
+      )
     },
-    onError: (e: unknown) => setCsvResult(`导入失败: ${e instanceof Error ? e.message : 'unknown'}`),
+    onError: (e: unknown) => setCsvResult(t('todoview.csv.failed', { msg: e instanceof Error ? e.message : 'unknown' })),
   })
 
   const handleToggle = (t: Todo, done: boolean) => {
@@ -246,7 +261,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
             selectedList === null ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50',
           )}
         >
-          <span className="flex items-center gap-1.5"><Inbox size={14} /> 全部</span>
+          <span className="flex items-center gap-1.5"><Inbox size={14} /> {t('todoview.lists.all')}</span>
           {stats && <span className="text-xs text-gray-400">{stats.incomplete}</span>}
         </button>
         {lists.map((l) => {
@@ -303,19 +318,19 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
                 <button
                   onClick={(e) => { e.stopPropagation(); setDefaultList(isDefault ? null : l.id) }}
                   className={isDefault ? 'text-amber-400' : 'opacity-0 group-hover:opacity-100 text-gray-300 hover:text-amber-400'}
-                  title={isDefault ? '取消默认' : '设为默认列表'}
+                  title={isDefault ? t('todoview.lists.unsetDefault') : t('todoview.lists.setDefault')}
                 >
                   <Star size={12} fill={isDefault ? 'currentColor' : 'none'} />
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); setRenamingListId(l.id); setRenameDraft(l.display_name) }}
                   className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-blue-500"
-                  title="重命名"
+                  title={t('todoview.lists.rename')}
                 >
                   <Pencil size={12} />
                 </button>
                 <button
-                  onClick={(e) => { e.stopPropagation(); if (confirm(`删除列表「${l.display_name}」及其所有待办？`)) deleteListMut.mutate(l.id) }}
+                  onClick={(e) => { e.stopPropagation(); if (confirm(t('todoview.lists.deleteConfirm', { name: l.display_name }))) deleteListMut.mutate(l.id) }}
                   className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"
                 >
                   <Trash2 size={12} />
@@ -336,12 +351,12 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
                 if (e.key === 'Enter' && newListName.trim()) { createListMut.mutate(newListName.trim()); setNewListName(''); setCreatingList(false) }
                 if (e.key === 'Escape') { setCreatingList(false); setNewListName('') }
               }}
-              placeholder="列表名"
+              placeholder={t('todoview.lists.namePlaceholder')}
             />
           </div>
         ) : (
           <button onClick={() => setCreatingList(true)} className="flex items-center gap-1 px-2 py-1.5 text-sm text-gray-400 hover:text-gray-600 mt-1">
-            <ListPlus size={14} /> 新建列表
+            <ListPlus size={14} /> {t('todoview.lists.create')}
           </button>
         )}
       </div>
@@ -351,23 +366,23 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <FilterSelect
-              label="排序"
+              label={t('todoview.filter.sort')}
               value={sort}
-              options={SORT_OPTIONS.map((o) => ({ value: o.key, label: o.label }))}
+              options={SORT_OPTIONS.map((o) => ({ value: o.key, label: t(o.labelKey) }))}
               onChange={(v) => { setSort(v as TodoSort); setManualOrder(null) }}
             />
             {allTags.length > 0 && (
               <FilterSelect
-                label="筛选"
+                label={t('todoview.filter.tag')}
                 value={tagFilter}
-                options={[{ value: '', label: '全部标签' }, ...allTags.map((t) => ({ value: t, label: t }))]}
+                options={[{ value: '', label: t('todoview.filter.allTags') }, ...allTags.map((tag) => ({ value: tag, label: tag }))]}
                 onChange={(v) => { setTagFilter(v); setManualOrder(null) }}
               />
             )}
           </div>
           <div className="flex items-center gap-2">
             <label className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg cursor-pointer">
-              <Upload size={14} /> CSV 导入
+              <Upload size={14} /> {t('todoview.toolbar.importCsv')}
               <input type="file" accept=".csv,text/csv" className="hidden" onChange={handleFile} />
             </label>
             <button
@@ -375,6 +390,10 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
                 if (!lists.length) {
                   setAutoList(true)
                   try {
+                    // 默认待办列表名经 createTodoList 持久化写入 todo_lists.display_name——
+                    // 持久化数据非渲染期文案（手册 §5.1），保持原样（Neo lists.defaultName
+                    // TODO-REVIEW 同款边界），行级棘轮豁免。
+                    // eslint-disable-next-line no-restricted-syntax
                     const tl = await createTodoList('任务')
                     setSelectedList(tl.id)
                     invalidate()
@@ -389,7 +408,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
               disabled={autoList}
               className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40"
             >
-              <Plus size={14} /> 新建待办
+              <Plus size={14} /> {t('todoview.actions.new')}
             </button>
           </div>
         </div>
@@ -428,12 +447,12 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
             />
           ) : filteredIncomplete.length === 0 && completedCount === undefined ? (
             <div className="h-full flex items-center justify-center text-gray-300 text-sm">
-              {tagFilter ? `没有「${tagFilter}」标签的待办` : '暂无待办，点「新建待办」开始'}
+              {tagFilter ? t('todoview.empty.tagFiltered', { tag: tagFilter }) : t('todoview.empty.desktop')}
             </div>
           ) : (
             <div className="flex flex-col gap-1">
               {filteredIncomplete.length === 0 && completedCount === 0 && (
-                <p className="text-sm text-gray-400 text-center py-4">没有未完成待办</p>
+                <p className="text-sm text-gray-400 text-center py-4">{t('todoview.empty.noneOpen')}</p>
               )}
               {filteredIncomplete.map((t) => {
                 const listName = lists.find((l) => l.id === t.list_id)?.display_name
@@ -492,12 +511,12 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
                     onClick={() => setShowCompleted((v) => !v)}
                     className="w-full flex items-center justify-between px-3 py-2 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-md"
                   >
-                    <span>已完成（{completedCount}）</span>
+                    <span>{t('todoview.row.completedWithCount', { n: completedCount ?? 0 })}</span>
                     {showCompleted ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                   </button>
                   {showCompleted && (
                     <div className="mt-1 flex flex-col gap-1">
-                      {loadingCompleted && <p className="text-xs text-gray-400 px-3 py-1">加载中…</p>}
+                      {loadingCompleted && <p className="text-xs text-gray-400 px-3 py-1">{t('common.loading')}</p>}
                       {completed.map((t) => {
                         const listName = lists.find((l) => l.id === t.list_id)?.display_name
                         return (
@@ -638,14 +657,15 @@ function TodoRow({ todo, listName, isDone, overdue, selected, leaving, onSelect,
   onToggle: () => void
   onOpenNotes?: () => void
 }) {
+  const t = useT()
   const dueState = useMemo(() => {
     if (!todo.due_date) return null
     const today = new Date(new Date().toDateString()).getTime()
     const due = new Date(todo.due_date).getTime()
     const diff = Math.round((due - today) / 86400000)
-    if (diff < 0) return { label: '已过期', cls: 'bg-red-100 text-red-600' }
-    if (diff === 0) return { label: '今天截止', cls: 'bg-orange-100 text-orange-600' }
-    if (diff === 1) return { label: '明天截止', cls: 'bg-amber-100 text-amber-600' }
+    if (diff < 0) return { labelKey: 'todoview.due.overdue' as TxKey, cls: 'bg-red-100 text-red-600' }
+    if (diff === 0) return { labelKey: 'todoview.due.today' as TxKey, cls: 'bg-orange-100 text-orange-600' }
+    if (diff === 1) return { labelKey: 'todoview.due.tomorrow' as TxKey, cls: 'bg-amber-100 text-amber-600' }
     return null
   }, [todo.due_date])
 
@@ -679,21 +699,21 @@ function TodoRow({ todo, listName, isDone, overdue, selected, leaving, onSelect,
         <div className="flex flex-wrap gap-1 mt-1">
           {todo.complexity && (
             <span className={clsx('text-[10px] px-1.5 py-0.5 rounded', COMPLEXITY_TAG_CLS[todo.complexity] ?? COMPLEXITY_TAG_CLS.medium)}>
-              {COMPLEXITY_LABEL[todo.complexity] ?? todo.complexity}
+              {labelOf(COMPLEXITY_KEYS, todo.complexity, t)}
             </span>
           )}
           <span className={clsx('text-[10px] px-1.5 py-0.5 rounded', IMPORTANCE_TAG_CLS[todo.importance] ?? IMPORTANCE_TAG_CLS.normal)}>
-            {IMPORTANCE_LABEL[todo.importance] ?? todo.importance}
+            {labelOf(IMPORTANCE_KEYS, todo.importance, t)}
           </span>
           {todo.repeat && todo.repeat !== 'none' && (
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 inline-flex items-center gap-0.5">
               <Repeat size={9} />
-              {todo.repeat === 'daily' ? '每日' : todo.repeat === 'weekdays' ? '工作日' : todo.repeat === 'weekly' ? '每周' : todo.repeat}
+              {labelOf(REPEAT_KEYS, todo.repeat, t)}
             </span>
           )}
           {!isDone && todo.status && todo.status !== 'notStarted' && (
             <span className={clsx('text-[10px] px-1.5 py-0.5 rounded', STATUS_TAG_CLS[todo.status] ?? STATUS_TAG_CLS.notStarted)}>
-              {STATUS_LABEL[todo.status] ?? todo.status}
+              {labelOf(STATUS_KEYS, todo.status, t)}
             </span>
           )}
           {(todo.tags ?? []).map((tag) => (
@@ -705,14 +725,16 @@ function TodoRow({ todo, listName, isDone, overdue, selected, leaving, onSelect,
         {listName && !isDone && <span className="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">{listName}</span>}
         {todo.due_date && !isDone && (
           <span className={clsx('text-[10px] px-1.5 py-0.5 rounded', dueState ? dueState.cls : 'bg-gray-100 text-gray-500')}>
-            {dueState ? `${dueState.label} · ${todo.due_date.slice(5)}` : todo.due_date.slice(5)}
+            {dueState
+              ? t('todoview.due.badge', { label: t(dueState.labelKey), date: todo.due_date.slice(5) })
+              : todo.due_date.slice(5)}
           </span>
         )}
         {plannedToday && !isDone && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">今日计划</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{t('todoview.plan.today')}</span>
         )}
         {plannedTomorrow && !isDone && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-600">明日计划</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-600">{t('todoview.plan.tomorrow')}</span>
         )}
       </div>
     </div>

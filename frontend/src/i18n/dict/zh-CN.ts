@@ -4,7 +4,7 @@
  * TxKey/PluralKey 类型从本字典推导，key 拼错是编译错误。
  * A2 抽词进度：批① dialogs/todoDetail/settings、批② 日历视图组（terms/topbar/shell/
  * countdown/calendar/app）、批③ 杂项+双盲（stats/detail/todoEditor/todo/palette/
- * sourceFields/errors）已入库。
+ * sourceFields/errors）、批④ 待办视图组（todoview/todoboards）已入库；白名单归零。
  */
 import { common } from './fragments/common'
 import { dialogs } from './fragments/dialogs'
@@ -23,6 +23,8 @@ import { todo } from './fragments/todo'
 import { palette } from './fragments/palette'
 import { sourceFields } from './fragments/sourceFields'
 import { errors } from './fragments/errors'
+import { todoview } from './fragments/todoview'
+import { todoboards } from './fragments/todoboards'
 
 export const zhCN = {
   common: common.zh,
@@ -42,6 +44,8 @@ export const zhCN = {
   palette: palette.zh,
   sourceFields: sourceFields.zh,
   errors: errors.zh,
+  todoview: todoview.zh,
+  todoboards: todoboards.zh,
 } as const
 
 export type Dict = typeof zhCN

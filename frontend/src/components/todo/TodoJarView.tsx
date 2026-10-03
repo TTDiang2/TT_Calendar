@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import clsx from 'clsx'
 import type { Todo } from '../../types'
 import { todayStr } from '../../utils/todoLogic'
+import { fmtDate, fmtWeekday, useLang, useT, useTPlural } from '../../i18n'
 
 interface Props {
   todos: Todo[]
@@ -18,8 +19,6 @@ const AVAIL = BODY_H - 26
 const HARD_ROW = 2
 const MED_ROW = 3
 const SIMPLE_ROW = 3
-
-const WEEKDAY = '日一二三四五六'
 
 const BLOBS = [
   '58% 42% 55% 45% / 52% 60% 40% 48%',
@@ -106,6 +105,9 @@ function packRow(items: Todo[], cx: Cx, perRow: number, baseH: number, wGap: num
 }
 
 export function TodoJarView({ todos, selectedTodoId, onSelect, onOpenNotes }: Props) {
+  const t = useT()
+  const tPlural = useTPlural()
+  const lang = useLang()
   const today = todayStr()
 
   const { todayOpen, todayDone } = useMemo(() => {
@@ -143,10 +145,11 @@ export function TodoJarView({ todos, selectedTodoId, onSelect, onOpenNotes }: Pr
     return n
   }, [used, all])
 
+  // 日期行：Intl 产出（原「M月d日 · 周X」手写格式删除，zh 输出逐字一致，沿 Neo 同款先例）
   const dateStr = useMemo(() => {
     const d = new Date()
-    return `${d.getMonth() + 1}月${d.getDate()}日 · 周${WEEKDAY[d.getDay()]}`
-  }, [])
+    return `${fmtDate(lang, d, { month: 'long', day: 'numeric' })} · ${fmtWeekday(lang, d, 'short')}`
+  }, [lang])
 
   if (todayOpen.length === 0 && todayDone.length === 0) {
     return (
@@ -156,8 +159,8 @@ export function TodoJarView({ todos, selectedTodoId, onSelect, onOpenNotes }: Pr
           <path d="M17 13 L55 13 L51 21 L21 21 Z" fill="#f8f1e4" stroke="#d5c9b6" strokeWidth="2.5" strokeLinejoin="round" />
           <line x1="34" y1="42" x2="34" y2="72" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" opacity="0.8" />
         </svg>
-        <p className="text-sm text-[#6b5a44]">今天还没有安排</p>
-        <p className="text-xs">先放一块大石头进去吧（截止/计划日设为今天）</p>
+        <p className="text-sm text-[#6b5a44]">{t('todoboards.jar.empty')}</p>
+        <p className="text-xs">{t('todoboards.jar.emptyHint')}</p>
       </div>
     )
   }
@@ -169,20 +172,20 @@ export function TodoJarView({ todos, selectedTodoId, onSelect, onOpenNotes }: Pr
 
         <div className="flex items-end justify-between" style={{ width: BODY_W }}>
           <div>
-            <p className="text-[10px] tracking-[0.25em] font-medium text-[#a08a68]">今日拾贝</p>
+            <p className="text-[10px] tracking-[0.25em] font-medium text-[#a08a68]">{t('todoboards.jar.title')}</p>
             <p className="text-[15px] font-semibold text-[#57503f] leading-tight mt-0.5">{dateStr}</p>
           </div>
           <p className="text-xs text-[#7a6a55]">
-            装了 <span className="font-semibold text-[#57503f] tabular-nums">{todayOpen.length}</span> 件
+            {t('todoboards.jar.carried')} <span className="font-semibold text-[#57503f] tabular-nums">{todayOpen.length}</span> {t('todoboards.jar.piece')}
             <span className="mx-1.5 text-[#c9bda6]">·</span>
-            沉底 <span className="font-semibold text-[#57503f] tabular-nums">{todayDone.length}</span> 件
+            {t('todoboards.jar.settled')} <span className="font-semibold text-[#57503f] tabular-nums">{todayDone.length}</span> {t('todoboards.jar.piece')}
           </p>
         </div>
 
         <div className="relative">
           {overflowCount > 0 && (
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap text-[11px] font-medium px-3 py-1 rounded-full bg-[#fbf0da] border border-[#e3cba0] text-[#8a6420] shadow-sm">
-              罐子满了 · {overflowCount} 件放不下
+              {tPlural('todoboards.jar.overflow', overflowCount)}
             </div>
           )}
 
@@ -195,7 +198,7 @@ export function TodoJarView({ todos, selectedTodoId, onSelect, onOpenNotes }: Pr
 
           <div
             role="img"
-            aria-label="今日任务玻璃罐"
+            aria-label={t('todoboards.jar.jarAria')}
             className="relative mx-auto overflow-hidden border-2 border-[#d5c9b6]"
             style={{
               width: BODY_W,
@@ -254,7 +257,7 @@ export function TodoJarView({ todos, selectedTodoId, onSelect, onOpenNotes }: Pr
                   backgroundSize: '8px 7px, auto',
                 }}
               >
-                <span className="text-[11px] font-medium text-[#8a6d3b]">沉底 · 今日完成 {todayDone.length}</span>
+                <span className="text-[11px] font-medium text-[#8a6d3b]">{t('todoboards.jar.settledToday', { n: todayDone.length })}</span>
               </div>
             )}
 
@@ -272,19 +275,19 @@ export function TodoJarView({ todos, selectedTodoId, onSelect, onOpenNotes }: Pr
         </div>
 
         <div className="flex items-center gap-3.5 flex-wrap text-[11px] text-[#7a6a55]" style={{ width: BODY_W }}>
-          {([['磐石 · 难', TONES.hard[0], rocks.length], ['卵石 · 中', TONES.medium[0], mediums.length], ['沙粒 · 简', TONES.simple[0], simples.length]] as const).map(([label, tone, n]) => (
-            <span key={label} className="flex items-center gap-1.5">
+          {([['hard', 'todoboards.jar.legendHard', TONES.hard[0], rocks.length], ['medium', 'todoboards.jar.legendMedium', TONES.medium[0], mediums.length], ['simple', 'todoboards.jar.legendSimple', TONES.simple[0], simples.length]] as const).map(([cx, labelKey, tone, n]) => (
+            <span key={cx} className="flex items-center gap-1.5">
               <i className="w-4 h-3 rounded-[40%_60%_55%_45%/55%_45%_60%_40%]"
                 style={{ background: `radial-gradient(120% 120% at 30% 25%, ${tone[0]}, ${tone[1]} 55%, ${tone[2]})`, boxShadow: 'inset 0 -2px 3px -2px rgba(90,60,30,0.4)' }} />
-              {label} {n}
+              {t(labelKey)} {n}
             </span>
           ))}
           <span className="flex items-center gap-1.5 text-[#8a6d3b]">
             <i className="w-4 h-3 rounded-[4px]"
               style={{ background: 'radial-gradient(rgba(160,125,60,0.25) 1px, transparent 1.3px), linear-gradient(180deg,#f2e5c8,#e9d7ae)', backgroundSize: '6px 5px, auto' }} />
-            沉底 {todayDone.length}
+            {t('todoboards.jar.settled')} {todayDone.length}
           </span>
-          <span className="ml-auto text-[#a08a68]">大石头先进，沙子填缝。</span>
+          <span className="ml-auto text-[#a08a68]">{t('todoboards.jar.tagline')}</span>
         </div>
       </div>
     </div>

@@ -69,11 +69,12 @@ export function TodoGanttView({ todos, lists, selectedTodoId, onSelect }: Props)
     const weekendCols: number[] = []
     for (let i = 0; i <= span; i += 1) {
       const d = new Date((min + i) * DAY)
-      if (d.getDate() === 1 || i === 0) months.push({ start: i, label: `${d.getMonth() + 1} 月` })
+      // 月份刻度保留手拼「{n} 月」（数字两侧空格是老端原文，zh 逐屏一致红线；Neo 走 Intl 会去空格）
+      if (d.getDate() === 1 || i === 0) months.push({ start: i, label: t('todoboards.gantt.month', { n: d.getMonth() + 1 }) })
       if (d.getDay() === 0 || d.getDay() === 6) weekendCols.push(i)
     }
     return { t0: min, totalDays: span + 1, dayW: w, months, weekendCols }
-  }, [rows, today, viewW])
+  }, [rows, today, viewW, t])
 
   const laneW = geo.totalDays * geo.dayW
   const todayX = (dayIndex(today) - geo.t0) * geo.dayW
@@ -92,7 +93,7 @@ export function TodoGanttView({ todos, lists, selectedTodoId, onSelect }: Props)
   }, [lists])
 
   if (rows.length === 0) {
-    return <div className="h-full flex items-center justify-center text-sm text-gray-300">暂无待办</div>
+    return <div className="h-full flex items-center justify-center text-sm text-gray-300">{t('todoboards.empty.none')}</div>
   }
 
   const showDayNums = geo.dayW >= 12
@@ -175,9 +176,13 @@ export function TodoGanttView({ todos, lists, selectedTodoId, onSelect }: Props)
                       selected && 'ring-2 ring-blue-400',
                     )}
                     style={{ left: x, width: w, top: (ROW_H - BAR_H) / 2, height: BAR_H }}
-                    title={`${r.start} → ${r.end}${r.overdue ? '（已过期）' : ''} · ${labelOf(STATUS_KEYS, td.status, t)}`}
+                    title={t('todoboards.gantt.barTitle', {
+                      range: `${r.start} → ${r.end}`,
+                      overdue: r.overdue ? t('todoboards.gantt.overdueSuffix') : '',
+                      status: labelOf(STATUS_KEYS, td.status, t),
+                    })}
                   >
-                    {r.overdue && <span className="font-medium">逾期中</span>}
+                    {r.overdue && <span className="font-medium">{t('todoboards.gantt.overdueBar')}</span>}
                   </div>
                 </div>
               </div>

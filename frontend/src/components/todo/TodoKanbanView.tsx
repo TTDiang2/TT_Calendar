@@ -3,17 +3,18 @@ import clsx from 'clsx'
 import { CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Todo, TodoList } from '../../types'
 import { COMPLEXITY_KEYS, IMPORTANCE_KEYS, STATUS_KEYS, labelOf, todayStr } from '../../utils/todoLogic'
-import { useT, type TxKey } from '../../i18n'
+import { useT, type I18n, type TxKey } from '../../i18n'
 import { TodoMiniCard } from './TodoMiniCard'
 
 type Dim = 'status' | 'planned' | 'importance' | 'complexity' | 'tag'
 
-const DIMS: { key: Dim; label: string }[] = [
-  { key: 'status', label: '按状态' },
-  { key: 'planned', label: '按计划日期' },
-  { key: 'importance', label: '按重要性' },
-  { key: 'complexity', label: '按复杂度' },
-  { key: 'tag', label: '按标签' },
+/** 维度切换胶囊（labelKey 模式：模块常量不存文案，渲染时 t(d.labelKey)） */
+const DIMS: { key: Dim; labelKey: TxKey }[] = [
+  { key: 'status', labelKey: 'todoboards.kanban.dim.status' },
+  { key: 'planned', labelKey: 'todoboards.kanban.dim.planned' },
+  { key: 'importance', labelKey: 'todoboards.kanban.dim.importance' },
+  { key: 'complexity', labelKey: 'todoboards.kanban.dim.complexity' },
+  { key: 'tag', labelKey: 'todoboards.kanban.dim.tag' },
 ]
 
 interface Props {
@@ -85,7 +86,7 @@ function tagHash(s: string): number {
 }
 
 /** 翻译函数形参类型（buildColumns 是模块级函数，无 hook 环境，由调用方传入 t） */
-type Translate = (k: TxKey) => string
+type Translate = I18n['t']
 
 function buildColumns(openTodos: Todo[], dim: Dim, today: string, tr: Translate): Column[] {
   const map = new Map<string, Column>()
@@ -107,8 +108,10 @@ function buildColumns(openTodos: Todo[], dim: Dim, today: string, tr: Translate)
       case 'planned': {
         if (t.planned_date && t.planned_date < today) break
         const key = t.planned_date ?? '__none__'
-        // 标题带具体日期，用户不用算「后天是几号」
-        const title = t.planned_date === today ? `今天 · ${t.planned_date.slice(5)}` : t.planned_date ?? '未计划'
+        // 标题带具体日期，用户不用算「后天是几号」；无日期列头走字典
+        const title = t.planned_date
+          ? (t.planned_date === today ? tr('todoboards.kanban.todayCol', { date: t.planned_date.slice(5) }) : t.planned_date)
+          : tr('todoboards.kanban.unplanned')
         const { tone, headCls } = plannedTone(key, today)
         col(key, title, tone, headCls).items.push(t)
         break
@@ -121,7 +124,7 @@ function buildColumns(openTodos: Todo[], dim: Dim, today: string, tr: Translate)
         break
       case 'tag': {
         const tags = t.tags ?? []
-        if (tags.length === 0) col('__none__', '无标签').items.push(t)
+        if (tags.length === 0) col('__none__', tr('todoboards.kanban.untagged')).items.push(t)
         else
           for (const tag of tags) {
             const p = TAG_PALETTE[tagHash(tag) % TAG_PALETTE.length]
@@ -180,9 +183,9 @@ export function TodoKanbanView({ openTodos, completedTodos, completedCount, list
   }
 
   // 已完成卡片的副标题：完成时间比所属列表更有信息量（列表名仍前置）
-  const doneSub = (t: Todo): string => {
-    const ln = listName(t)
-    const ca = t.completed_at ? `完成于 ${t.completed_at.slice(5, 10)}` : null
+  const doneSub = (td: Todo): string => {
+    const ln = listName(td)
+    const ca = td.completed_at ? t('todoboards.kanban.doneAt', { date: td.completed_at.slice(5, 10) }) : null
     return [ln, ca].filter(Boolean).join(' · ')
   }
 
@@ -199,11 +202,11 @@ export function TodoKanbanView({ openTodos, completedTodos, completedCount, list
                 dim === d.key ? 'bg-white text-gray-900 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700',
               )}
             >
-              {d.label}
+              {t(d.labelKey)}
             </button>
           ))}
         </div>
-        {droppable && <span className="text-xs text-gray-400">拖动卡片到其他列即可改变状态；勾选圆形按钮直接完成</span>}
+        {droppable && <span className="text-xs text-gray-400">{t('todoboards.kanban.dragHint')}</span>}
       </div>
 
       <div className="flex-1 overflow-x-auto overflow-y-hidden pb-4">
@@ -252,7 +255,7 @@ export function TodoKanbanView({ openTodos, completedTodos, completedCount, list
                   </div>
                 ))}
                 {c.items.length === 0 && (
-                  <div className="flex-1 flex items-center justify-center text-xs text-gray-300 py-6">空</div>
+                  <div className="flex-1 flex items-center justify-center text-xs text-gray-300 py-6">{t('todoboards.kanban.emptyCol')}</div>
                 )}
               </div>
             </div>
@@ -274,13 +277,13 @@ export function TodoKanbanView({ openTodos, completedTodos, completedCount, list
                     className="px-3 py-2 flex items-center justify-between border-b border-black/5 flex-shrink-0 cursor-pointer hover:bg-emerald-100/60 rounded-t-xl transition-colors"
                   >
                     <span className="text-sm font-medium text-gray-600 truncate">
-                      已完成 <span className="text-emerald-600 font-semibold">{completedCount}</span>
+                      {t('todoboards.kanban.completed')} <span className="text-emerald-600 font-semibold">{completedCount}</span>
                     </span>
                     <ChevronRight size={14} className="text-gray-400" />
                   </button>
                   <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1.5 min-h-0">
                     {completedTodos.length === 0 && (
-                      <div className="flex-1 flex items-center justify-center text-xs text-gray-300 py-6">加载中…</div>
+                      <div className="flex-1 flex items-center justify-center text-xs text-gray-300 py-6">{t('common.loading')}</div>
                     )}
                     {completedTodos.slice(0, COMPLETED_RENDER_LIMIT).map((t) => (
                       <TodoMiniCard
@@ -294,7 +297,7 @@ export function TodoKanbanView({ openTodos, completedTodos, completedCount, list
                     ))}
                     {completedTodos.length > COMPLETED_RENDER_LIMIT && (
                       <div className="text-[10px] text-gray-400 text-center py-2 border-t border-black/5">
-                        已显示最近 {COMPLETED_RENDER_LIMIT} / 共 {completedCount} 条
+                        {t('todoboards.kanban.shownOf', { shown: COMPLETED_RENDER_LIMIT, total: completedCount })}
                       </div>
                     )}
                   </div>
@@ -304,11 +307,11 @@ export function TodoKanbanView({ openTodos, completedTodos, completedCount, list
                 <button
                   onClick={() => setShowCompletedCol(true)}
                   className="flex-1 flex flex-col items-center gap-1.5 py-3 cursor-pointer hover:bg-emerald-100/50 transition-colors"
-                  aria-label={`展开已完成列（共 ${completedCount} 条）`}
+                  aria-label={t('todoboards.kanban.expandCompleted', { n: completedCount })}
                 >
                   <CheckCircle2 size={15} className="text-emerald-500" />
                   <span className="text-xs font-semibold text-emerald-700">{completedCount}</span>
-                  <span className="text-[10px] text-gray-500 [writing-mode:vertical-rl] tracking-widest">已完成</span>
+                  <span className="text-[10px] text-gray-500 [writing-mode:vertical-rl] tracking-widest">{t('todoboards.kanban.completed')}</span>
                   <ChevronLeft size={12} className="text-gray-400 mt-auto" />
                 </button>
               )}
@@ -316,7 +319,7 @@ export function TodoKanbanView({ openTodos, completedTodos, completedCount, list
           )}
 
           {columns.length === 0 && (
-            <div className="text-sm text-gray-300 flex items-center px-8">暂无待办</div>
+            <div className="text-sm text-gray-300 flex items-center px-8">{t('todoboards.empty.none')}</div>
           )}
         </div>
       </div>

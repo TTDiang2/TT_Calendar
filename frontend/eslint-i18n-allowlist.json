@@ -1,9 +1,1 @@
-[
-  "src/components/TodoView.tsx",
-  "src/components/todo/TodoGanttView.tsx",
-  "src/components/todo/TodoJarView.tsx",
-  "src/components/todo/TodoKanbanView.tsx",
-  "src/components/todo/TodoMatrixView.tsx",
-  "src/components/todo/TodoMiniCard.tsx",
-  "src/components/todo/TodoStickiesView.tsx"
-]
+[]

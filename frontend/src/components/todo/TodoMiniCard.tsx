@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 import type { Todo } from '../../types'
 import { COMPLEXITY_KEYS, IMPORTANCE_KEYS, STATUS_KEYS, dueInDays, labelOf } from '../../utils/todoLogic'
-import { useT } from '../../i18n'
+import { useT, useTPlural } from '../../i18n'
 
 // 状态点的颜色：看板/矩阵卡片元信息行用小圆点区分状态，比文字 badge 更紧凑
 const STATUS_DOT: Record<string, string> = {
@@ -39,6 +39,7 @@ export function TodoMiniCard({ todo, selected, sub, onClick, onToggle }: {
 }) {
   const done = todo.status === 'completed'
   const t = useT()
+  const tPlural = useTPlural()
   const din = dueInDays(todo)
   const overdue = !done && din !== null && din < 0
   const dueToday = !done && din === 0
@@ -55,7 +56,7 @@ export function TodoMiniCard({ todo, selected, sub, onClick, onToggle }: {
     >
       {onToggle && (
         <button
-          aria-label={done ? '标记为未完成' : '标记为已完成'}
+          aria-label={done ? t('todoboards.aria.markUndone') : t('todoboards.aria.markDone')}
           onClick={(e) => { e.stopPropagation(); onToggle(!done) }}
           className={clsx(
             'mt-0.5 w-4 h-4 rounded-full border flex-shrink-0 flex items-center justify-center cursor-pointer transition-colors duration-200',
@@ -77,11 +78,11 @@ export function TodoMiniCard({ todo, selected, sub, onClick, onToggle }: {
           <span className="flex flex-col items-end gap-0.5 flex-shrink-0">
             {overdue && (
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-50 text-red-600 font-medium whitespace-nowrap">
-                逾期 {-(din ?? 0)} 天
+                {tPlural('todoboards.card.overdueBy', -(din ?? 0))}
               </span>
             )}
             {dueToday && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-50 text-orange-600 font-medium whitespace-nowrap">今天</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-50 text-orange-600 font-medium whitespace-nowrap">{t('todoboards.card.today')}</span>
             )}
           </span>
         </div>
@@ -101,11 +102,11 @@ export function TodoMiniCard({ todo, selected, sub, onClick, onToggle }: {
             </span>
             {todo.due_date && (
               <span className={clsx(overdue && 'text-red-600 font-medium')}>
-                截止 {shortDate(todo.due_date)}
+                {t('todoboards.card.due', { date: shortDate(todo.due_date) })}
               </span>
             )}
-            {todo.planned_date && <span>计划 {shortDate(todo.planned_date)}</span>}
-            {todo.start_date && <span>开始 {shortDate(todo.start_date)}</span>}
+            {todo.planned_date && <span>{t('todoboards.card.planned', { date: shortDate(todo.planned_date) })}</span>}
+            {todo.start_date && <span>{t('todoboards.card.start', { date: shortDate(todo.start_date) })}</span>}
           </div>
         )}
 

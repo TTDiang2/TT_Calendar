@@ -21,6 +21,8 @@ import { todo } from './fragments/todo'
 import { palette } from './fragments/palette'
 import { sourceFields } from './fragments/sourceFields'
 import { errors } from './fragments/errors'
+import { todoview } from './fragments/todoview'
+import { todoboards } from './fragments/todoboards'
 
 export const en: DeepPartialDict<Dict> = {
   common: common.en,
@@ -40,4 +42,6 @@ export const en: DeepPartialDict<Dict> = {
   palette: palette.en,
   sourceFields: sourceFields.en,
   errors: errors.en,
+  todoview: todoview.en,
+  todoboards: todoboards.en,
 }
