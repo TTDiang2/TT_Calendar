@@ -21,6 +21,7 @@
 ### 门 2 条件（20261004）
 
 - [x] **D1 台账欠账（本文件+python-survey.md，批④后/A3 前补齐）**：A2 四批记录、C2/C3 核销、Python 侧勘察清单全部落仓内实体。**申报口径纪律（门2 警示，第二次）：凡"成文/已登记"类申报必须有仓内实体对应，再犯打回。**
+- [x] **门3 条件2 原生勘察口径补记**：原生面勘察范围 = `frontend/src-tauri`（lib.rs 恰 1 处注释）**+ `launcher/src/main.rs`（16 处中文全为注释、非注释 0 条）**——结论"原生面无用户可见中文"对整个原生面成立；A3 申报"src-tauri 全扫"口径漏 launcher，已由门3 指正（第三次口径苗头，零损害记账不罚）。
 - [ ] **D2 SYNC_IN_PROGRESS_MARK 迁移**：`fragments/app.ts` 导出的 `'正在进行'` 子串匹配属协议逻辑键，Python 结构化错误码落地时迁出 i18n/** 并删子串匹配（现 TODO-REVIEW 在代码，暂不强制搬家）→列入 Python 批次范围。
 - [ ] **D3 lunar ja/ko 升格**：Python 侧 Day.lunar 结构化（{year,month,day,leap}）落地时，lunarDisplay 的 ja/ko 从透传升格为翻译档（旧暦/음력）→列入 Python 批次范围。
 
