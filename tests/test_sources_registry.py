@@ -171,6 +171,111 @@ def test_plugin_discovery_from_plugins_dir(monkeypatch, tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# 协议版本（插件声明「我需要 ≥N 的 app」，不兼容则跳过并说清原因）
+# ---------------------------------------------------------------------------
+
+
+def test_plugin_declining_future_protocol_is_skipped(monkeypatch, caplog):
+    """要求更高协议版本的插件被跳过，且日志说清差在哪个版本。"""
+    import tt_calendar.sources as reg
+
+    future = Source.PROTOCOL_VERSION + 1
+    plugin_file = reg._plugins_dir() / "test_tmp_future_plugin.py"
+    plugin_file.write_text(
+        "from tt_calendar.sources.base import Source\n"
+        "from tt_calendar.models import ImportResult\n"
+        "class FutureSub(Source):\n"
+        "    source_id = 'future_sub'\n"
+        "    display_name = '未来源'\n"
+        f"    PROTOCOL_VERSION = {future}\n"
+        "    async def fetch(self, start, end, **kw):\n"
+        "        return [], ImportResult(source='future_sub', layer_id='x')\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(reg, "_PLUGINS", None)
+    try:
+        with caplog.at_level("ERROR"):
+            found = reg._discover_plugins()
+        assert "future_sub" not in found
+        assert reg.get_source("future_sub") is None
+        # 报错必须可操作：说清插件要哪个版本、app 支持哪个
+        msg = "\n".join(r.getMessage() for r in caplog.records)
+        assert str(future) in msg
+        assert str(Source.PROTOCOL_VERSION) in msg
+    finally:
+        monkeypatch.setattr(reg, "_PLUGINS", None)
+        plugin_file.unlink()
+
+
+def test_plugin_declining_current_protocol_loads(monkeypatch):
+    """声明了当前协议版本的插件正常加载。"""
+    import tt_calendar.sources as reg
+
+    plugin_file = reg._plugins_dir() / "test_tmp_v2_plugin.py"
+    plugin_file.write_text(
+        "from tt_calendar.sources.base import Source\n"
+        "from tt_calendar.models import ImportResult\n"
+        "class V2Sub(Source):\n"
+        "    source_id = 'v2_sub'\n"
+        "    display_name = 'v2 源'\n"
+        f"    PROTOCOL_VERSION = {Source.PROTOCOL_VERSION}\n"
+        "    async def fetch(self, start, end, **kw):\n"
+        "        return [], ImportResult(source='v2_sub', layer_id='x')\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(reg, "_PLUGINS", None)
+    try:
+        found = reg._discover_plugins()
+        assert "v2_sub" in found
+    finally:
+        monkeypatch.setattr(reg, "_PLUGINS", None)
+        plugin_file.unlink()
+
+
+def test_plugin_without_version_declaration_still_loads(monkeypatch):
+    """早期插件未声明版本（继承基类）不应被拒——只有「要求更高」才拦。"""
+    import tt_calendar.sources as reg
+
+    plugin_file = reg._plugins_dir() / "test_tmp_noversion_plugin.py"
+    plugin_file.write_text(
+        "from tt_calendar.sources.base import Source\n"
+        "from tt_calendar.models import ImportResult\n"
+        "class NoVerSub(Source):\n"
+        "    source_id = 'nover_sub'\n"
+        "    display_name = '无版本源'\n"
+        "    async def fetch(self, start, end, **kw):\n"
+        "        return [], ImportResult(source='nover_sub', layer_id='x')\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(reg, "_PLUGINS", None)
+    try:
+        assert "nover_sub" in reg._discover_plugins()
+    finally:
+        monkeypatch.setattr(reg, "_PLUGINS", None)
+        plugin_file.unlink()
+
+
+def test_protocol_incompatibility_never_blocks_older_plugins():
+    """单元口径：只拦「要求更高」这一个方向。"""
+    from tt_calendar.sources.base import protocol_incompatibility
+
+    class Future(Source):
+        source_id = "f"
+        PROTOCOL_VERSION = Source.PROTOCOL_VERSION + 1
+
+    class Older(Source):
+        source_id = "o"
+        PROTOCOL_VERSION = Source.PROTOCOL_VERSION - 1
+
+    class Same(Source):
+        source_id = "s"
+
+    assert protocol_incompatibility(Future) is not None
+    assert protocol_incompatibility(Older) is None
+    assert protocol_incompatibility(Same) is None
+
+
+# ---------------------------------------------------------------------------
 # 刷新窗口（由源声明驱动）
 # ---------------------------------------------------------------------------
 

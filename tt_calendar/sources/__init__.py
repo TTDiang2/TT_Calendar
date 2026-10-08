@@ -17,7 +17,7 @@ import importlib.util
 import logging
 import sys
 
-from .base import Source, collect_sources
+from .base import Source, collect_sources, protocol_incompatibility
 
 log = logging.getLogger(__name__)
 
@@ -56,6 +56,11 @@ def _discover_plugins() -> dict[str, type[Source]]:
                 spec.loader.exec_module(module)
                 for cls in collect_sources(module):
                     if not cls.source_id:
+                        continue
+                    reason = protocol_incompatibility(cls)
+                    if reason:
+                        log.error("plugin %s: source %r 未启用 — %s",
+                                  path.name, cls.source_id, reason)
                         continue
                     if cls.source_id in found:
                         log.warning("plugin %s: source_id %r 重复，跳过", path.name, cls.source_id)

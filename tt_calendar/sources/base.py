@@ -97,6 +97,12 @@ class LayerSpec:
 class Source(ABC):
     """导入源基类（订阅插件协议）。"""
 
+    # 插件协议版本。插件可覆盖它来声明「我需要 ≥ N 的 app」；加载器发现 app
+    # 版本低于此值时会跳过该插件并给出可读原因，而不是让它装上后静默失灵。
+    # 不声明则视为 1（早期的插件，不使用后续新增的可选能力）。
+    # 2 = LayerSpec.sub_filter（子动作过滤）与 manual_pickable（数据源填充图层）
+    PROTOCOL_VERSION: int = 2
+
     source_id: str = ""         # 唯一 ID（如 'jisilu' / 'investing'）
     display_name: str = ""      # UI 显示名（订阅卡片、图层分组）
     group: str = ""             # 图层侧栏分组名；空 = 用 display_name
@@ -253,6 +259,21 @@ def collect_sources(module: Any) -> list[type[Source]]:
             if obj.source_id:
                 out.append(obj)
     return out
+
+
+def protocol_incompatibility(cls: type[Source]) -> str | None:
+    """插件要求的协议版本高于当前 app 所支持时，返回可读的跳过原因；兼容则 None。
+
+    只拦「插件要求更高」这一个方向：早期插件不声明版本（视为 1），在后续 app 上
+    依然可用，不该被拒。反过来（插件用了新能力、app 却没有）才是会产生「装上了
+    却静默失灵」的那种不兼容，必须拦下来并说清楚差在哪。
+    """
+    required = getattr(cls, "PROTOCOL_VERSION", 1)
+    supported = Source.PROTOCOL_VERSION
+    if required > supported:
+        return (f"需要插件协议 v{required}，当前 app 仅支持 v{supported}"
+                f"（请升级 TT Calendar 后重试）")
+    return None
 
 
 def layer_group_name(source: Source) -> str:

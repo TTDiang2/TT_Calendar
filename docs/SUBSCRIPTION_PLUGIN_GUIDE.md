@@ -90,8 +90,25 @@ def layer_specs(self):
 两个字段都存进图层行，所以源被卸载后规则仍在。`ensure_layers` 只写这两个键
 与你自己的 `config`，**不会**动用户数据（例如已勾选的子动作）。
 
-> 需要带 `SubFilterSpec` 的 app 版本；旧版加载插件会记一条 `plugin load failed`
-> 并跳过该插件，已有图层照常工作。
+### 协议版本（`PROTOCOL_VERSION`）
+
+只要用到了上面那些**新增能力**，就显式声明你需要的协议版本：
+
+```python
+class MySource(Source):
+    PROTOCOL_VERSION = 2   # 我需要支持协议 v2 的 app
+```
+
+加载器会拿它和 app 的 `Source.PROTOCOL_VERSION` 比较，**app 更旧时跳过该插件并记一条
+可读的错**（"需要插件协议 v2，当前 app 仅支持 v1"），而不是让它装上后运行到一半抛一个
+看不懂的 `TypeError`。这能把最难排查的一类"装了却失灵"变成一句明确的提示。
+
+只拦「插件要求更高」这一个方向：未声明版本的早期插件按 v1 处理，在更新的 app 上照常可用。
+
+| 版本 | 引入的能力 |
+|---|---|
+| v1 | `layer_specs` / `field_specs` / `refresh_*_days` |
+| v2 | `LayerSpec.sub_filter`、`LayerSpec.manual_pickable` |
 
 ### Event 字段约定
 
