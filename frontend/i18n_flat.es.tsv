@@ -1,0 +1,562 @@
+# es 对照表：路径<TAB>译文。复数条目用 | 分隔变体，顺序 other|one|two|few|many，留空位表示不适用。
+# es 的 one 仅用于恰好 1，0 走复数（0 días）；尾部空格用 \s 显式表达。
+common.confirm	Confirmar
+common.cancel	Cancelar
+common.save	Guardar
+common.close	Cerrar
+common.delete	Eliminar
+common.add	Añadir
+common.loading	Cargando…
+common.daysAfter	dentro de {n} días|dentro de {n} día|||dentro de {n} días
+common.daysBefore	hace {n} días|hace {n} día|||hace {n} días
+dialogs.toTime	hasta
+dialogs.hiddenSuffix	(oculto)
+dialogs.deleteScheduleItem	Eliminar esta cita
+dialogs.unknownError	Error desconocido
+dialogs.event.titleEdit	Editar evento
+dialogs.event.titleNew	Nuevo evento
+dialogs.event.fieldTitle	Título
+dialogs.event.fieldDate	Fecha
+dialogs.event.fieldLayer	Capa
+dialogs.event.fieldDesc	Descripción (opcional)
+dialogs.event.fieldColor	Color (opcional, #RRGGBB)
+dialogs.schedule.titleWithDate	Cita del {date}
+dialogs.schedule.empty	No hay citas ese día; pulsa "Añadir cita" para empezar
+dialogs.schedule.add	Añadir cita
+dialogs.schedule.what	Qué hacer
+dialogs.schedule.dateLabel	Fecha
+dialogs.schedule.endDateHint	Vacío = un solo día; si lo rellenas es una cita de varios días, visible cada día
+dialogs.schedule.singleDay	Un solo día
+dialogs.schedule.multiDay	Varios días · {n} días en total
+dialogs.schedule.spanBad	La fecha de fin es anterior a la de inicio
+dialogs.schedule.cat.work	Trabajo
+dialogs.schedule.cat.course	Curso
+dialogs.schedule.cat.sport	Deporte
+dialogs.schedule.cat.play	Ocio
+dialogs.schedule.cat.misc	Otro
+dialogs.coloring.titleWithDate	Ocupación del {date}
+dialogs.coloring.current	Actualmente: {level}
+dialogs.coloring.notSet	Sin definir
+dialogs.coloring.clear	Borrar
+dialogs.coloringLevel.relaxed	Relajado
+dialogs.coloringLevel.mild	Ligero
+dialogs.coloringLevel.moderate	Moderado
+dialogs.coloringLevel.busy	Cargado
+dialogs.coloringLevel.productive	Productivo
+dialogs.search.title	Buscar eventos
+dialogs.search.placeholder	Escribe una palabra clave…
+dialogs.search.nothing	No hay eventos que coincidan con "{q}"
+dialogs.subscription.title	Suscripción
+dialogs.subscription.intro	Suscríbete a fuentes de calendarios externos para mantenerlos al día al abrir la aplicación. Cada nueva suscripción debe adaptarla tu agente (la aplicación te lo indicará).
+dialogs.subscription.pendingCount	{n} suscripción(es) pendiente(s) de adaptación
+dialogs.subscription.pendingHint	Abre la carpeta TT_Calendar con tu agente y dile que hay suscripciones nuevas que adaptar (el agente leerá las fichas "pendientes de adaptación" de abajo y seguirá docs/SUBSCRIPTION_SPEC.md).
+dialogs.subscription.pendingBadge	Por adaptar
+dialogs.subscription.errorBadge	Error
+dialogs.subscription.updatedAt	Actualizado a las {time}
+dialogs.subscription.toggleOff	Desactivar la suscripción
+dialogs.subscription.toggleOn	Activar la suscripción
+dialogs.subscription.urlLabel	URL:
+dialogs.subscription.rulesLabel	Reglas:
+dialogs.subscription.emptyValue	(ninguna)
+dialogs.subscription.autoUpdate	Actualizar al abrir
+dialogs.subscription.refresh	Actualizar ahora
+dialogs.subscription.refreshing	Actualizando…
+dialogs.subscription.updatedMsg	"{name}" se ha actualizado ({n} añadido(s))
+dialogs.subscription.updateFailed	Error al actualizar "{name}": {error}
+dialogs.subscription.deleteConfirm	¿Eliminar la suscripción "{name}"? (los eventos ya descargados se conservan)
+dialogs.subscription.fieldTitle	Título
+dialogs.subscription.fieldUrl	URL
+dialogs.subscription.namePlaceholder	Ej.: calendario de conferencias
+dialogs.subscription.fieldRules	Reglas de suscripción (lenguaje natural, para tu agente)
+dialogs.subscription.rulesPlaceholder	Describe dónde está este calendario, cómo obtenerlo, qué campos y con qué frecuencia se actualiza…
+dialogs.subscription.submitting	Enviando…
+dialogs.subscription.confirmAdd	Confirmar la suscripción
+dialogs.subscription.addNew	Nueva suscripción
+dialogs.menu.newEvent	Nuevo evento
+dialogs.menu.editSchedule	Editar la cita
+dialogs.menu.setColoring	Definir la ocupación
+dialogs.dayEntry.titleWithDate	Nuevo: {date}
+dialogs.dayEntry.tabDot	Puntos / Citas
+dialogs.dayEntry.tabColor	Coloración
+dialogs.dayEntry.fieldStart	Fecha de inicio
+dialogs.dayEntry.fieldEnd	Fecha de fin (opcional; si la rellenas es una cita de varios días)
+dialogs.dayEntry.rangeInvalid	La fecha de fin no puede ser anterior a la de inicio
+dialogs.dayEntry.multiCount	{n} días en total ({range})
+dialogs.dayEntry.suffixSchedule	 · se guarda como 1 cita de varios días, visible cada día
+dialogs.dayEntry.suffixEvents	 · crear {n} eventos (uno por día)
+dialogs.dayEntry.suffixColor	 · marcar {n} días seguidos
+dialogs.dayEntry.pickLayer	Elegir una capa
+dialogs.dayEntry.groupSchedule	Citas
+dialogs.dayEntry.groupOther	Otros
+dialogs.dayEntry.allDay	Todo el día
+dialogs.dayEntry.layerColorTitle	Color de la capa
+dialogs.dayEntry.fieldContent	Contenido
+dialogs.dayEntry.contentPlaceholder	Qué hacer
+dialogs.dayEntry.contentRequired	Escribe el contenido
+dialogs.dayEntry.pickColorLayer	Elegir una capa de coloración
+dialogs.dayEntry.groupHabit	Seguimiento de hábitos
+dialogs.dayEntry.groupProgress	Avance del trabajo
+dialogs.dayEntry.groupLinked	Coloración vinculada
+dialogs.dayEntry.levelFullness	Nivel de ocupación
+dialogs.dayEntry.level	Nivel
+dialogs.dayEntry.fixedColor	Color de la capa (fijo)
+dialogs.dayEntry.fixedColorHint	El marcado usa el color predefinido de la capa; para cambiarlo, edita la capa en los ajustes.
+dialogs.dayEntry.autoTodo	Crear también la tarea correspondiente
+dialogs.dayEntry.autoTodoDetail	Se coloca en la lista "{list}" (se crea si no existe); fecha planificada {start}, vencimiento {end}
+dialogs.dayEntry.autoTodoTitleHint	 · el título será "{title}"
+dialogs.dayEntry.scheduleWord	Cita
+dialogs.dayEntry.coloringWord	Coloración
+dialogs.dayEntry.submit	Añadir
+dialogs.dayEntry.saving	Guardando…
+dialogs.dayEntry.saveFailed	Error al guardar: {msg}
+todoDetail.title	Detalle de la tarea
+todoDetail.emptyPanel	Pulsa una tarea para ver su detalle
+todoDetail.field.title	Título
+todoDetail.field.bodyOptional	Notas (opcional)
+todoDetail.field.list	Lista
+todoDetail.field.importance	Importancia
+todoDetail.field.dueDate	Fecha de vencimiento
+todoDetail.field.plannedDate	Fecha planificada
+todoDetail.field.startDate	Fecha de inicio
+todoDetail.field.status	Estado
+todoDetail.field.complexity	Complejidad
+todoDetail.field.repeat	Repetición
+todoDetail.field.repeatHint	Al completar la tarea se genera automáticamente el siguiente periodo
+todoDetail.field.tags	Etiquetas (separadas por comas, libres)
+todoDetail.tagsPlaceholder	trabajo, estudio, familia…
+todoDetail.dblClickEdit	Doble clic para ampliar y editar
+todoDetail.importance.high	Alta
+todoDetail.importance.normal	Normal
+todoDetail.importance.low	Baja
+todoDetail.status.notStarted	Sin empezar
+todoDetail.status.inProgress	En curso
+todoDetail.status.completed	Completada
+todoDetail.status.waitingOnOthers	Esperando a otros
+todoDetail.status.deferred	Aplazada
+todoDetail.complexity.simple	Sencilla
+todoDetail.complexity.medium	Media
+todoDetail.complexity.hard	Compleja
+todoDetail.repeat.none	Sin repetición
+todoDetail.repeat.daily	Diaria
+todoDetail.repeat.weekdays	Cada día laborable
+todoDetail.repeat.weekly	Semanal
+todoDetail.due.today	Hoy
+todoDetail.due.tomorrow	Mañana
+todoDetail.due.nextMonday	El próximo lunes
+todoDetail.due.todayWithDate	Hoy ({date})
+todoDetail.due.tomorrowWithDate	Mañana ({date})
+todoDetail.due.nextMondayWithDate	El próximo lunes ({date})
+todoDetail.due.customValue	{value} (personalizado)
+todoDetail.due.pickDate	Elegir fecha…
+todoDetail.due.back	Volver
+todoDetail.due.none	Ninguna
+todoDetail.action.close	Cerrar
+todoDetail.action.delete	Eliminar
+todoDetail.action.save	Guardar
+todoDetail.action.saving	Guardando…
+todoDetail.autosavePrefix	Guardado automático al cambiar de página ·\s
+todoDetail.autosaveSuffix	 Guardar directamente
+todoDetail.deleteConfirm	¿Eliminar la tarea "{title}"?
+todoDetail.notesFallbackTitle	Notas
+settings.title	Ajustes
+settings.saving	Guardando…
+settings.loading	Cargando…
+settings.import.sectionTitle	Importar eventos
+settings.import.fieldStart	Inicio
+settings.import.fieldEnd	Fin
+settings.import.desc	Obtiene de Jisilu las IPO, convertibles, dividendos y opciones del intervalo. Las capas desactivadas se omiten.
+settings.import.running	Importando…
+settings.import.start	Empezar la importación
+settings.import.resultOk	{n} elemento(s) importado(s)
+settings.import.resultError	{n} elemento(s) importado(s); error: {error}
+settings.jisilu.sectionTitle	Calendario de inversión de Jisilu
+settings.jisilu.collapse	Contraer
+settings.jisilu.expandStar	Mostrar el filtro por estrellas
+settings.jisilu.expandSub	Mostrar las subacciones
+settings.jisilu.minStar	Estrellas mínimas
+settings.jisilu.starAll	Todas
+settings.jisilu.star1	1★ o más
+settings.jisilu.star2	2★ o más
+settings.jisilu.star3	3★
+settings.jisilu.subLoading	Leyendo las subacciones…
+settings.jisilu.subEmpty	Esta capa no tiene datos de eventos, así que no se pueden listar las subacciones. Ejecuta primero una importación en "Importar eventos".
+settings.jisilu.subAllOn	Mostrando todas
+settings.jisilu.subFiltered	{n}/{total} mostradas
+settings.jisilu.subReset	Restablecer todo
+settings.layers.sectionTitle	Capas personalizadas
+settings.layers.empty	Aún no hay capas personalizadas. Crea una con "Nueva capa" en la barra lateral del calendario.
+settings.layers.deleteTitle	Eliminar la capa (el marcado no se conservará)
+settings.layers.confirmDelete	Confirmar la eliminación
+settings.busy.sectionTitle	Carga de tareas
+settings.busy.desc	Capa predictiva: las tareas pendientes se ponderan por "vencimiento×5 + planificación×3 + importancia + complejidad" para fechas futuras; capa real: las tareas marcadas puntúan ese día para fechas pasadas.
+settings.busy.fieldDue	Peso del vencimiento
+settings.busy.fieldPlanned	Peso de la planificación
+settings.busy.fieldImportance	Importancia alta/media/baja
+settings.busy.fieldComplexity	Complejidad alta/media/baja
+settings.busy.fieldThresholds	Umbrales de los 5 niveles
+settings.busy.predictLayer	Capa predictiva
+settings.busy.actualLayer	Capa real
+settings.busy.levelTitle	Nivel {n}
+settings.busy.save	Guardar y recalcular
+settings.busy.savedDays	Instantánea de carga recalculada para {n} días|Instantánea de carga recalculada para {n} día|||Instantánea de carga recalculada para {n} días
+settings.reminder.sectionTitle	Recordatorio diario
+settings.reminder.desc	A la hora configurada, si hoy siguen sin completarse tareas planificadas, aparecerá un banner discreto arriba. Desactivado por defecto.
+settings.reminder.enable	Activar el recordatorio diario
+settings.reminder.fieldTime	Hora del recordatorio
+settings.sync.sectionTitle	Sincronización de datos
+settings.sync.desc	Sincroniza todos tus datos (tareas, coloraciones, aniversarios, ajustes) entre varios ordenadores usando tu repositorio privado de GitHub. Los datos se guardan en claro en tu repositorio; el PAT se cifra con Windows y nunca se envía. Consulta docs/SYNC_SETUP.md.
+settings.sync.decisionPrompt	El repositorio remoto ya tiene {n} filas y esta es la primera vinculación local. ¿Qué hacemos?
+settings.sync.resolveMerge	Combinar ambos y subir (recomendado)
+settings.sync.resolveOverwrite	Sobrescribir lo local con lo remoto
+settings.sync.lastSyncOk	✓ Última sincronización {time}
+settings.sync.lastSyncWarn	⚠ Última sincronización {time}
+settings.sync.lastSyncNever	Nunca sincronizado
+settings.sync.notConfigured	Sin configurar
+settings.sync.fieldRepo	Repositorio (owner/repo)
+settings.sync.fieldBranch	Rama
+settings.sync.patLabel	PAT ({state})
+settings.sync.patStored	Guardado; déjalo vacío para no modificarlo
+settings.sync.patMissing	fine-grained, consulta la guía
+settings.sync.autoOnStart	Sincronizar al iniciar
+settings.sync.syncOnClose	Sincronizar antes de cerrar (al pulsar ✕ se sincroniza y luego se sale)
+settings.sync.test	Probar la conexión
+settings.sync.testing	Probando…
+settings.sync.syncNow	Sincronizar ahora
+settings.sync.syncing	Sincronizando…
+settings.sync.savedMsg	Guardado
+settings.sync.initDone	Primera inicialización completada: {n} filas subidas|Primera inicialización completada: {n} fila subida|||Primera inicialización completada: {n} filas subidas
+settings.sync.report	Descargados {pulled} · Subidos {pushed} · Conflictos {conflicts} · Eliminados {deleted}
+settings.sync.reportWarning	({warning})
+settings.sync.resolvedDone	Vinculación completada: {report}
+terms.calendar	Calendario
+terms.todo	Tarea
+terms.countdown	Cuenta atrás
+terms.subscription	Suscripción
+topbar.mode.month	Mes
+topbar.mode.week	Semana
+topbar.mode.day	Día
+topbar.mode.year	Año
+topbar.mode.countdown	Cuenta atrás
+topbar.todoMode.list	Lista
+topbar.todoMode.matrix	Matriz
+topbar.todoMode.kanban	Kanban
+topbar.todoMode.gantt	Gantt
+topbar.todoMode.stickies	Notas
+topbar.nav.prevYear	Año anterior
+topbar.nav.prevMonth	Mes anterior
+topbar.nav.prevWeek	Semana anterior
+topbar.nav.prevDay	Día anterior
+topbar.nav.nextYear	Año siguiente
+topbar.nav.nextMonth	Mes siguiente
+topbar.nav.nextWeek	Semana siguiente
+topbar.nav.nextDay	Día siguiente
+topbar.today	Hoy
+topbar.searchPlaceholder	Buscar eventos…
+shell.navHeading	Navegación
+shell.kind.color	Coloración
+shell.kind.dot	Puntos
+shell.groupOther	Otros
+shell.countdownLabel	Cuenta atrás
+shell.createLayer	Nueva capa
+shell.field.layerKind	Tipo de capa
+shell.field.layerName	Nombre de la capa
+shell.field.group	Grupo (opcional)
+shell.field.template	Plantilla de coloración
+shell.field.palette	Paleta de 5 colores
+shell.field.color	Color
+shell.field.tag	Etiqueta de tarea vinculada
+shell.kindLayer.color	Capa de coloración
+shell.kindLayer.colorDesc	Pinta las celdas de las fechas
+shell.kindLayer.dot	Capa de puntos
+shell.kindLayer.dotDesc	Muestra un punto + información
+shell.namePlaceholder.dot	Ej.: cena con Ana
+shell.namePlaceholder.solid	Ej.: madrugón
+shell.namePlaceholder.graded	Ej.: avance del proyecto
+shell.namePlaceholder.tag	Ej.: seguimiento de cliente clave
+shell.groupPlaceholder.dot	Ej.: cenas (vacío = sin grupo)
+shell.groupPlaceholder.color	Ej.: hábitos (vacío = sin grupo)
+shell.groupHint	Las capas con el mismo nombre de grupo se agrupan juntas (varias capas "cenas" agrupadas bajo "cenas").
+shell.template.solid	Seguimiento de hábitos
+shell.template.solidDesc	Relleno de un solo color
+shell.template.graded	Avance del trabajo
+shell.template.gradedDesc	Cinco niveles de color
+shell.template.tag	Coloración vinculada
+shell.template.tagDesc	Según la etiqueta de la tarea
+shell.tagPlaceholder	Escribe un nombre de etiqueta (ej.: cliente)
+shell.tagHint	Todas las tareas con esa etiqueta colorean su fecha planificada y su vencimiento con el color de la capa.
+shell.tagRequired	Escribe un nombre de etiqueta
+shell.deleteHint	⚠️ Las capas solo se pueden eliminar en "Ajustes"; después el marcado de esa capa no se conserva.
+shell.creating	Creando…
+shell.create	Crear
+countdown.all	Todas
+countdown.createNew	Nueva cuenta atrás
+countdown.editTitle	Ajustes de la cuenta atrás
+countdown.titleWithCat	Cuenta atrás · {cat}
+countdown.createShort	Nueva
+countdown.empty	Aún no hay cuentas atrás; pulsa "Nueva" para añadir una
+countdown.banner.today	🎉 ¡Hoy es "{name}"!
+countdown.banner.until	Faltan {n} días para "{name}"
+countdown.banner.passed	Han pasado {n} días desde "{name}"
+countdown.banner.empty	Aún no hay cuentas atrás
+countdown.label.years	{n} aniversario(s)
+countdown.label.thisYear	Este año
+countdown.label.lunarAnniv	Aniversario lunar
+countdown.label.days	{n} días
+countdown.confirmDelete	¿Eliminar esta cuenta atrás?
+countdown.cardToday	🎉 ¡Es hoy!
+countdown.cardPassedNever	Pasado · conmemoración permanente
+countdown.cardPassed	Han pasado {n} días|Han pasado {n} día|||Han pasado {n} días
+countdown.cardLeft	Quedan {n} días|Queda {n} día|||Quedan {n} días
+countdown.repeatYearlySolar	Reinicio anual
+countdown.repeatYearlyLunar	Reinicio según el calendario lunar
+countdown.lunarBadge	Lunar
+countdown.lunarBadgeTitle	Repetición lunar
+countdown.milestoneTitle	Calcular los hitos automáticamente
+countdown.neverTitle	Nunca caduca
+countdown.fieldName	Nombre
+countdown.placeholderName	Ej.: cumpleaños / boda
+countdown.fieldCategory	Categoría
+countdown.placeholderCustomCat	Escribe un nombre de categoría
+countdown.back	Volver
+countdown.optionCustom	+ Personalizada…
+countdown.fieldBaseDate	Fecha de referencia
+countdown.fieldDate	Fecha
+countdown.repeatYearlyLabel	Reinicio anual (cumpleaños, festividad)
+countdown.repeatRule	Regla de repetición
+countdown.ruleSolar	Según el calendario gregoriano (mismo mes y día cada año)
+countdown.ruleLunar	Según el calendario lunar (año nuevo, qixi…)
+countdown.fieldMilestone	Aniversarios calculados automáticamente (días separados por comas)
+countdown.milestoneHint	Genera automáticamente los 100 días, el aniversario, etc. a partir de la fecha de referencia y muestra el más próximo.
+countdown.neverExpireLabel	No mostrar "pasado" tras caducar
+countdown.fieldNotes	Notas
+countdown.placeholderNotes	Opcional
+countdown.createBtn	Crear
+countdown.categoryBirthday	Cumpleaños
+countdown.categoryAnniversary	Conmemoración
+countdown.categoryFestival	Festividad
+countdown.categoryImportant	Evento importante
+countdown.categoryOther	Otro
+calendar.noData	Sin datos
+calendar.weekendSuffix	 · fin de semana
+calendar.makeUpWorkday	laborable
+calendar.scheduleMore	+{n} citas|+{n} cita|||+{n} citas
+calendar.markLabel	Marcado
+calendar.fullnessLabel	Ocupación
+calendar.emptyDay	Sin eventos ese día
+calendar.spanRange	Día {i}/{total} · {start} ~ {end}
+calendar.contTitle	{title} (día {i}/{total}, desde el {start})
+calendar.multiDayTitle	{title} (varios días {start} ~ {end}, {total} días en total)
+calendar.spanDays	 ↦{n} d
+app.syncExiting	Sincronizando; la aplicación se cerrará al terminar…
+app.syncOnCloseFailed	Error al sincronizar antes de cerrar
+app.retrySync	Reintentar la sincronización
+app.forceQuit	Forzar la salida
+app.cancelClose	Cancelar el cierre
+stats.title	Estadísticas
+stats.cards.total	Tareas en total
+stats.cards.incomplete	Pendientes
+stats.cards.completed	Completadas
+stats.cards.last90	Completadas en 90 días
+stats.quadrant.title	Matriz de tareas
+stats.quadrant.axes	Eje horizontal: urgencia del vencimiento → Eje vertical: importancia ↑ (un punto = una tarea pendiente)
+stats.quadrant.doNow	Urgente · importante
+stats.quadrant.planIt	No urgente · importante
+stats.quadrant.delegate	Urgente · secundario
+stats.quadrant.drop	No urgente · secundario
+stats.quadrant.imp.high	Alta
+stats.quadrant.imp.normal	Normal
+stats.quadrant.imp.low	Baja
+stats.quadrant.openCount	{n} tareas sin completar|{n} tarea sin completar|||{n} tareas sin completar
+stats.quadrant.point.title	{title}{due}
+stats.quadrant.point.overdue	({n} días de retraso)|({n} día de retraso)|||({n} días de retraso)
+stats.quadrant.point.dueIn	(vence en {n} días)|(vence en {n} día)|||(vence en {n} días)
+stats.quadrant.point.noDue	(sin vencimiento)
+stats.daily.title	Tareas completadas por día (últimos 90 días)
+stats.daily.avg	{n} al día
+stats.daily.peak	Máximo {n}/día
+stats.dist.title	Reparto de tareas pendientes (por lista)
+detail.panelEmpty	Pulsa una fecha para ver el detalle
+detail.selectedDate	Fecha seleccionada
+detail.dateMD	{d}/{m}
+detail.yearWeekday	{y} · {weekday}
+detail.dot	Puntos
+detail.coloring	Coloración
+detail.fullness	Ocupación
+detail.todoPredict	Tareas · pendientes
+detail.todoDone	Tareas · completadas
+detail.noLevel	Sin nivel asignado
+detail.marked	Marcado
+detail.deleteMark	Eliminar el marcado
+detail.schedule	Citas
+detail.editAllSchedule	Editar todas las citas
+detail.edit	Editar
+detail.allDay	Todo el día
+detail.multiDay	Varios días {index}/{total}
+detail.eventsCount	Eventos ({n})
+detail.noEvents	Sin eventos
+detail.todosCount	Tareas ({n})
+detail.highImportance	⚡Alta
+detail.dueTag	Vencimiento
+detail.notes.title	Notas
+detail.notes.placeholder	Notas (opcional)
+detail.notes.hint	Pulsa ESC o haz clic fuera para cerrar (guardado automático)
+detail.reminder.plannedLeft	Hoy aún quedan {n} tareas planificadas sin completar|Hoy aún queda {n} tarea planificada sin completar|||Hoy aún quedan {n} tareas planificadas sin completar
+detail.reminder.view	Ver
+detail.reminder.dismissAria	Cerrar el recordatorio de hoy
+detail.errorBoundary.title	La aplicación ha fallado
+detail.errorBoundary.retry	Reintentar
+todoEditor.title.edit	Editar la tarea
+todoEditor.title.new	Nueva tarea
+todoEditor.field.title	Título
+todoEditor.field.titlePlaceholder	Título de la tarea
+todoEditor.field.body	Notas
+todoEditor.field.bodyPlaceholder	Opcional
+todoEditor.field.list	Lista
+todoEditor.field.importance	Importancia
+todoEditor.field.legacyDueDate	Fecha de vencimiento
+todoEditor.field.status	Estado
+todo.card.status.notStarted	Sin empezar
+todo.card.status.inProgress	En curso
+todo.card.status.waitingOnOthers	Esperando a otros
+todo.card.status.deferred	Aplazada
+todo.card.status.completed	Completada
+todo.card.importance.high	Alta
+todo.card.importance.normal	Media
+todo.card.importance.low	Baja
+todo.card.complexity.hard	Difícil
+todo.card.complexity.medium	Media
+todo.card.complexity.simple	Sencilla
+palette.green	Verde
+palette.blue	Azul
+palette.orange	Naranja
+palette.purple	Morado
+palette.red	Rojo
+palette.cyan	Cian
+palette.indigo	Índigo
+palette.gray	Gris
+sourceFields.importanceTitle	Importancia {stars}
+sourceFields.unknown	Desconocida
+errors.syncFailed	Error de sincronización ({status})
+todoview.sort.manual	Orden manual
+todoview.sort.dueImportance	Vencimiento + importancia
+todoview.sort.duePlannedImportance	Vencimiento + planificación + importancia
+todoview.sort.due	Vencimiento
+todoview.sort.planned	Fecha planificada
+todoview.sort.importance	Importancia
+todoview.sort.created	Fecha de creación
+todoview.imp.high	Importante
+todoview.imp.normal	Normal
+todoview.imp.low	Secundaria
+todoview.status.notStarted	Sin empezar
+todoview.status.inProgress	En curso
+todoview.status.completed	Completada
+todoview.status.waitingOnOthers	Esperando a otros
+todoview.status.deferred	Aplazada
+todoview.complexity.simple	Sencilla
+todoview.complexity.medium	Media
+todoview.complexity.hard	Compleja
+todoview.repeat.daily	Diaria
+todoview.repeat.weekdays	Laborable
+todoview.repeat.weekly	Semanal
+todoview.due.overdue	Vencida
+todoview.due.today	Vence hoy
+todoview.due.tomorrow	Vence mañana
+todoview.due.badge	{label} · {date}
+todoview.plan.today	Planificado hoy
+todoview.plan.tomorrow	Planificado mañana
+todoview.lists.all	Todas
+todoview.lists.setDefault	Definir como lista predeterminada
+todoview.lists.unsetDefault	Quitar la lista predeterminada
+todoview.lists.rename	Renombrar
+todoview.lists.deleteConfirm	¿Eliminar la lista "{name}" y todas sus tareas?
+todoview.lists.namePlaceholder	Nombre de la lista
+todoview.lists.create	Nueva lista
+todoview.filter.sort	Ordenar
+todoview.filter.tag	Filtrar
+todoview.filter.allTags	Todas las etiquetas
+todoview.toolbar.importCsv	Importar CSV
+todoview.actions.new	Nueva tarea
+todoview.empty.tagFiltered	No hay tareas con la etiqueta "{tag}"
+todoview.empty.desktop	Aún no hay tareas; pulsa "Nueva tarea" para empezar
+todoview.empty.noneOpen	No hay tareas pendientes
+todoview.row.completedWithCount	Completadas ({n})
+todoview.csv.done	Importados {inserted} elemento(s), creadas {lists} lista(s)
+todoview.csv.doneWithErrors	Importados {inserted} elemento(s), creadas {lists} lista(s), {n} línea(s) con error
+todoview.csv.failed	Error al importar: {msg}
+todoboards.empty.none	Aún no hay tareas
+todoboards.matrix.quadrant.doNow.title	Importante × urgente
+todoboards.matrix.quadrant.doNow.action	Ahora mismo
+todoboards.matrix.quadrant.doNow.desc	Lo que tiene que avanzar hoy
+todoboards.matrix.quadrant.planIt.title	Importante × no urgente
+todoboards.matrix.quadrant.planIt.action	Planificar
+todoboards.matrix.quadrant.planIt.desc	La zona de mayor valor: no la dejes pasar a urgente
+todoboards.matrix.quadrant.delegate.title	Secundaria × urgente
+todoboards.matrix.quadrant.delegate.action	Despejar
+todoboards.matrix.quadrant.delegate.desc	Interrupciones dispersas: trátalas en bloque
+todoboards.matrix.quadrant.drop.title	Secundaria × no urgente
+todoboards.matrix.quadrant.drop.action	Cuando有空
+todoboards.matrix.quadrant.drop.desc	No le dediques tu mejor energía
+todoboards.matrix.soonTitle	Vencen en 3-7 días
+todoboards.matrix.nearing	{n} fechas próximas|{n} fecha próxima|||{n} fechas próximas
+todoboards.matrix.sub.overdueBy	Vencido hace {n} días|Vencido hace {n} día|||Vencido hace {n} días
+todoboards.matrix.sub.dueToday	Vence hoy
+todoboards.matrix.sub.dueIn	Vence en {n} días|Vence en {n} día|||Vence en {n} días
+todoboards.matrix.sub.planned	Planificado el {date}
+todoboards.kanban.dim.status	Por estado
+todoboards.kanban.dim.planned	Por fecha planificada
+todoboards.kanban.dim.importance	Por importancia
+todoboards.kanban.dim.complexity	Por complejidad
+todoboards.kanban.dim.tag	Por etiqueta
+todoboards.kanban.dragHint	Arrastra una tarjeta a otra columna para cambiar su estado; marca el botón redondo para completarla
+todoboards.kanban.emptyCol	Vacía
+todoboards.kanban.unplanned	Sin planificar
+todoboards.kanban.untagged	Sin etiqueta
+todoboards.kanban.todayCol	Hoy · {date}
+todoboards.kanban.doneAt	Completada el {date}
+todoboards.kanban.completed	Completadas
+todoboards.kanban.expandCompleted	Mostrar la columna de completadas ({n} en total)
+todoboards.kanban.shownOf	Mostrando las {shown} más recientes de {total} en total
+todoboards.gantt.month	{n} mes
+todoboards.gantt.overdueBar	Atrasada
+todoboards.gantt.barTitle	{range}{overdue} · {status}
+todoboards.gantt.overdueSuffix	(vencida)
+todoboards.jar.title	Recolección del día
+todoboards.jar.carried	colocados
+todoboards.jar.piece	piezas
+todoboards.jar.settled	al fondo
+todoboards.jar.overflow	El bote está lleno · no caben {n} elementos|El bote está lleno · no cabe {n} elemento|||El bote está lleno · no caben {n} elementos
+todoboards.jar.settledToday	Al fondo · {n} completada(s) hoy
+todoboards.jar.legendHard	Roca · difícil
+todoboards.jar.legendMedium	Guijarro · media
+todoboards.jar.legendSimple	Grano de arena · sencilla
+todoboards.jar.tagline	Primero las piedras grandes, luego la arena.
+todoboards.jar.jarAria	Bote de tareas del día
+todoboards.jar.empty	Hoy no hay nada planeado
+todoboards.jar.emptyHint	Empieza por meter una piedra grande (vencimiento o fecha planificada = hoy)
+todoboards.stickies.empty	No hay ninguna nota en la pared
+todoboards.stickies.emptyHint	Pulsa "Nueva tarea" para pegar la primera
+todoboards.stickies.dblClickHint	Doble clic para ver o editar las notas
+todoboards.aria.markDone	Marcar como completada
+todoboards.aria.markUndone	Marcar como no completada
+todoboards.card.overdueBy	{n} días de retraso|{n} día de retraso|||{n} días de retraso
+todoboards.card.today	Hoy
+todoboards.card.due	Vence {date}
+todoboards.card.planned	Planificado {date}
+todoboards.card.start	Empieza {date}
+language.title	Elegir idioma
+language.subtitle	Puedes cambiarlo en cualquier momento desde los ajustes
+language.start	Empezar
+language.settingsLabel	Idioma
+layers.scheduleLegacy	Citas (antiguo)
+layers.important	Fechas importantes
+layers.coloring	Coloración de ocupación
+layers.holiday	Días festivos
+layers.todo	Tareas
+layers.todoDone	Tareas · completadas
+layers.work	Trabajo
+layers.course	Curso
+layers.sport	Deporte
+layers.play	Ocio
+layers.misc	Otro
+layers.scheduleTodoList	Tareas de cita
+layers.defaultTaskList	Tareas

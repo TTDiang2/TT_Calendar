@@ -1,0 +1,562 @@
+# fr 对照表：路径<TAB>译文。复数条目用 | 分隔变体，顺序 other|one|two|few|many，留空位表示该类别不适用。
+# 首尾空格用 \s 显式表达（避免被工具链 trim 掉）。
+common.confirm	Confirmer
+common.cancel	Annuler
+common.save	Enregistrer
+common.close	Fermer
+common.delete	Supprimer
+common.add	Ajouter
+common.loading	Chargement…
+common.daysAfter	dans {n} jours|dans {n} jour|||dans {n} jours
+common.daysBefore	il y a {n} jours|il y a {n} jour|||il y a {n} jours
+dialogs.toTime	au
+dialogs.hiddenSuffix	(masqué)
+dialogs.deleteScheduleItem	Supprimer ce créneau
+dialogs.unknownError	Erreur inconnue
+dialogs.event.titleEdit	Modifier l'événement
+dialogs.event.titleNew	Nouvel événement
+dialogs.event.fieldTitle	Titre
+dialogs.event.fieldDate	Date
+dialogs.event.fieldLayer	Calque
+dialogs.event.fieldDesc	Description (facultatif)
+dialogs.event.fieldColor	Couleur (facultatif, #RRGGBB)
+dialogs.schedule.titleWithDate	Créneau du {date}
+dialogs.schedule.empty	Aucun créneau ce jour-là, cliquez sur « Ajouter un créneau » pour commencer
+dialogs.schedule.add	Ajouter un créneau
+dialogs.schedule.what	Que faire
+dialogs.schedule.dateLabel	Date
+dialogs.schedule.endDateHint	Vide = un seul jour ; rempli = un créneau sur plusieurs jours, affiché chaque jour
+dialogs.schedule.singleDay	Un seul jour
+dialogs.schedule.multiDay	Multi-jour · {n} jours au total
+dialogs.schedule.spanBad	La date de fin précède la date de début
+dialogs.schedule.cat.work	Travail
+dialogs.schedule.cat.course	Cours
+dialogs.schedule.cat.sport	Sport
+dialogs.schedule.cat.play	Loisir
+dialogs.schedule.cat.misc	Autre
+dialogs.coloring.titleWithDate	Occupation du {date}
+dialogs.coloring.current	Actuellement : {level}
+dialogs.coloring.notSet	Non défini
+dialogs.coloring.clear	Effacer
+dialogs.coloringLevel.relaxed	Détente
+dialogs.coloringLevel.mild	Léger
+dialogs.coloringLevel.moderate	Modéré
+dialogs.coloringLevel.busy	Chargé
+dialogs.coloringLevel.productive	Productif
+dialogs.search.title	Rechercher un événement
+dialogs.search.placeholder	Saisir un mot-clé…
+dialogs.search.nothing	Aucun événement ne correspond à « {q} »
+dialogs.subscription.title	Abonnement
+dialogs.subscription.intro	Abonnez-vous à des sources de calendriers externes pour les garder à jour à l'ouverture. Chaque nouvel abonnement doit être adapté par votre agent (l'application vous le signalera).
+dialogs.subscription.pendingCount	{n} abonnement(s) en attente d'adaptation
+dialogs.subscription.pendingHint	Ouvrez le dossier TT_Calendar avec votre agent et signalez-lui que de nouveaux abonnements sont à adapter (l'agent lira les fiches « en attente d'adaptation » ci-dessous et suivra docs/SUBSCRIPTION_SPEC.md).
+dialogs.subscription.pendingBadge	À adapter
+dialogs.subscription.errorBadge	Erreur
+dialogs.subscription.updatedAt	Mis à jour à {time}
+dialogs.subscription.toggleOff	Désactiver l'abonnement
+dialogs.subscription.toggleOn	Activer l'abonnement
+dialogs.subscription.urlLabel	URL :
+dialogs.subscription.rulesLabel	Règles :
+dialogs.subscription.emptyValue	(aucun)
+dialogs.subscription.autoUpdate	Mettre à jour à l'ouverture
+dialogs.subscription.refresh	Mettre à jour
+dialogs.subscription.refreshing	Mise à jour…
+dialogs.subscription.updatedMsg	« {name} » a été mis à jour ({n} ajouté(s))
+dialogs.subscription.updateFailed	Échec de la mise à jour de « {name} » : {error}
+dialogs.subscription.deleteConfirm	Supprimer l'abonnement « {name} » ? (les événements déjà récupérés sont conservés)
+dialogs.subscription.fieldTitle	Titre
+dialogs.subscription.fieldUrl	URL
+dialogs.subscription.namePlaceholder	Ex. : calendrier de conférences
+dialogs.subscription.fieldRules	Règles d'abonnement (langage naturel, pour votre agent)
+dialogs.subscription.rulesPlaceholder	Décrivez où se trouve ce calendrier, comment le récupérer, quels champs, à quelle fréquence le mettre à jour…
+dialogs.subscription.submitting	Envoi…
+dialogs.subscription.confirmAdd	Confirmer l'abonnement
+dialogs.subscription.addNew	Nouvel abonnement
+dialogs.menu.newEvent	Nouvel événement
+dialogs.menu.editSchedule	Modifier le créneau
+dialogs.menu.setColoring	Définir l'occupation
+dialogs.dayEntry.titleWithDate	Nouveau : {date}
+dialogs.dayEntry.tabDot	Points / Créneaux
+dialogs.dayEntry.tabColor	Coloration
+dialogs.dayEntry.fieldStart	Date de début
+dialogs.dayEntry.fieldEnd	Date de fin (facultatif, donne un créneau multi-jour)
+dialogs.dayEntry.rangeInvalid	La date de fin ne peut pas précéder la date de début
+dialogs.dayEntry.multiCount	{n} jours au total ({range})
+dialogs.dayEntry.suffixSchedule	 · enregistré comme 1 créneau multi-jour, visible chaque jour
+dialogs.dayEntry.suffixEvents	 · créer {n} événements (un par jour)
+dialogs.dayEntry.suffixColor	 · marquer {n} jours consécutifs
+dialogs.dayEntry.pickLayer	Choisir un calque
+dialogs.dayEntry.groupSchedule	Créneaux
+dialogs.dayEntry.groupOther	Autres
+dialogs.dayEntry.allDay	Toute la journée
+dialogs.dayEntry.layerColorTitle	Couleur du calque
+dialogs.dayEntry.fieldContent	Contenu
+dialogs.dayEntry.contentPlaceholder	Que faire
+dialogs.dayEntry.contentRequired	Veuillez saisir un contenu
+dialogs.dayEntry.pickColorLayer	Choisir un calque de coloration
+dialogs.dayEntry.groupHabit	Suivi d'habitude
+dialogs.dayEntry.groupProgress	Avancement professionnel
+dialogs.dayEntry.groupLinked	Coloration liée
+dialogs.dayEntry.levelFullness	Niveau d'occupation
+dialogs.dayEntry.level	Niveau
+dialogs.dayEntry.fixedColor	Couleur du calque (fixe)
+dialogs.dayEntry.fixedColorHint	Le marquage utilise la couleur prédéfinie du calque ; pour la changer, modifiez le calque dans les paramètres.
+dialogs.dayEntry.autoTodo	Créer aussi la tâche correspondante
+dialogs.dayEntry.autoTodoDetail	Placée dans la liste « {list} » (créée si besoin) ; date planifiée {start}, échéance {end}
+dialogs.dayEntry.autoTodoTitleHint	 · le titre sera « {title} »
+dialogs.dayEntry.scheduleWord	Créneau
+dialogs.dayEntry.coloringWord	Coloration
+dialogs.dayEntry.submit	Ajouter
+dialogs.dayEntry.saving	Enregistrement…
+dialogs.dayEntry.saveFailed	Échec de l'enregistrement : {msg}
+todoDetail.title	Détail de la tâche
+todoDetail.emptyPanel	Cliquez sur une tâche pour voir les détails
+todoDetail.field.title	Titre
+todoDetail.field.bodyOptional	Notes (facultatif)
+todoDetail.field.list	Liste
+todoDetail.field.importance	Importance
+todoDetail.field.dueDate	Date d'échéance
+todoDetail.field.plannedDate	Date planifiée
+todoDetail.field.startDate	Date de début
+todoDetail.field.status	Statut
+todoDetail.field.complexity	Complexité
+todoDetail.field.repeat	Répétition
+todoDetail.field.repeatHint	La période suivante est générée automatiquement une fois la tâche terminée
+todoDetail.field.tags	Étiquettes (séparées par des virgules, libres)
+todoDetail.tagsPlaceholder	travail, études, famille…
+todoDetail.dblClickEdit	Double-clic pour agrandir et modifier
+todoDetail.importance.high	Élevée
+todoDetail.importance.normal	Normale
+todoDetail.importance.low	Basse
+todoDetail.status.notStarted	Non commencée
+todoDetail.status.inProgress	En cours
+todoDetail.status.completed	Terminée
+todoDetail.status.waitingOnOthers	En attente d'autrui
+todoDetail.status.deferred	Reportée
+todoDetail.complexity.simple	Simple
+todoDetail.complexity.medium	Moyenne
+todoDetail.complexity.hard	Complexe
+todoDetail.repeat.none	Aucune répétition
+todoDetail.repeat.daily	Quotidienne
+todoDetail.repeat.weekdays	Chaque jour ouvré
+todoDetail.repeat.weekly	Hebdomadaire
+todoDetail.due.today	Aujourd'hui
+todoDetail.due.tomorrow	Demain
+todoDetail.due.nextMonday	Lundi prochain
+todoDetail.due.todayWithDate	Aujourd'hui ({date})
+todoDetail.due.tomorrowWithDate	Demain ({date})
+todoDetail.due.nextMondayWithDate	Lundi prochain ({date})
+todoDetail.due.customValue	{value} (personnalisé)
+todoDetail.due.pickDate	Choisir une date…
+todoDetail.due.back	Retour
+todoDetail.due.none	Aucune
+todoDetail.action.close	Fermer
+todoDetail.action.delete	Supprimer
+todoDetail.action.save	Enregistrer
+todoDetail.action.saving	Enregistrement…
+todoDetail.autosavePrefix	Enregistrement auto au changement de page ·\s
+todoDetail.autosaveSuffix	 Enregistrer directement
+todoDetail.deleteConfirm	Supprimer la tâche « {title} » ?
+todoDetail.notesFallbackTitle	Notes
+settings.title	Paramètres
+settings.saving	Enregistrement…
+settings.loading	Chargement…
+settings.import.sectionTitle	Import d'événements
+settings.import.fieldStart	Début
+settings.import.fieldEnd	Fin
+settings.import.desc	Récupère sur Jisilu les introductions, obligations convertibles, dividendes et options de la période. Les calques désactivés sont ignorés.
+settings.import.running	Import en cours…
+settings.import.start	Lancer l'import
+settings.import.resultOk	{n} élément(s) importé(s)
+settings.import.resultError	{n} élément(s) importé(s) ; erreur : {error}
+settings.jisilu.sectionTitle	Calendrier d'investissement Jisilu
+settings.jisilu.collapse	Replier
+settings.jisilu.expandStar	Afficher le filtre par étoiles
+settings.jisilu.expandSub	Afficher les sous-actions
+settings.jisilu.minStar	Étoiles minimales
+settings.jisilu.starAll	Toutes
+settings.jisilu.star1	1★ et plus
+settings.jisilu.star2	2★ et plus
+settings.jisilu.star3	3★
+settings.jisilu.subLoading	Lecture des sous-actions…
+settings.jisilu.subEmpty	Aucune donnée d'événement pour ce calque : impossible de lister les sous-actions. Lancez d'abord un import dans « Import d'événements ».
+settings.jisilu.subAllOn	Toutes affichées
+settings.jisilu.subFiltered	{n}/{total} affichées
+settings.jisilu.subReset	Tout rétablir
+settings.layers.sectionTitle	Calques personnalisés
+settings.layers.empty	Aucun calque personnalisé. Créez-en un via « Nouveau calque » dans la barre latérale du calendrier.
+settings.layers.deleteTitle	Supprimer le calque (les marquages seront perdus)
+settings.layers.confirmDelete	Confirmer la suppression
+settings.busy.sectionTitle	Charge des tâches
+settings.busy.desc	Couche prédictive : les tâches ouvertes sont pondérées par « échéance×5 + planification×3 + importance + complexité » pour les dates futures ; couche réelle : les tâches cochées ce jour comptent pour les dates passées.
+settings.busy.fieldDue	Pondération de l'échéance
+settings.busy.fieldPlanned	Pondération de la planification
+settings.busy.fieldImportance	Importance haute/moyenne/basse
+settings.busy.fieldComplexity	Complexité haute/moyenne/basse
+settings.busy.fieldThresholds	Seuils des 5 niveaux
+settings.busy.predictLayer	Couche prédictive
+settings.busy.actualLayer	Couche réelle
+settings.busy.levelTitle	Niveau {n}
+settings.busy.save	Enregistrer et recalculer
+settings.busy.savedDays	Instantané de charge recalculé pour {n} jours|Instantané de charge recalculé pour {n} jour|||Instantané de charge recalculé pour {n} jours
+settings.reminder.sectionTitle	Rappel quotidien
+settings.reminder.desc	À l'heure définie, si des tâches planifiées restent incomplètes aujourd'hui, une bannière discrète s'affiche en haut de l'application. Désactivé par défaut.
+settings.reminder.enable	Activer le rappel quotidien
+settings.reminder.fieldTime	Heure du rappel
+settings.sync.sectionTitle	Synchronisation des données
+settings.sync.desc	Synchronise toutes vos données (tâches, colorations, anniversaires, réglages) entre plusieurs ordinateurs via votre dépôt GitHub privé. Les données sont stockées en clair dans votre dépôt ; le PAT est chiffré par Windows et jamais envoyé. Voir docs/SYNC_SETUP.md.
+settings.sync.decisionPrompt	Le dépôt distant contient déjà {n} lignes ; il s'agit de la première liaison locale. Comment procéder ?
+settings.sync.resolveMerge	Fusionner les deux et envoyer (recommandé)
+settings.sync.resolveOverwrite	Écraser le local avec le distant
+settings.sync.lastSyncOk	✓ Dernière synchronisation {time}
+settings.sync.lastSyncWarn	⚠ Dernière synchronisation {time}
+settings.sync.lastSyncNever	Jamais synchronisé
+settings.sync.notConfigured	Non configuré
+settings.sync.fieldRepo	Dépôt (owner/repo)
+settings.sync.fieldBranch	Branche
+settings.sync.patLabel	PAT ({state})
+settings.sync.patStored	Enregistré, laisser vide pour ne pas modifier
+settings.sync.patMissing	fine-grained, voir le guide
+settings.sync.autoOnStart	Synchroniser automatiquement au démarrage
+settings.sync.syncOnClose	Synchroniser avant la fermeture (la synchronisation a lieu avant de quitter via ✕)
+settings.sync.test	Tester la connexion
+settings.sync.testing	Test en cours…
+settings.sync.syncNow	Synchroniser maintenant
+settings.sync.syncing	Synchronisation…
+settings.sync.savedMsg	Enregistré
+settings.sync.initDone	Première initialisation terminée : {n} lignes envoyées|Première initialisation terminée : {n} ligne envoyée|||Première initialisation terminée : {n} lignes envoyées
+settings.sync.report	Récupéré {pulled} · Envoyé {pushed} · Conflits {conflicts} · Supprimé {deleted}
+settings.sync.reportWarning	({warning})
+settings.sync.resolvedDone	Liaison terminée : {report}
+terms.calendar	Calendrier
+terms.todo	Tâche
+terms.countdown	Compte à rebours
+terms.subscription	Abonnement
+topbar.mode.month	Mois
+topbar.mode.week	Semaine
+topbar.mode.day	Jour
+topbar.mode.year	Année
+topbar.mode.countdown	Compte à rebours
+topbar.todoMode.list	Liste
+topbar.todoMode.matrix	Matrice
+topbar.todoMode.kanban	Kanban
+topbar.todoMode.gantt	Gantt
+topbar.todoMode.stickies	Notes
+topbar.nav.prevYear	Année précédente
+topbar.nav.prevMonth	Mois précédent
+topbar.nav.prevWeek	Semaine précédente
+topbar.nav.prevDay	Jour précédent
+topbar.nav.nextYear	Année suivante
+topbar.nav.nextMonth	Mois suivant
+topbar.nav.nextWeek	Semaine suivante
+topbar.nav.nextDay	Jour suivant
+topbar.today	Aujourd'hui
+topbar.searchPlaceholder	Rechercher un événement…
+shell.navHeading	Navigation
+shell.kind.color	Coloration
+shell.kind.dot	Points
+shell.groupOther	Autres
+shell.countdownLabel	Compte à rebours
+shell.createLayer	Nouveau calque
+shell.field.layerKind	Type de calque
+shell.field.layerName	Nom du calque
+shell.field.group	Groupe (facultatif)
+shell.field.template	Modèle de coloration
+shell.field.palette	Palette de 5 couleurs
+shell.field.color	Couleur
+shell.field.tag	Étiquette de tâche associée
+shell.kindLayer.color	Calque de coloration
+shell.kindLayer.colorDesc	Colore les cases de dates
+shell.kindLayer.dot	Calque de points
+shell.kindLayer.dotDesc	Affiche une pastille + une info
+shell.namePlaceholder.dot	Ex. : dîner avec Camille
+shell.namePlaceholder.solid	Ex. : réveil matinal
+shell.namePlaceholder.graded	Ex. : avancement du projet
+shell.namePlaceholder.tag	Ex. : suivi client important
+shell.groupPlaceholder.dot	Ex. : dîners (vide = pas de groupe)
+shell.groupPlaceholder.color	Ex. : habitudes (vide = pas de groupe)
+shell.groupHint	Les calques qui portent le même nom de groupe sont regroupés (plusieurs calques « dîners » regroupés sous « dîners »).
+shell.template.solid	Suivi d'habitude
+shell.template.solidDesc	Remplissage uni
+shell.template.graded	Avancement professionnel
+shell.template.gradedDesc	Cinq niveaux de couleur
+shell.template.tag	Coloration liée
+shell.template.tagDesc	Selon l'étiquette de la tâche
+shell.tagPlaceholder	Saisir un nom d'étiquette (ex. : client)
+shell.tagHint	Toutes les tâches portant cette étiquette colorent leur date planifiée et leur échéance avec la couleur du calque.
+shell.tagRequired	Veuillez saisir un nom d'étiquette
+shell.deleteHint	⚠️ La suppression d'un calque se fait uniquement dans « Paramètres » ; les marquages du calque seront perdus.
+shell.creating	Création…
+shell.create	Créer
+countdown.all	Tous
+countdown.createNew	Nouveau compte à rebours
+countdown.editTitle	Paramètres du compte à rebours
+countdown.titleWithCat	Compte à rebours · {cat}
+countdown.createShort	Nouveau
+countdown.empty	Aucun compte à rebours, cliquez sur « Nouveau » pour en ajouter un
+countdown.banner.today	🎉 Aujourd'hui : « {name} »
+countdown.banner.until	Il reste {n} jours avant « {name} »
+countdown.banner.passed	« {name} » : {n} jours écoulés
+countdown.banner.empty	Aucun compte à rebours
+countdown.label.years	{n} ans
+countdown.label.thisYear	Cette année
+countdown.label.lunarAnniv	Anniversaire lunaire
+countdown.label.days	{n} jours
+countdown.confirmDelete	Supprimer ce compte à rebours ?
+countdown.cardToday	🎉 C'est aujourd'hui
+countdown.cardPassedNever	Passé · commémoration permanente
+countdown.cardPassed	{n} jours écoulés|{n} jour écoulé|||{n} jours écoulés
+countdown.cardLeft	Il reste {n} jours|Il reste {n} jour|||Il reste {n} jours
+countdown.repeatYearlySolar	Réinitialisation chaque année
+countdown.repeatYearlyLunar	Réinitialisation selon le calendrier lunaire
+countdown.lunarBadge	Lunaire
+countdown.lunarBadgeTitle	Répétition lunaire
+countdown.milestoneTitle	Calculer les jalons automatiquement
+countdown.neverTitle	Ne expire jamais
+countdown.fieldName	Nom
+countdown.placeholderName	Ex. : anniversaire / mariage
+countdown.fieldCategory	Catégorie
+countdown.placeholderCustomCat	Saisir un nom de catégorie
+countdown.back	Retour
+countdown.optionCustom	+ Personnalisée…
+countdown.fieldBaseDate	Date de référence
+countdown.fieldDate	Date
+countdown.repeatYearlyLabel	Réinitialisation annuelle (anniversaires, fêtes)
+countdown.repeatRule	Règle de répétition
+countdown.ruleSolar	Selon le calendrier grégorien (même mois et jour chaque année)
+countdown.ruleLunar	Selon le calendrier lunaire (nouvel an, qixi…)
+countdown.fieldMilestone	Anniversaires calculés automatiquement (jours séparés par des virgules)
+countdown.milestoneHint	Génère automatiquement 100 jours, 1 an, etc. à partir de la date de référence et affiche le plus proche à venir.
+countdown.neverExpireLabel	Ne pas afficher « passé » après expiration
+countdown.fieldNotes	Notes
+countdown.placeholderNotes	Facultatif
+countdown.createBtn	Créer
+countdown.categoryBirthday	Anniversaire
+countdown.categoryAnniversary	Commémoration
+countdown.categoryFestival	Fête
+countdown.categoryImportant	Événement important
+countdown.categoryOther	Autre
+calendar.noData	Aucune donnée
+calendar.weekendSuffix	 · week-end
+calendar.makeUpWorkday	ouvré
+calendar.scheduleMore	+{n} créneaux|+{n} créneau|||+{n} créneaux
+calendar.markLabel	Marquage
+calendar.fullnessLabel	Occupation
+calendar.emptyDay	Aucun événement ce jour-là
+calendar.spanRange	Jour {i}/{total} · {start} ~ {end}
+calendar.contTitle	{title} (jour {i}/{total}, à partir du {start})
+calendar.multiDayTitle	{title} (multi-jour {start} ~ {end}, {total} jours au total)
+calendar.spanDays	 ↦{n} j
+app.syncExiting	Synchronisation en cours ; l'application se fermera automatiquement à la fin…
+app.syncOnCloseFailed	Échec de la synchronisation avant fermeture
+app.retrySync	Réessayer la synchronisation
+app.forceQuit	Forcer la fermeture
+app.cancelClose	Annuler la fermeture
+stats.title	Statistiques
+stats.cards.total	Tâches au total
+stats.cards.incomplete	Ouvertes
+stats.cards.completed	Terminées
+stats.cards.last90	Terminées sur 90 jours
+stats.quadrant.title	Matrice des tâches
+stats.quadrant.axes	Axe horizontal : urgence de l'échéance → Axe vertical : importance ↑ (un point = une tâche ouverte)
+stats.quadrant.doNow	Urgent · important
+stats.quadrant.planIt	Non urgent · important
+stats.quadrant.delegate	Urgent · secondaire
+stats.quadrant.drop	Non urgent · secondaire
+stats.quadrant.imp.high	Élevée
+stats.quadrant.imp.normal	Normale
+stats.quadrant.imp.low	Basse
+stats.quadrant.openCount	{n} tâches non terminées|{n} tâche non terminée|||{n} tâches non terminées
+stats.quadrant.point.title	{title}{due}
+stats.quadrant.point.overdue	(en retard de {n} jours)|(en retard de {n} jour)|||(en retard de {n} jours)
+stats.quadrant.point.dueIn	(échéance dans {n} jours)|(échéance dans {n} jour)|||(échéance dans {n} jours)
+stats.quadrant.point.noDue	(sans échéance)
+stats.daily.title	Tâches terminées par jour (90 derniers jours)
+stats.daily.avg	{n} par jour
+stats.daily.peak	Record {n}/jour
+stats.dist.title	Répartition des tâches ouvertes (par liste)
+detail.panelEmpty	Cliquez sur une date pour voir les détails
+detail.selectedDate	Date sélectionnée
+detail.dateMD	{d}/{m}
+detail.yearWeekday	{y} · {weekday}
+detail.dot	Points
+detail.coloring	Coloration
+detail.fullness	Occupation
+detail.todoPredict	Tâches · ouvertes
+detail.todoDone	Tâches · terminées
+detail.noLevel	Aucun niveau marqué
+detail.marked	Marqué
+detail.deleteMark	Supprimer le marquage
+detail.schedule	Créneaux
+detail.editAllSchedule	Modifier tous les créneaux
+detail.edit	Modifier
+detail.allDay	Toute la journée
+detail.multiDay	Multi-jour {index}/{total}
+detail.eventsCount	Événements ({n})
+detail.noEvents	Aucun événement
+detail.todosCount	Tâches ({n})
+detail.highImportance	⚡Haute
+detail.dueTag	Échéance
+detail.notes.title	Notes
+detail.notes.placeholder	Notes (facultatif)
+detail.notes.hint	Échap ou cliquez ailleurs pour fermer (enregistrement auto)
+detail.reminder.plannedLeft	Encore {n} tâches planifiées incomplètes aujourd'hui|Encore {n} tâche planifiée incomplète aujourd'hui|||Encore {n} tâches planifiées incomplètes aujourd'hui
+detail.reminder.view	Voir
+detail.reminder.dismissAria	Fermer le rappel du jour
+detail.errorBoundary.title	L'application a rencontré une erreur
+detail.errorBoundary.retry	Réessayer
+todoEditor.title.edit	Modifier la tâche
+todoEditor.title.new	Nouvelle tâche
+todoEditor.field.title	Titre
+todoEditor.field.titlePlaceholder	Titre de la tâche
+todoEditor.field.body	Notes
+todoEditor.field.bodyPlaceholder	Facultatif
+todoEditor.field.list	Liste
+todoEditor.field.importance	Importance
+todoEditor.field.legacyDueDate	Date d'échéance
+todoEditor.field.status	Statut
+todo.card.status.notStarted	Non commencée
+todo.card.status.inProgress	En cours
+todo.card.status.waitingOnOthers	En attente d'autrui
+todo.card.status.deferred	Reportée
+todo.card.status.completed	Terminée
+todo.card.importance.high	Haute
+todo.card.importance.normal	Moyenne
+todo.card.importance.low	Basse
+todo.card.complexity.hard	Difficile
+todo.card.complexity.medium	Moyenne
+todo.card.complexity.simple	Simple
+palette.green	Vert
+palette.blue	Bleu
+palette.orange	Orange
+palette.purple	Violet
+palette.red	Rouge
+palette.cyan	Cyan
+palette.indigo	Indigo
+palette.gray	Gris
+sourceFields.importanceTitle	Importance {stars}
+sourceFields.unknown	Inconnue
+errors.syncFailed	Échec de la synchronisation ({status})
+todoview.sort.manual	Tri manuel
+todoview.sort.dueImportance	Échéance + importance
+todoview.sort.duePlannedImportance	Échéance + planification + importance
+todoview.sort.due	Échéance
+todoview.sort.planned	Date planifiée
+todoview.sort.importance	Importance
+todoview.sort.created	Date de création
+todoview.imp.high	Haute
+todoview.imp.normal	Normale
+todoview.imp.low	Basse
+todoview.status.notStarted	Non commencée
+todoview.status.inProgress	En cours
+todoview.status.completed	Terminée
+todoview.status.waitingOnOthers	En attente d'autrui
+todoview.status.deferred	Reportée
+todoview.complexity.simple	Simple
+todoview.complexity.medium	Moyenne
+todoview.complexity.hard	Complexe
+todoview.repeat.daily	Quotidien
+todoview.repeat.weekdays	Jour ouvré
+todoview.repeat.weekly	Hebdomadaire
+todoview.due.overdue	En retard
+todoview.due.today	Échéance aujourd'hui
+todoview.due.tomorrow	Échéance demain
+todoview.due.badge	{label} · {date}
+todoview.plan.today	Planifié aujourd'hui
+todoview.plan.tomorrow	Planifié demain
+todoview.lists.all	Toutes
+todoview.lists.setDefault	Définir comme liste par défaut
+todoview.lists.unsetDefault	Retirer la liste par défaut
+todoview.lists.rename	Renommer
+todoview.lists.deleteConfirm	Supprimer la liste « {name} » et toutes ses tâches ?
+todoview.lists.namePlaceholder	Nom de la liste
+todoview.lists.create	Nouvelle liste
+todoview.filter.sort	Trier
+todoview.filter.tag	Filtrer
+todoview.filter.allTags	Toutes les étiquettes
+todoview.toolbar.importCsv	Import CSV
+todoview.actions.new	Nouvelle tâche
+todoview.empty.tagFiltered	Aucune tâche avec l'étiquette « {tag} »
+todoview.empty.desktop	Aucune tâche, cliquez sur « Nouvelle tâche » pour commencer
+todoview.empty.noneOpen	Aucune tâche ouverte
+todoview.row.completedWithCount	Terminées ({n})
+todoview.csv.done	Import de {inserted} élément(s), création de {lists} liste(s)
+todoview.csv.doneWithErrors	Import de {inserted} élément(s), création de {lists} liste(s), {n} ligne(s) en erreur
+todoview.csv.failed	Échec de l'import : {msg}
+todoboards.empty.none	Aucune tâche
+todoboards.matrix.quadrant.doNow.title	Important × urgent
+todoboards.matrix.quadrant.doNow.action	Tout de suite
+todoboards.matrix.quadrant.doNow.desc	Ce qui doit avancer aujourd'hui
+todoboards.matrix.quadrant.planIt.title	Important × non urgent
+todoboards.matrix.quadrant.planIt.action	Planifier
+todoboards.matrix.quadrant.planIt.desc	La zone à plus forte valeur : ne la laissez pas devenir urgente
+todoboards.matrix.quadrant.delegate.title	Secondaire × urgent
+todoboards.matrix.quadrant.delegate.action	Débarrasser
+todoboards.matrix.quadrant.delegate.desc	Interruptions fragmentées : traitez-en un lot
+todoboards.matrix.quadrant.drop.title	Secondaire × non urgent
+todoboards.matrix.quadrant.drop.action	Quand il y a le temps
+todoboards.matrix.quadrant.drop.desc	Ne pas y consacrer sa meilleure énergie
+todoboards.matrix.soonTitle	Échéance dans 3 à 7 jours
+todoboards.matrix.nearing	{n} échéances proches|{n} échéance proche|||{n} échéances proches
+todoboards.matrix.sub.overdueBy	Échéance dépassée depuis {n} jours|Échéance dépassée depuis {n} jour|||Échéance dépassée depuis {n} jours
+todoboards.matrix.sub.dueToday	Échéance aujourd'hui
+todoboards.matrix.sub.dueIn	Échéance dans {n} jours|Échéance dans {n} jour|||Échéance dans {n} jours
+todoboards.matrix.sub.planned	Planifié le {date}
+todoboards.kanban.dim.status	Par statut
+todoboards.kanban.dim.planned	Par date planifiée
+todoboards.kanban.dim.importance	Par importance
+todoboards.kanban.dim.complexity	Par complexité
+todoboards.kanban.dim.tag	Par étiquette
+todoboards.kanban.dragHint	Glissez une carte vers une autre colonne pour changer son statut ; cochez le bouton rond pour terminer
+todoboards.kanban.emptyCol	Vide
+todoboards.kanban.unplanned	Non planifié
+todoboards.kanban.untagged	Sans étiquette
+todoboards.kanban.todayCol	Aujourd'hui · {date}
+todoboards.kanban.doneAt	Terminée le {date}
+todoboards.kanban.completed	Terminées
+todoboards.kanban.expandCompleted	Afficher la colonne terminées ({n} au total)
+todoboards.kanban.shownOf	{shown} plus récentes affichées sur {total} au total
+todoboards.gantt.month	{n} mois
+todoboards.gantt.overdueBar	En retard
+todoboards.gantt.barTitle	{range}{overdue} · {status}
+todoboards.gantt.overdueSuffix	(en retard)
+todoboards.jar.title	Récolte du jour
+todoboards.jar.carried	chargées
+todoboards.jar.piece	pièces
+todoboards.jar.settled	au fond
+todoboards.jar.overflow	Bocal plein · {n} éléments ne rentrent pas|Bocal plein · {n} élément ne rentre pas|||Bocal plein · {n} éléments ne rentrent pas
+todoboards.jar.settledToday	Au fond · {n} terminée(s) aujourd'hui
+todoboards.jar.legendHard	Roc · difficile
+todoboards.jar.legendMedium	Galet · moyen
+todoboards.jar.legendSimple	Grain de sable · simple
+todoboards.jar.tagline	Les gros cailloux d'abord, le sable ensuite.
+todoboards.jar.jarAria	Bocal des tâches du jour
+todoboards.jar.empty	Rien de prévu aujourd'hui
+todoboards.jar.emptyHint	Commencez par y déposer un gros caillou (échéance ou date planifiée = aujourd'hui)
+todoboards.stickies.empty	Aucune note sur le mur
+todoboards.stickies.emptyHint	Cliquez sur « Nouvelle tâche » pour en coller la première
+todoboards.stickies.dblClickHint	Double-clic pour voir / modifier les notes
+todoboards.aria.markDone	Marquer comme terminée
+todoboards.aria.markUndone	Marquer comme non terminée
+todoboards.card.overdueBy	En retard de {n} jours|En retard de {n} jour|||En retard de {n} jours
+todoboards.card.today	Aujourd'hui
+todoboards.card.due	Échéance {date}
+todoboards.card.planned	Planifié {date}
+todoboards.card.start	Débute {date}
+language.title	Choisir la langue
+language.subtitle	Vous pourrez la changer à tout moment dans les paramètres
+language.start	Commencer
+language.settingsLabel	Langue
+layers.scheduleLegacy	Créneaux (ancien)
+layers.important	Dates importantes
+layers.coloring	Coloration d'occupation
+layers.holiday	Jours fériés
+layers.todo	Tâches
+layers.todoDone	Tâches · terminées
+layers.work	Travail
+layers.course	Cours
+layers.sport	Sport
+layers.play	Loisir
+layers.misc	Autre
+layers.scheduleTodoList	Tâches de créneau
+layers.defaultTaskList	Tâches

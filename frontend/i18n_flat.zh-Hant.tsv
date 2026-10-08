@@ -1,0 +1,562 @@
+# zh-Hant 对照表：路径<TAB>译文。复数条目用 | 分隔变体，顺序 other|one|two|few|many。
+# 转换口径：纯简→繁字形转换（与 LANG_META['zh-Hant'].sample 一致），不做地区术语替换。
+common.confirm	確認
+common.cancel	取消
+common.save	儲存
+common.close	關閉
+common.delete	刪除
+common.add	添加
+common.loading	加載中…
+common.daysAfter	{n} 天後
+common.daysBefore	{n} 天前
+dialogs.toTime	至
+dialogs.hiddenSuffix	（隱藏）
+dialogs.deleteScheduleItem	刪除這條日程
+dialogs.unknownError	未知錯誤
+dialogs.event.titleEdit	編輯事件
+dialogs.event.titleNew	新建事件
+dialogs.event.fieldTitle	標題
+dialogs.event.fieldDate	日期
+dialogs.event.fieldLayer	圖層
+dialogs.event.fieldDesc	描述（可選）
+dialogs.event.fieldColor	顏色（可選，#RRGGBB）
+dialogs.schedule.titleWithDate	日程 {date}
+dialogs.schedule.empty	當天沒有日程，點「添加日程」開始
+dialogs.schedule.add	添加日程
+dialogs.schedule.what	做什麼
+dialogs.schedule.dateLabel	日期
+dialogs.schedule.endDateHint	留空 = 單日；填了就是多日日程，每天都顯示
+dialogs.schedule.singleDay	單日
+dialogs.schedule.multiDay	多日 · 共 {n} 天
+dialogs.schedule.spanBad	結束日期早於開始日期
+dialogs.schedule.cat.work	工作
+dialogs.schedule.cat.course	課程
+dialogs.schedule.cat.sport	運動
+dialogs.schedule.cat.play	玩耍
+dialogs.schedule.cat.misc	其他
+dialogs.coloring.titleWithDate	充實度 {date}
+dialogs.coloring.current	當前：{level}
+dialogs.coloring.notSet	未設
+dialogs.coloring.clear	清除
+dialogs.coloringLevel.relaxed	放鬆
+dialogs.coloringLevel.mild	輕鬆
+dialogs.coloringLevel.moderate	適中
+dialogs.coloringLevel.busy	充實
+dialogs.coloringLevel.productive	高產
+dialogs.search.title	搜尋事件
+dialogs.search.placeholder	輸入關鍵詞…
+dialogs.search.nothing	未找到匹配「{q}」的事件
+dialogs.subscription.title	訂閱
+dialogs.subscription.intro	訂閱外部日曆數據源，打開日曆時自動保持最新。新增自訂訂閱後需由你的 agent 完成適配（應用內會提示）。
+dialogs.subscription.pendingCount	有 {n} 個訂閱待適配
+dialogs.subscription.pendingHint	請把 TT_Calendar 資料夾用您的 agent 軟件打開，並提醒 agent 有新的訂閱要做適配 （agent 將讀取下方「待適配」卡片裡的登記信息，按 docs/SUBSCRIPTION_SPEC.md 完成適配）。
+dialogs.subscription.pendingBadge	待適配
+dialogs.subscription.errorBadge	出錯
+dialogs.subscription.updatedAt	更新於 {time}
+dialogs.subscription.toggleOff	關閉訂閱
+dialogs.subscription.toggleOn	開啟訂閱
+dialogs.subscription.urlLabel	網址：
+dialogs.subscription.rulesLabel	規則：
+dialogs.subscription.emptyValue	（無）
+dialogs.subscription.autoUpdate	打開時自動更新
+dialogs.subscription.refresh	立即更新
+dialogs.subscription.refreshing	更新中…
+dialogs.subscription.updatedMsg	「{name}」已更新（新增 {n} 條）
+dialogs.subscription.updateFailed	「{name}」更新失敗：{error}
+dialogs.subscription.deleteConfirm	刪除訂閱「{name}」？（已抓取的事件數據保留）
+dialogs.subscription.fieldTitle	標題
+dialogs.subscription.fieldUrl	網址
+dialogs.subscription.namePlaceholder	如：高金講座日曆
+dialogs.subscription.fieldRules	訂閱規則（自然語言，給你的 agent 讀）
+dialogs.subscription.rulesPlaceholder	描述這個日曆在哪、怎麼抓、哪些欄位、什麼頻率更新……
+dialogs.subscription.submitting	提交中…
+dialogs.subscription.confirmAdd	確認訂閱
+dialogs.subscription.addNew	新增訂閱
+dialogs.menu.newEvent	新建事件
+dialogs.menu.editSchedule	編輯日程
+dialogs.menu.setColoring	設定充實度
+dialogs.dayEntry.titleWithDate	新建 {date}
+dialogs.dayEntry.tabDot	點點 / 日程
+dialogs.dayEntry.tabColor	塗色
+dialogs.dayEntry.fieldStart	開始日期
+dialogs.dayEntry.fieldEnd	結束日期（可選，填了就是多日）
+dialogs.dayEntry.rangeInvalid	結束日期不能早於開始日期
+dialogs.dayEntry.multiCount	共 {n} 天（{range}）
+dialogs.dayEntry.suffixSchedule	 · 存為 1 條多日日程，每天都可見
+dialogs.dayEntry.suffixEvents	 · 按天建 {n} 條事件
+dialogs.dayEntry.suffixColor	 · 連續 {n} 天都做標記
+dialogs.dayEntry.pickLayer	選擇圖層
+dialogs.dayEntry.groupSchedule	日程
+dialogs.dayEntry.groupOther	其他
+dialogs.dayEntry.allDay	全天
+dialogs.dayEntry.layerColorTitle	圖層顏色
+dialogs.dayEntry.fieldContent	內容
+dialogs.dayEntry.contentPlaceholder	做什麼
+dialogs.dayEntry.contentRequired	請填寫內容
+dialogs.dayEntry.pickColorLayer	選擇塗色圖層
+dialogs.dayEntry.groupHabit	習慣打卡
+dialogs.dayEntry.groupProgress	工作完成度
+dialogs.dayEntry.groupLinked	關聯塗色
+dialogs.dayEntry.levelFullness	充實度檔位
+dialogs.dayEntry.level	檔位
+dialogs.dayEntry.fixedColor	圖層顏色（固定）
+dialogs.dayEntry.fixedColorHint	標記使用圖層預設顏色，如需改色請到設定頁編輯圖層。
+dialogs.dayEntry.autoTodo	同時創建對應待辦
+dialogs.dayEntry.autoTodoDetail	放入「{list}」列表（沒有會自動創建）；計劃日期 {start}、截止日期 {end}
+dialogs.dayEntry.autoTodoTitleHint	 · 標題將用「{title}」
+dialogs.dayEntry.scheduleWord	日程
+dialogs.dayEntry.coloringWord	塗色
+dialogs.dayEntry.submit	添加
+dialogs.dayEntry.saving	儲存中…
+dialogs.dayEntry.saveFailed	儲存失敗：{msg}
+todoDetail.title	待辦詳情
+todoDetail.emptyPanel	點擊待辦查看詳情
+todoDetail.field.title	標題
+todoDetail.field.bodyOptional	備註（可選）
+todoDetail.field.list	列表
+todoDetail.field.importance	重要性
+todoDetail.field.dueDate	截止日期
+todoDetail.field.plannedDate	計劃日期
+todoDetail.field.startDate	開始日
+todoDetail.field.status	狀態
+todoDetail.field.complexity	複雜度
+todoDetail.field.repeat	重複
+todoDetail.field.repeatHint	完成後自動生成下一期
+todoDetail.field.tags	標籤（逗號分隔，自訂）
+todoDetail.tagsPlaceholder	工作, 學習, 家庭…
+todoDetail.dblClickEdit	雙擊放大編輯
+todoDetail.importance.high	高
+todoDetail.importance.normal	普通
+todoDetail.importance.low	低
+todoDetail.status.notStarted	未開始
+todoDetail.status.inProgress	進行中
+todoDetail.status.completed	已完成
+todoDetail.status.waitingOnOthers	等待他人
+todoDetail.status.deferred	已推遲
+todoDetail.complexity.simple	簡單
+todoDetail.complexity.medium	中等
+todoDetail.complexity.hard	複雜
+todoDetail.repeat.none	不重複
+todoDetail.repeat.daily	每日重複
+todoDetail.repeat.weekdays	每工作日重複
+todoDetail.repeat.weekly	每週重複
+todoDetail.due.today	今天
+todoDetail.due.tomorrow	明天
+todoDetail.due.nextMonday	下週一
+todoDetail.due.todayWithDate	今天（{date}）
+todoDetail.due.tomorrowWithDate	明天（{date}）
+todoDetail.due.nextMondayWithDate	下週一（{date}）
+todoDetail.due.customValue	{value}（自訂）
+todoDetail.due.pickDate	選擇日期…
+todoDetail.due.back	返回
+todoDetail.due.none	無
+todoDetail.action.close	關閉
+todoDetail.action.delete	刪除
+todoDetail.action.save	儲存
+todoDetail.action.saving	儲存中…
+todoDetail.autosavePrefix	切換頁面自動儲存 ·\s
+todoDetail.autosaveSuffix	 直接儲存
+todoDetail.deleteConfirm	刪除待辦「{title}」？
+todoDetail.notesFallbackTitle	備註
+settings.title	設定
+settings.saving	儲存中…
+settings.loading	加載中…
+settings.import.sectionTitle	事件匯入
+settings.import.fieldStart	開始
+settings.import.fieldEnd	結束
+settings.import.desc	從集思錄抓取該區間的新股/可轉債/分紅/期權等數據。已禁用的圖層會跳過。
+settings.import.running	匯入中…
+settings.import.start	開始匯入
+settings.import.resultOk	匯入 {n} 條
+settings.import.resultError	匯入 {n} 條；錯誤：{error}
+settings.jisilu.sectionTitle	集思錄投資日曆
+settings.jisilu.collapse	收起
+settings.jisilu.expandStar	展開星級過濾
+settings.jisilu.expandSub	展開子動作
+settings.jisilu.minStar	最低星級
+settings.jisilu.starAll	全部
+settings.jisilu.star1	1★ 以上
+settings.jisilu.star2	2★ 以上
+settings.jisilu.star3	3★
+settings.jisilu.subLoading	讀取子動作中…
+settings.jisilu.subEmpty	該圖層暫無事件數據，無法列出子動作。請先在「事件匯入」拉取一次。
+settings.jisilu.subAllOn	當前全部顯示
+settings.jisilu.subFiltered	已過濾 {n}/{total}
+settings.jisilu.subReset	恢復全部
+settings.layers.sectionTitle	自訂圖層
+settings.layers.empty	暫無自訂圖層。可在日曆左側邊欄點「新建圖層」創建。
+settings.layers.deleteTitle	刪除圖層（標記數據不會保留）
+settings.layers.confirmDelete	確認刪除
+settings.busy.sectionTitle	待辦忙度
+settings.busy.desc	預測層：未完成待辦按「截止×5 + 計劃×3 + 重要度 + 複雜度」加權，用於未來日期；實際層：勾選當天計分，用於過去日期。
+settings.busy.fieldDue	截止權重
+settings.busy.fieldPlanned	計劃權重
+settings.busy.fieldImportance	重要度 高/中/低
+settings.busy.fieldComplexity	複雜度 高/中/低
+settings.busy.fieldThresholds	分檔閾值（5 個）
+settings.busy.predictLayer	預測層
+settings.busy.actualLayer	實際層
+settings.busy.levelTitle	檔位 {n}
+settings.busy.save	儲存並重算
+settings.busy.savedDays	已儲存並重算 {n} 天的忙度快照
+settings.reminder.sectionTitle	每日提醒
+settings.reminder.desc	到了設定時間，若今日仍有計劃未完成的待辦，應用頂部會出現一條安靜橫幅。默認關。
+settings.reminder.enable	啟用每日提醒
+settings.reminder.fieldTime	提醒時間
+settings.sync.sectionTitle	數據同步
+settings.sync.desc	透過你的 GitHub 私有倉庫在多台電腦間同步全部數據（待辦、塗色、紀念日、設定）。數據明文存於你的倉庫；PAT 用 Windows 加密儲存、永不上傳。設定步驟見 docs/SYNC_SETUP.md。
+settings.sync.decisionPrompt	遠端倉庫已有 {n} 行數據，本地是首次綁定。如何處理？
+settings.sync.resolveMerge	合併兩邊並上傳（推薦）
+settings.sync.resolveOverwrite	用遠端覆蓋本地
+settings.sync.lastSyncOk	✓ 上次同步 {time}
+settings.sync.lastSyncWarn	⚠ 上次同步 {time}
+settings.sync.lastSyncNever	尚未同步過
+settings.sync.notConfigured	未設定
+settings.sync.fieldRepo	倉庫（owner/repo）
+settings.sync.fieldBranch	分支
+settings.sync.patLabel	PAT（{state}）
+settings.sync.patStored	已儲存，留空則不修改
+settings.sync.patMissing	fine-grained，見操作指引
+settings.sync.autoOnStart	啟動時自動同步一次
+settings.sync.syncOnClose	關閉前自動同步（點窗口 ✕ 時先同步再退出）
+settings.sync.test	測試連接
+settings.sync.testing	測試中…
+settings.sync.syncNow	立即同步
+settings.sync.syncing	同步中…
+settings.sync.savedMsg	已儲存
+settings.sync.initDone	首次初始化完成：已上傳 {n} 行
+settings.sync.report	拉取 {pulled} · 推送 {pushed} · 衝突 {conflicts} · 刪除 {deleted}
+settings.sync.reportWarning	（{warning}）
+settings.sync.resolvedDone	綁定完成：{report}
+terms.calendar	日曆
+terms.todo	待辦
+terms.countdown	倒數日
+terms.subscription	訂閱
+topbar.mode.month	月
+topbar.mode.week	週
+topbar.mode.day	日
+topbar.mode.year	年
+topbar.mode.countdown	倒數日
+topbar.todoMode.list	列表
+topbar.todoMode.matrix	矩陣
+topbar.todoMode.kanban	看板
+topbar.todoMode.gantt	甘特
+topbar.todoMode.stickies	便籤
+topbar.nav.prevYear	上一年
+topbar.nav.prevMonth	上一月
+topbar.nav.prevWeek	上一週
+topbar.nav.prevDay	上一天
+topbar.nav.nextYear	下一年
+topbar.nav.nextMonth	下一月
+topbar.nav.nextWeek	下一週
+topbar.nav.nextDay	下一天
+topbar.today	今天
+topbar.searchPlaceholder	搜尋事件…
+shell.navHeading	導航
+shell.kind.color	塗色
+shell.kind.dot	點點
+shell.groupOther	其他
+shell.countdownLabel	倒數計時
+shell.createLayer	新建圖層
+shell.field.layerKind	圖層類型
+shell.field.layerName	圖層名稱
+shell.field.group	歸類分組（可選）
+shell.field.template	塗色範本
+shell.field.palette	五檔顏色預設
+shell.field.color	顏色
+shell.field.tag	關聯待辦標籤
+shell.kindLayer.color	塗色圖層
+shell.kindLayer.colorDesc	給日期格子塗色
+shell.kindLayer.dot	點點圖層
+shell.kindLayer.dotDesc	顯示色點+信息
+shell.namePlaceholder.dot	如：朋友A約飯
+shell.namePlaceholder.solid	如：早起打卡
+shell.namePlaceholder.graded	如：專案進度
+shell.namePlaceholder.tag	如：重要客戶跟進
+shell.groupPlaceholder.dot	如：約飯（留空則不分組）
+shell.groupPlaceholder.color	如：打卡（留空則不分組）
+shell.groupHint	填相同的分組名會收納到一起（如多個「約飯」圖層都填「約飯」）。
+shell.template.solid	習慣打卡
+shell.template.solidDesc	單色塗滿
+shell.template.graded	工作完成度
+shell.template.gradedDesc	五檔顏色
+shell.template.tag	關聯塗色
+shell.template.tagDesc	按待辦標籤
+shell.tagPlaceholder	輸入標籤名（如：客戶）
+shell.tagHint	所有帶該標籤的待辦，其計劃日期 / 截止日期會自動染上圖層顏色。
+shell.tagRequired	請輸入標籤名
+shell.deleteHint	⚠️ 刪除圖層只能在「設定」頁面進行，刪除後該圖層的標記數據不會保留。
+shell.creating	創建中…
+shell.create	創建
+countdown.all	全部
+countdown.createNew	新建倒數日
+countdown.editTitle	倒數日設定
+countdown.titleWithCat	倒數日 · {cat}
+countdown.createShort	新建
+countdown.empty	暫無倒數日，點「新建」新增
+countdown.banner.today	🎉 今天是「{name}」
+countdown.banner.until	距離「{name}」還有 {n} 天
+countdown.banner.passed	「{name}」已過 {n} 天
+countdown.banner.empty	暫無倒數日
+countdown.label.years	{n} 週年
+countdown.label.thisYear	今年
+countdown.label.lunarAnniv	農曆週年
+countdown.label.days	{n} 天
+countdown.confirmDelete	刪除該倒數日？
+countdown.cardToday	🎉 就是今天
+countdown.cardPassedNever	已過 · 永久紀念
+countdown.cardPassed	已過 {n} 天
+countdown.cardLeft	還有 {n} 天
+countdown.repeatYearlySolar	每年重置
+countdown.repeatYearlyLunar	按農曆每年重置
+countdown.lunarBadge	農曆
+countdown.lunarBadgeTitle	農曆重複
+countdown.milestoneTitle	自動計算里程碑
+countdown.neverTitle	永不過期
+countdown.fieldName	名稱
+countdown.placeholderName	如：生日 / 結婚紀念日
+countdown.fieldCategory	分類
+countdown.placeholderCustomCat	輸入自訂分類名
+countdown.back	返回
+countdown.optionCustom	+ 自訂…
+countdown.fieldBaseDate	基準日期
+countdown.fieldDate	日期
+countdown.repeatYearlyLabel	每年重置（生日/節日）
+countdown.repeatRule	重複規則
+countdown.ruleSolar	按公曆（每年同月日）
+countdown.ruleLunar	按農曆（春節/七夕等）
+countdown.fieldMilestone	自動計算紀念日（逗號分隔天數）
+countdown.milestoneHint	從基準日期起自動生成百天/週年等特殊日子，顯示最近的下一個。
+countdown.neverExpireLabel	過期後不顯示「已過」
+countdown.fieldNotes	備註
+countdown.placeholderNotes	可選
+countdown.createBtn	創建
+countdown.categoryBirthday	生日
+countdown.categoryAnniversary	紀念日
+countdown.categoryFestival	節日
+countdown.categoryImportant	重要事件
+countdown.categoryOther	其他
+calendar.noData	無數據
+calendar.weekendSuffix	 · 週末
+calendar.makeUpWorkday	班
+calendar.scheduleMore	+{n} 項日程
+calendar.markLabel	標記
+calendar.fullnessLabel	充實度
+calendar.emptyDay	當天無事件
+calendar.spanRange	第 {i}/{total} 天 · {start} ~ {end}
+calendar.contTitle	{title}（{i}/{total} 天，{start} 起）
+calendar.multiDayTitle	{title}（多日 {start} ~ {end}，共 {total} 天）
+calendar.spanDays	 ↦{n}天
+app.syncExiting	正在同步，同步完成後會自動退出……
+app.syncOnCloseFailed	關閉前同步失敗
+app.retrySync	重試同步
+app.forceQuit	強制退出
+app.cancelClose	取消關閉
+stats.title	統計
+stats.cards.total	總待辦
+stats.cards.incomplete	未完成
+stats.cards.completed	已完成
+stats.cards.last90	近90天完成
+stats.quadrant.title	待辦四象限
+stats.quadrant.axes	橫軸：到期緊迫度 →　縱軸：重要性 ↑（點 = 未完成待辦）
+stats.quadrant.doNow	緊急·重要
+stats.quadrant.planIt	不緊急·重要
+stats.quadrant.delegate	緊急·次要
+stats.quadrant.drop	不緊急·次要
+stats.quadrant.imp.high	高
+stats.quadrant.imp.normal	普通
+stats.quadrant.imp.low	低
+stats.quadrant.openCount	{n} 個未完成
+stats.quadrant.point.title	{title}{due}
+stats.quadrant.point.overdue	（已逾期{n}天）
+stats.quadrant.point.dueIn	（{n}天後到期）
+stats.quadrant.point.noDue	（無到期日）
+stats.daily.title	逐日完成數量（近 90 天）
+stats.daily.avg	日均 {n}
+stats.daily.peak	峰值 {n}/天
+stats.dist.title	未完成待辦分布（按列表）
+detail.panelEmpty	點擊日期查看詳情
+detail.selectedDate	已選日期
+detail.dateMD	{m} 月 {d} 日
+detail.yearWeekday	{y} 年 · {weekday}
+detail.dot	點點
+detail.coloring	塗色
+detail.fullness	充實度
+detail.todoPredict	待辦·未完成
+detail.todoDone	待辦·已完成
+detail.noLevel	未標記檔位
+detail.marked	已標記
+detail.deleteMark	刪除標記
+detail.schedule	日程
+detail.editAllSchedule	編輯全部日程
+detail.edit	編輯
+detail.allDay	全天
+detail.multiDay	多日 {index}/{total}
+detail.eventsCount	事件（{n}）
+detail.noEvents	無事件
+detail.todosCount	待辦（{n}）
+detail.highImportance	⚡高
+detail.dueTag	截止
+detail.notes.title	備註
+detail.notes.placeholder	備註（可選）
+detail.notes.hint	ESC 或點擊空白處關閉（自動儲存）
+detail.reminder.plannedLeft	今日還有 {n} 條計劃任務未完成
+detail.reminder.view	查看
+detail.reminder.dismissAria	關閉今日提醒
+detail.errorBoundary.title	應用出錯了
+detail.errorBoundary.retry	重試
+todoEditor.title.edit	編輯待辦
+todoEditor.title.new	新建待辦
+todoEditor.field.title	標題
+todoEditor.field.titlePlaceholder	任務標題
+todoEditor.field.body	備註
+todoEditor.field.bodyPlaceholder	可選
+todoEditor.field.list	列表
+todoEditor.field.importance	重要性
+todoEditor.field.legacyDueDate	到期日
+todoEditor.field.status	狀態
+todo.card.status.notStarted	未開始
+todo.card.status.inProgress	進行中
+todo.card.status.waitingOnOthers	等他人
+todo.card.status.deferred	已推遲
+todo.card.status.completed	已完成
+todo.card.importance.high	高
+todo.card.importance.normal	中
+todo.card.importance.low	低
+todo.card.complexity.hard	困難
+todo.card.complexity.medium	中等
+todo.card.complexity.simple	簡單
+palette.green	綠
+palette.blue	藍
+palette.orange	橙
+palette.purple	紫
+palette.red	紅
+palette.cyan	青
+palette.indigo	靛
+palette.gray	灰
+sourceFields.importanceTitle	重要性 {stars}
+sourceFields.unknown	未知
+errors.syncFailed	同步失敗（{status}）
+todoview.sort.manual	手動排序
+todoview.sort.dueImportance	截止+重要性
+todoview.sort.duePlannedImportance	截止+計劃+重要性
+todoview.sort.due	截止日
+todoview.sort.planned	計劃日
+todoview.sort.importance	重要性
+todoview.sort.created	創建時間
+todoview.imp.high	重要
+todoview.imp.normal	普通
+todoview.imp.low	次要
+todoview.status.notStarted	未開始
+todoview.status.inProgress	進行中
+todoview.status.completed	已完成
+todoview.status.waitingOnOthers	等待他人
+todoview.status.deferred	已推遲
+todoview.complexity.simple	簡單
+todoview.complexity.medium	中等
+todoview.complexity.hard	複雜
+todoview.repeat.daily	每日
+todoview.repeat.weekdays	工作日
+todoview.repeat.weekly	每週
+todoview.due.overdue	已過期
+todoview.due.today	今天截止
+todoview.due.tomorrow	明天截止
+todoview.due.badge	{label} · {date}
+todoview.plan.today	今日計劃
+todoview.plan.tomorrow	明日計劃
+todoview.lists.all	全部
+todoview.lists.setDefault	設為默認列表
+todoview.lists.unsetDefault	取消默認
+todoview.lists.rename	重新命名
+todoview.lists.deleteConfirm	刪除列表「{name}」及其所有待辦？
+todoview.lists.namePlaceholder	列表名
+todoview.lists.create	新建列表
+todoview.filter.sort	排序
+todoview.filter.tag	篩選
+todoview.filter.allTags	全部標籤
+todoview.toolbar.importCsv	CSV 匯入
+todoview.actions.new	新建待辦
+todoview.empty.tagFiltered	沒有「{tag}」標籤的待辦
+todoview.empty.desktop	暫無待辦，點「新建待辦」開始
+todoview.empty.noneOpen	沒有未完成待辦
+todoview.row.completedWithCount	已完成（{n}）
+todoview.csv.done	匯入 {inserted} 條，新建 {lists} 個列表
+todoview.csv.doneWithErrors	匯入 {inserted} 條，新建 {lists} 個列表，{n} 行錯誤
+todoview.csv.failed	匯入失敗: {msg}
+todoboards.empty.none	暫無待辦
+todoboards.matrix.quadrant.doNow.title	重要 × 緊急
+todoboards.matrix.quadrant.doNow.action	立即做
+todoboards.matrix.quadrant.doNow.desc	今天必須推進的事
+todoboards.matrix.quadrant.planIt.title	重要 × 不緊急
+todoboards.matrix.quadrant.planIt.action	規劃做
+todoboards.matrix.quadrant.planIt.desc	矩陣的核心價值區：別讓它變成緊急
+todoboards.matrix.quadrant.delegate.title	不重要 × 緊急
+todoboards.matrix.quadrant.delegate.action	快速清
+todoboards.matrix.quadrant.delegate.desc	碎片打斷：批量快速處理
+todoboards.matrix.quadrant.drop.title	不重要 × 不緊急
+todoboards.matrix.quadrant.drop.action	有空做
+todoboards.matrix.quadrant.drop.desc	不佔用最佳精力，有空再說
+todoboards.matrix.soonTitle	3-7 天內到期
+todoboards.matrix.nearing	{n} 臨近
+todoboards.matrix.sub.overdueBy	截止已過 {n} 天
+todoboards.matrix.sub.dueToday	今天截止
+todoboards.matrix.sub.dueIn	{n} 天後截止
+todoboards.matrix.sub.planned	計劃 {date}
+todoboards.kanban.dim.status	按狀態
+todoboards.kanban.dim.planned	按計劃日期
+todoboards.kanban.dim.importance	按重要性
+todoboards.kanban.dim.complexity	按複雜度
+todoboards.kanban.dim.tag	按標籤
+todoboards.kanban.dragHint	拖動卡片到其他列即可改變狀態；勾選圓形按鈕直接完成
+todoboards.kanban.emptyCol	空
+todoboards.kanban.unplanned	未計劃
+todoboards.kanban.untagged	無標籤
+todoboards.kanban.todayCol	今天 · {date}
+todoboards.kanban.doneAt	完成於 {date}
+todoboards.kanban.completed	已完成
+todoboards.kanban.expandCompleted	展開已完成列（共 {n} 條）
+todoboards.kanban.shownOf	已顯示最近 {shown} / 共 {total} 條
+todoboards.gantt.month	{n} 月
+todoboards.gantt.overdueBar	逾期中
+todoboards.gantt.barTitle	{range}{overdue} · {status}
+todoboards.gantt.overdueSuffix	（已過期）
+todoboards.jar.title	今日拾貝
+todoboards.jar.carried	裝了
+todoboards.jar.piece	件
+todoboards.jar.settled	沉底
+todoboards.jar.overflow	罐子滿了 · {n} 件放不下
+todoboards.jar.settledToday	沉底 · 今日完成 {n}
+todoboards.jar.legendHard	磐石 · 難
+todoboards.jar.legendMedium	卵石 · 中
+todoboards.jar.legendSimple	沙粒 · 簡
+todoboards.jar.tagline	大石頭先進，沙子填縫。
+todoboards.jar.jarAria	今日任務玻璃罐
+todoboards.jar.empty	今天還沒有安排
+todoboards.jar.emptyHint	先放一塊大石頭進去吧（截止/計劃日設為今天）
+todoboards.stickies.empty	牆上一張便籤都沒有
+todoboards.stickies.emptyHint	點「新建待辦」貼上第一張
+todoboards.stickies.dblClickHint	雙擊查看 / 編輯備註
+todoboards.aria.markDone	標記為已完成
+todoboards.aria.markUndone	標記為未完成
+todoboards.card.overdueBy	逾期 {n} 天
+todoboards.card.today	今天
+todoboards.card.due	截止 {date}
+todoboards.card.planned	計劃 {date}
+todoboards.card.start	開始 {date}
+language.title	選擇語言
+language.subtitle	你可以隨時在設定中更改
+language.start	開始使用
+language.settingsLabel	語言
+layers.scheduleLegacy	日程（舊）
+layers.important	重要日期
+layers.coloring	充實度染色
+layers.holiday	公共節假日
+layers.todo	待辦
+layers.todoDone	待辦·已完成
+layers.work	工作
+layers.course	課程
+layers.sport	運動
+layers.play	玩耍
+layers.misc	其他
+layers.scheduleTodoList	日程待辦
+layers.defaultTaskList	任務

@@ -1,0 +1,563 @@
+# ru 对照表：路径<TAB>译文。复数条目用 | 分隔变体，顺序 other|one|two|few|many。
+# ru 需 one/few/many/other 四类别；数词后的名词按 CLDR 变格：1 день / 2 дня / 5 дней / 1,5 дня。
+# 尾部空格用 \s 显式表达。
+common.confirm	Подтвердить
+common.cancel	Отмена
+common.save	Сохранить
+common.close	Закрыть
+common.delete	Удалить
+common.add	Добавить
+common.loading	Загрузка…
+common.daysAfter	через {n} дня|через {n} день||через {n} дня|через {n} дней
+common.daysBefore	{n} дня назад|{n} день назад||{n} дня назад|{n} дней назад
+dialogs.toTime	до
+dialogs.hiddenSuffix	(скрыто)
+dialogs.deleteScheduleItem	Удалить эту запись
+dialogs.unknownError	Неизвестная ошибка
+dialogs.event.titleEdit	Изменить событие
+dialogs.event.titleNew	Новое событие
+dialogs.event.fieldTitle	Заголовок
+dialogs.event.fieldDate	Дата
+dialogs.event.fieldLayer	Слой
+dialogs.event.fieldDesc	Описание (необязательно)
+dialogs.event.fieldColor	Цвет (необязательно, #RRGGBB)
+dialogs.schedule.titleWithDate	Запись на {date}
+dialogs.schedule.empty	На этот день записей нет — нажмите «Добавить запись»
+dialogs.schedule.add	Добавить запись
+dialogs.schedule.what	Что сделать
+dialogs.schedule.dateLabel	Дата
+dialogs.schedule.endDateHint	Пусто = один день; если заполнить — запись на несколько дней, видна каждый день
+dialogs.schedule.singleDay	Один день
+dialogs.schedule.multiDay	Несколько дней · всего {n} дн.
+dialogs.schedule.spanBad	Дата окончания раньше даты начала
+dialogs.schedule.cat.work	Работа
+dialogs.schedule.cat.course	Учёба
+dialogs.schedule.cat.sport	Спорт
+dialogs.schedule.cat.play	Досуг
+dialogs.schedule.cat.misc	Прочее
+dialogs.coloring.titleWithDate	Заполненность за {date}
+dialogs.coloring.current	Сейчас: {level}
+dialogs.coloring.notSet	Не задано
+dialogs.coloring.clear	Очистить
+dialogs.coloringLevel.relaxed	Свободно
+dialogs.coloringLevel.mild	Легко
+dialogs.coloringLevel.moderate	Умеренно
+dialogs.coloringLevel.busy	Занято
+dialogs.coloringLevel.productive	Продуктивно
+dialogs.search.title	Поиск событий
+dialogs.search.placeholder	Введите ключевое слово…
+dialogs.search.nothing	Событий по запросу «{q}» не найдено
+dialogs.subscription.title	Подписка
+dialogs.subscription.intro	Подпишитесь на внешние источники календарей, чтобы они оставались актуальными при открытии. Каждую новую подписку должен адаптировать ваш агент (приложение напомнит об этом).
+dialogs.subscription.pendingCount	Подписок к адаптации: {n}
+dialogs.subscription.pendingHint	Откройте папку TT_Calendar вашим агентом и сообщите ему, что появились подписки для адаптации (агент прочитает карточки «к адаптации» ниже и выполнит адаптацию по docs/SUBSCRIPTION_SPEC.md).
+dialogs.subscription.pendingBadge	К адаптации
+dialogs.subscription.errorBadge	Ошибка
+dialogs.subscription.updatedAt	Обновлено в {time}
+dialogs.subscription.toggleOff	Отключить подписку
+dialogs.subscription.toggleOn	Включить подписку
+dialogs.subscription.urlLabel	Ссылка:
+dialogs.subscription.rulesLabel	Правила:
+dialogs.subscription.emptyValue	(нет)
+dialogs.subscription.autoUpdate	Обновлять при открытии
+dialogs.subscription.refresh	Обновить сейчас
+dialogs.subscription.refreshing	Обновление…
+dialogs.subscription.updatedMsg	«{name}» обновлено (добавлено: {n})
+dialogs.subscription.updateFailed	Не удалось обновить «{name}»: {error}
+dialogs.subscription.deleteConfirm	Удалить подписку «{name}»? (уже загруженные события сохранятся)
+dialogs.subscription.fieldTitle	Заголовок
+dialogs.subscription.fieldUrl	Ссылка
+dialogs.subscription.namePlaceholder	Например: календарь конференций
+dialogs.subscription.fieldRules	Правила подписки (естественный язык, для вашего агента)
+dialogs.subscription.rulesPlaceholder	Опишите, где лежит этот календарь, как его забирать, какие поля нужны и как часто обновлять…
+dialogs.subscription.submitting	Отправка…
+dialogs.subscription.confirmAdd	Подтвердить подписку
+dialogs.subscription.addNew	Новая подписка
+dialogs.menu.newEvent	Новое событие
+dialogs.menu.editSchedule	Изменить запись
+dialogs.menu.setColoring	Задать заполненность
+dialogs.dayEntry.titleWithDate	Новое: {date}
+dialogs.dayEntry.tabDot	Точки / Записи
+dialogs.dayEntry.tabColor	Заливка
+dialogs.dayEntry.fieldStart	Дата начала
+dialogs.dayEntry.fieldEnd	Дата окончания (необязательно; заполните — будет запись на несколько дней)
+dialogs.dayEntry.rangeInvalid	Дата окончания не может быть раньше даты начала
+dialogs.dayEntry.multiCount	Всего {n} дн. ({range})
+dialogs.dayEntry.suffixSchedule	 · сохранится как 1 запись на несколько дней, видна каждый день
+dialogs.dayEntry.suffixEvents	 · создать {n} событий (по одному в день)
+dialogs.dayEntry.suffixColor	 · отметить {n} дней подряд
+dialogs.dayEntry.pickLayer	Выберите слой
+dialogs.dayEntry.groupSchedule	Записи
+dialogs.dayEntry.groupOther	Прочее
+dialogs.dayEntry.allDay	Весь день
+dialogs.dayEntry.layerColorTitle	Цвет слоя
+dialogs.dayEntry.fieldContent	Содержимое
+dialogs.dayEntry.contentPlaceholder	Что сделать
+dialogs.dayEntry.contentRequired	Введите содержимое
+dialogs.dayEntry.pickColorLayer	Выберите слой заливки
+dialogs.dayEntry.groupHabit	Отметка привычек
+dialogs.dayEntry.groupProgress	Выполнение работы
+dialogs.dayEntry.groupLinked	Связанная заливка
+dialogs.dayEntry.levelFullness	Уровень заполненности
+dialogs.dayEntry.level	Уровень
+dialogs.dayEntry.fixedColor	Цвет слоя (фиксированный)
+dialogs.dayEntry.fixedColorHint	Отметка использует заданный цвет слоя; чтобы поменять цвет, отредактируйте слой в настройках.
+dialogs.dayEntry.autoTodo	Создать также соответствующую задачу
+dialogs.dayEntry.autoTodoDetail	Попадёт в список «{list}» (создастся, если его нет); дата плана {start}, срок {end}
+dialogs.dayEntry.autoTodoTitleHint	 · заголовок будет «{title}»
+dialogs.dayEntry.scheduleWord	Запись
+dialogs.dayEntry.coloringWord	Заливка
+dialogs.dayEntry.submit	Добавить
+dialogs.dayEntry.saving	Сохранение…
+dialogs.dayEntry.saveFailed	Не удалось сохранить: {msg}
+todoDetail.title	Задача подробно
+todoDetail.emptyPanel	Нажмите на задачу, чтобы открыть подробности
+todoDetail.field.title	Заголовок
+todoDetail.field.bodyOptional	Заметки (необязательно)
+todoDetail.field.list	Список
+todoDetail.field.importance	Важность
+todoDetail.field.dueDate	Дата срока
+todoDetail.field.plannedDate	Дата плана
+todoDetail.field.startDate	Дата начала
+todoDetail.field.status	Статус
+todoDetail.field.complexity	Сложность
+todoDetail.field.repeat	Повторение
+todoDetail.field.repeatHint	После выполнения следующий период создаётся автоматически
+todoDetail.field.tags	Метки (через запятую, произвольные)
+todoDetail.tagsPlaceholder	работа, учёба, семья…
+todoDetail.dblClickEdit	Двойной щелчок — развернуть для правки
+todoDetail.importance.high	Высокая
+todoDetail.importance.normal	Обычная
+todoDetail.importance.low	Низкая
+todoDetail.status.notStarted	Не начата
+todoDetail.status.inProgress	В работе
+todoDetail.status.completed	Выполнена
+todoDetail.status.waitingOnOthers	Ждёт других
+todoDetail.status.deferred	Отложена
+todoDetail.complexity.simple	Простая
+todoDetail.complexity.medium	Средняя
+todoDetail.complexity.hard	Сложная
+todoDetail.repeat.none	Без повторения
+todoDetail.repeat.daily	Каждый день
+todoDetail.repeat.weekdays	По будням
+todoDetail.repeat.weekly	Каждую неделю
+todoDetail.due.today	Сегодня
+todoDetail.due.tomorrow	Завтра
+todoDetail.due.nextMonday	В следующий понедельник
+todoDetail.due.todayWithDate	Сегодня ({date})
+todoDetail.due.tomorrowWithDate	Завтра ({date})
+todoDetail.due.nextMondayWithDate	В следующий понедельник ({date})
+todoDetail.due.customValue	{value} (свой вариант)
+todoDetail.due.pickDate	Выбрать дату…
+todoDetail.due.back	Назад
+todoDetail.due.none	Нет
+todoDetail.action.close	Закрыть
+todoDetail.action.delete	Удалить
+todoDetail.action.save	Сохранить
+todoDetail.action.saving	Сохранение…
+todoDetail.autosavePrefix	Автосохранение при смене страницы ·\s
+todoDetail.autosaveSuffix	 Сохранить напрямую
+todoDetail.deleteConfirm	Удалить задачу «{title}»?
+todoDetail.notesFallbackTitle	Заметки
+settings.title	Настройки
+settings.saving	Сохранение…
+settings.loading	Загрузка…
+settings.import.sectionTitle	Импорт событий
+settings.import.fieldStart	Начало
+settings.import.fieldEnd	Конец
+settings.import.desc	Забирает с Jisilu IPO, облигации, дивиденды и опционы за указанный период. Отключённые слои пропускаются.
+settings.import.running	Импорт…
+settings.import.start	Начать импорт
+settings.import.resultOk	Импортировано: {n}
+settings.import.resultError	Импортировано: {n}; ошибка: {error}
+settings.jisilu.sectionTitle	Инвестиционный календарь Jisilu
+settings.jisilu.collapse	Свернуть
+settings.jisilu.expandStar	Показать фильтр по звёздам
+settings.jisilu.expandSub	Показать поддействия
+settings.jisilu.minStar	Минимум звёзд
+settings.jisilu.starAll	Все
+settings.jisilu.star1	1★ и выше
+settings.jisilu.star2	2★ и выше
+settings.jisilu.star3	3★
+settings.jisilu.subLoading	Чтение поддействий…
+settings.jisilu.subEmpty	В этом слое нет данных о событиях, поэтому поддействия не показать. Сначала выполните импорт в разделе «Импорт событий».
+settings.jisilu.subAllOn	Показаны все
+settings.jisilu.subFiltered	Показано {n}/{total}
+settings.jisilu.subReset	Сбросить всё
+settings.layers.sectionTitle	Свои слои
+settings.layers.empty	Своих слоёв пока нет. Создайте слой кнопкой «Новый слой» на боковой панели календаря.
+settings.layers.deleteTitle	Удалить слой (отметки не сохранятся)
+settings.layers.confirmDelete	Подтвердить удаление
+settings.busy.sectionTitle	Загрузка задач
+settings.busy.desc	Прогнозный слой: незакрытые задачи взвешиваются по формуле «срок×5 + план×3 + важность + сложность» для будущих дат; фактический слой: отмеченные сегодня задачи засчитываются за прошедшие даты.
+settings.busy.fieldDue	Вес срока
+settings.busy.fieldPlanned	Вес плана
+settings.busy.fieldImportance	Важность высокая/средняя/низкая
+settings.busy.fieldComplexity	Сложность высокая/средняя/низкая
+settings.busy.fieldThresholds	Пороги 5 уровней
+settings.busy.predictLayer	Прогнозный слой
+settings.busy.actualLayer	Фактический слой
+settings.busy.levelTitle	Уровень {n}
+settings.busy.save	Сохранить и пересчитать
+settings.busy.savedDays	Снимок загрузки пересчитан за {n} дня|Снимок загрузки пересчитан за {n} день||Снимок загрузки пересчитан за {n} дня|Снимок загрузки пересчитан за {n} дней
+settings.reminder.sectionTitle	Ежедневное напоминание
+settings.reminder.desc	В заданное время, если на сегодня остались невыполненные задачи по плану, сверху появится ненавязчивая плашка. По умолчанию выключено.
+settings.reminder.enable	Включить ежедневное напоминание
+settings.reminder.fieldTime	Время напоминания
+settings.sync.sectionTitle	Синхронизация данных
+settings.sync.desc	Синхронизирует все ваши данные (задачи, заливки, годовщины, настройки) между несколькими компьютерами через ваш приватный репозиторий GitHub. Данные хранятся в репозитории открытым текстом; PAT зашифрован средствами Windows и никогда не отправляется. См. docs/SYNC_SETUP.md.
+settings.sync.decisionPrompt	В удалённом репозитории уже {n} строк, локальная копия привязывается впервые. Как поступить?
+settings.sync.resolveMerge	Объединить обе стороны и отправить (рекомендуется)
+settings.sync.resolveOverwrite	Перезаписать локальную версию удалённой
+settings.sync.lastSyncOk	✓ Последняя синхронизация {time}
+settings.sync.lastSyncWarn	⚠ Последняя синхронизация {time}
+settings.sync.lastSyncNever	Ещё не синхронизировалось
+settings.sync.notConfigured	Не настроено
+settings.sync.fieldRepo	Репозиторий (owner/repo)
+settings.sync.fieldBranch	Ветка
+settings.sync.patLabel	PAT ({state})
+settings.sync.patStored	Сохранён, оставьте пустым, чтобы не менять
+settings.sync.patMissing	fine-grained, см. инструкцию
+settings.sync.autoOnStart	Синхронизироваться при запуске
+settings.sync.syncOnClose	Синхронизировать перед закрытием (при нажатии ✕ сначала идёт синхронизация, затем выход)
+settings.sync.test	Проверить подключение
+settings.sync.testing	Проверка…
+settings.sync.syncNow	Синхронизировать сейчас
+settings.sync.syncing	Синхронизация…
+settings.sync.savedMsg	Сохранено
+settings.sync.initDone	Первичная инициализация завершена: отправлено {n} строки|Первичная инициализация завершена: отправлена {n} строка|Первичная инициализация завершена: отправлено {n} строки|Первичная инициализация завершена: отправлено {n} строк|Первичная инициализация завершена: отправлено {n} строк
+settings.sync.report	Получено {pulled} · Отправлено {pushed} · Конфликты {conflicts} · Удалено {deleted}
+settings.sync.reportWarning	({warning})
+settings.sync.resolvedDone	Привязка завершена: {report}
+terms.calendar	Календарь
+terms.todo	Задача
+terms.countdown	Обратный отсчёт
+terms.subscription	Подписка
+topbar.mode.month	Месяц
+topbar.mode.week	Неделя
+topbar.mode.day	День
+topbar.mode.year	Год
+topbar.mode.countdown	Обратный отсчёт
+topbar.todoMode.list	Список
+topbar.todoMode.matrix	Матрица
+topbar.todoMode.kanban	Канбан
+topbar.todoMode.gantt	Гант
+topbar.todoMode.stickies	Заметки
+topbar.nav.prevYear	Предыдущий год
+topbar.nav.prevMonth	Предыдущий месяц
+topbar.nav.prevWeek	Предыдущая неделя
+topbar.nav.prevDay	Предыдущий день
+topbar.nav.nextYear	Следующий год
+topbar.nav.nextMonth	Следующий месяц
+topbar.nav.nextWeek	Следующая неделя
+topbar.nav.nextDay	Следующий день
+topbar.today	Сегодня
+topbar.searchPlaceholder	Поиск событий…
+shell.navHeading	Навигация
+shell.kind.color	Заливка
+shell.kind.dot	Точки
+shell.groupOther	Прочее
+shell.countdownLabel	Обратный отсчёт
+shell.createLayer	Новый слой
+shell.field.layerKind	Тип слоя
+shell.field.layerName	Название слоя
+shell.field.group	Группа (необязательно)
+shell.field.template	Шаблон заливки
+shell.field.palette	Палитра из 5 цветов
+shell.field.color	Цвет
+shell.field.tag	Метка связанных задач
+shell.kindLayer.color	Слой заливки
+shell.kindLayer.colorDesc	Заливает ячейки дат
+shell.kindLayer.dot	Слой точек
+shell.kindLayer.dotDesc	Показывает цветную точку и подпись
+shell.namePlaceholder.dot	Например: ужин с Аней
+shell.namePlaceholder.solid	Например: ранний подъём
+shell.namePlaceholder.graded	Например: ход проекта
+shell.namePlaceholder.tag	Например: важный клиент
+shell.groupPlaceholder.dot	Например: ужины (пусто = без группы)
+shell.groupPlaceholder.color	Например: привычки (пусто = без группы)
+shell.groupHint	Слои с одинаковым названием группы собираются вместе (несколько слоёв «ужины» попадут в группу «ужины»).
+shell.template.solid	Отметка привычек
+shell.template.solidDesc	Сплошная заливка одним цветом
+shell.template.graded	Выполнение работы
+shell.template.gradedDesc	Пять уровней цвета
+shell.template.tag	Связанная заливка
+shell.template.tagDesc	По метке задачи
+shell.tagPlaceholder	Введите название метки (например: клиент)
+shell.tagHint	Все задачи с этой меткой окрашивают дату плана и срок цветом слоя.
+shell.tagRequired	Введите название метки
+shell.deleteHint	⚠️ Слои удаляются только на странице «Настройки»; после удаления отметки слоя не сохранятся.
+shell.creating	Создание…
+shell.create	Создать
+countdown.all	Все
+countdown.createNew	Новый обратный отсчёт
+countdown.editTitle	Настройки обратного отсчёта
+countdown.titleWithCat	Обратный отсчёт · {cat}
+countdown.createShort	Создать
+countdown.empty	Обратных отсчётов пока нет — нажмите «Создать», чтобы добавить
+countdown.banner.today	🎉 Сегодня «{name}»!
+countdown.banner.until	До «{name}» осталось {n} дней
+countdown.banner.passed	С «{name}» прошло {n} дней
+countdown.banner.empty	Обратных отсчётов пока нет
+countdown.label.years	{n} лет
+countdown.label.thisYear	В этом году
+countdown.label.lunarAnniv	Лунная годовщина
+countdown.label.days	{n} дн.
+countdown.confirmDelete	Удалить этот обратный отсчёт?
+countdown.cardToday	🎉 Сегодня!
+countdown.cardPassedNever	Прошло · постоянная память
+countdown.cardPassed	Прошло {n} дня|Прошёл {n} день||Прошло {n} дня|Прошло {n} дней
+countdown.cardLeft	Осталось {n} дня|Остался {n} день||Осталось {n} дня|Осталось {n} дней
+countdown.repeatYearlySolar	Сброс каждый год
+countdown.repeatYearlyLunar	Сброс по лунному календарю
+countdown.lunarBadge	Лунный
+countdown.lunarBadgeTitle	Повтор по лунному календарю
+countdown.milestoneTitle	Считать вехи автоматически
+countdown.neverTitle	Никогда не истекает
+countdown.fieldName	Название
+countdown.placeholderName	Например: день рождения / свадьба
+countdown.fieldCategory	Категория
+countdown.placeholderCustomCat	Введите название категории
+countdown.back	Назад
+countdown.optionCustom	+ Своя…
+countdown.fieldBaseDate	Базовая дата
+countdown.fieldDate	Дата
+countdown.repeatYearlyLabel	Сброс раз в год (дни рождения, праздники)
+countdown.repeatRule	Правило повторения
+countdown.ruleSolar	По григорианскому календарю (тот же месяц и день каждый год)
+countdown.ruleLunar	По лунному календарю (новый год, циси…)
+countdown.fieldMilestone	Годовщины считаются автоматически (дни через запятую)
+countdown.milestoneHint	От базовой даты автоматически строятся 100 дней, годовщина и т. п.; показывается ближайшая.
+countdown.neverExpireLabel	После истечения не показывать «прошло»
+countdown.fieldNotes	Заметки
+countdown.placeholderNotes	Необязательно
+countdown.createBtn	Создать
+countdown.categoryBirthday	День рождения
+countdown.categoryAnniversary	Годовщина
+countdown.categoryFestival	Праздник
+countdown.categoryImportant	Важное событие
+countdown.categoryOther	Прочее
+calendar.noData	Нет данных
+calendar.weekendSuffix	 · выходные
+calendar.makeUpWorkday	рабочий
+calendar.scheduleMore	+{n} события|+{n} событие||+{n} события|+{n} событий
+calendar.markLabel	Отметка
+calendar.fullnessLabel	Заполненность
+calendar.emptyDay	В этот день событий нет
+calendar.spanRange	День {i}/{total} · {start} ~ {end}
+calendar.contTitle	{title} (день {i}/{total}, начиная с {start})
+calendar.multiDayTitle	{title} (несколько дней {start} ~ {end}, всего {total} дн.)
+calendar.spanDays	 ↦{n} дн.
+app.syncExiting	Идёт синхронизация, после неё приложение закроется само…
+app.syncOnCloseFailed	Не удалось синхронизировать перед закрытием
+app.retrySync	Повторить синхронизацию
+app.forceQuit	Закрыть принудительно
+app.cancelClose	Отменить закрытие
+stats.title	Статистика
+stats.cards.total	Всего задач
+stats.cards.incomplete	Незакрытые
+stats.cards.completed	Выполненные
+stats.cards.last90	Выполнено за 90 дней
+stats.quadrant.title	Матрица задач
+stats.quadrant.axes	Горизонтальная ось: срочность срока → Вертикальная ось: важность ↑ (точка = незакрытая задача)
+stats.quadrant.doNow	Срочно · важно
+stats.quadrant.planIt	Не срочно · важно
+stats.quadrant.delegate	Срочно · второстепенно
+stats.quadrant.drop	Не срочно · второстепенно
+stats.quadrant.imp.high	Высокая
+stats.quadrant.imp.normal	Обычная
+stats.quadrant.imp.low	Низкая
+stats.quadrant.openCount	{n} незавершённых задачи|{n} незавершённая задача||{n} незавершённые задачи|{n} незавершённых задач
+stats.quadrant.point.title	{title}{due}
+stats.quadrant.point.overdue	(просрочено на {n} дня)|(просрочено на {n} день)||(просрочено на {n} дня)|(просрочено на {n} дней)
+stats.quadrant.point.dueIn	(срок через {n} дня)|(срок через {n} день)||(срок через {n} дня)|(срок через {n} дней)
+stats.quadrant.point.noDue	(без срока)
+stats.daily.title	Выполнено по дням (последние 90 дней)
+stats.daily.avg	{n} в день
+stats.daily.peak	Пик {n}/день
+stats.dist.title	Распределение незакрытых задач (по спискам)
+detail.panelEmpty	Нажмите на дату, чтобы открыть подробности
+detail.selectedDate	Выбранная дата
+detail.dateMD	{d}.{m}
+detail.yearWeekday	{y} · {weekday}
+detail.dot	Точки
+detail.coloring	Заливка
+detail.fullness	Заполненность
+detail.todoPredict	Задачи · незакрытые
+detail.todoDone	Задачи · выполненные
+detail.noLevel	Уровень не задан
+detail.marked	Отмечено
+detail.deleteMark	Убрать отметку
+detail.schedule	Записи
+detail.editAllSchedule	Изменить все записи
+detail.edit	Изменить
+detail.allDay	Весь день
+detail.multiDay	Несколько дней {index}/{total}
+detail.eventsCount	События ({n})
+detail.noEvents	Событий нет
+detail.todosCount	Задачи ({n})
+detail.highImportance	⚡Высокая
+detail.dueTag	Срок
+detail.notes.title	Заметки
+detail.notes.placeholder	Заметки (необязательно)
+detail.notes.hint	ESC или щелчок по пустому месту — закрыть (сохраняется автоматически)
+detail.reminder.plannedLeft	Сегодня осталось {n} запланированных задачи|Сегодня осталась {n} запланированная задача||Сегодня осталось {n} запланированные задачи|Сегодня осталось {n} запланированных задач
+detail.reminder.view	Посмотреть
+detail.reminder.dismissAria	Закрыть напоминание на сегодня
+detail.errorBoundary.title	Приложение дало сбой
+detail.errorBoundary.retry	Повторить
+todoEditor.title.edit	Изменить задачу
+todoEditor.title.new	Новая задача
+todoEditor.field.title	Заголовок
+todoEditor.field.titlePlaceholder	Заголовок задачи
+todoEditor.field.body	Заметки
+todoEditor.field.bodyPlaceholder	Необязательно
+todoEditor.field.list	Список
+todoEditor.field.importance	Важность
+todoEditor.field.legacyDueDate	Срок
+todoEditor.field.status	Статус
+todo.card.status.notStarted	Не начата
+todo.card.status.inProgress	В работе
+todo.card.status.waitingOnOthers	Ждёт других
+todo.card.status.deferred	Отложена
+todo.card.status.completed	Выполнена
+todo.card.importance.high	Высокая
+todo.card.importance.normal	Средняя
+todo.card.importance.low	Низкая
+todo.card.complexity.hard	Трудная
+todo.card.complexity.medium	Средняя
+todo.card.complexity.simple	Простая
+palette.green	Зелёный
+palette.blue	Синий
+palette.orange	Оранжевый
+palette.purple	Фиолетовый
+palette.red	Красный
+palette.cyan	Бирюзовый
+palette.indigo	Индиго
+palette.gray	Серый
+sourceFields.importanceTitle	Важность {stars}
+sourceFields.unknown	Неизвестно
+errors.syncFailed	Сбой синхронизации ({status})
+todoview.sort.manual	Ручная сортировка
+todoview.sort.dueImportance	Срок + важность
+todoview.sort.duePlannedImportance	Срок + план + важность
+todoview.sort.due	Срок
+todoview.sort.planned	Дата плана
+todoview.sort.importance	Важность
+todoview.sort.created	Время создания
+todoview.imp.high	Важная
+todoview.imp.normal	Обычная
+todoview.imp.low	Второстепенная
+todoview.status.notStarted	Не начата
+todoview.status.inProgress	В работе
+todoview.status.completed	Выполнена
+todoview.status.waitingOnOthers	Ждёт других
+todoview.status.deferred	Отложена
+todoview.complexity.simple	Простая
+todoview.complexity.medium	Средняя
+todoview.complexity.hard	Сложная
+todoview.repeat.daily	Ежедневно
+todoview.repeat.weekdays	По будням
+todoview.repeat.weekly	Еженедельно
+todoview.due.overdue	Просрочена
+todoview.due.today	Срок сегодня
+todoview.due.tomorrow	Срок завтра
+todoview.due.badge	{label} · {date}
+todoview.plan.today	План на сегодня
+todoview.plan.tomorrow	План на завтра
+todoview.lists.all	Все
+todoview.lists.setDefault	Сделать списком по умолчанию
+todoview.lists.unsetDefault	Снять список по умолчанию
+todoview.lists.rename	Переименовать
+todoview.lists.deleteConfirm	Удалить список «{name}» и все задачи в нём?
+todoview.lists.namePlaceholder	Название списка
+todoview.lists.create	Новый список
+todoview.filter.sort	Сортировка
+todoview.filter.tag	Фильтр
+todoview.filter.allTags	Все метки
+todoview.toolbar.importCsv	Импорт CSV
+todoview.actions.new	Новая задача
+todoview.empty.tagFiltered	Задач с меткой «{tag}» нет
+todoview.empty.desktop	Задач пока нет — нажмите «Новая задача», чтобы начать
+todoview.empty.noneOpen	Незакрытых задач нет
+todoview.row.completedWithCount	Выполненные ({n})
+todoview.csv.done	Импортировано {inserted}, создано списков: {lists}
+todoview.csv.doneWithErrors	Импортировано {inserted}, создано списков: {lists}, строк с ошибкой: {n}
+todoview.csv.failed	Сбой импорта: {msg}
+todoboards.empty.none	Задач пока нет
+todoboards.matrix.quadrant.doNow.title	Важно × срочно
+todoboards.matrix.quadrant.doNow.action	Сейчас
+todoboards.matrix.quadrant.doNow.desc	То, что должно двигаться сегодня
+todoboards.matrix.quadrant.planIt.title	Важно × не срочно
+todoboards.matrix.quadrant.planIt.action	Запланировать
+todoboards.matrix.quadrant.planIt.desc	Самая ценная зона: не дай ей стать срочной
+todoboards.matrix.quadrant.delegate.title	Второстепенно × срочно
+todoboards.matrix.quadrant.delegate.action	Быстро разобрать
+todoboards.matrix.quadrant.delegate.desc	Мелкие срывы: обработать пакетом
+todoboards.matrix.quadrant.drop.title	Второстепенно × не срочно
+todoboards.matrix.quadrant.drop.action	Когда будет время
+todoboards.matrix.quadrant.drop.desc	Не трать на это лучшие силы
+todoboards.matrix.soonTitle	Срок в ближайшие 3-7 дней
+todoboards.matrix.nearing	{n} на подходе|{n} на подходе||{n} на подходе|{n} на подходе
+todoboards.matrix.sub.overdueBy	Срок прошёл {n} дня назад|Срок прошёл {n} день назад||Срок прошёл {n} дня назад|Срок прошёл {n} дней назад
+todoboards.matrix.sub.dueToday	Срок сегодня
+todoboards.matrix.sub.dueIn	Срок через {n} дня|Срок через {n} день||Срок через {n} дня|Срок через {n} дней
+todoboards.matrix.sub.planned	План на {date}
+todoboards.kanban.dim.status	По статусу
+todoboards.kanban.dim.planned	По дате плана
+todoboards.kanban.dim.importance	По важности
+todoboards.kanban.dim.complexity	По сложности
+todoboards.kanban.dim.tag	По метке
+todoboards.kanban.dragHint	Перетащите карточку в другой столбец, чтобы сменить статус; отметьте круглую кнопку, чтобы выполнить
+todoboards.kanban.emptyCol	Пусто
+todoboards.kanban.unplanned	Без плана
+todoboards.kanban.untagged	Без метки
+todoboards.kanban.todayCol	Сегодня · {date}
+todoboards.kanban.doneAt	Выполнено {date}
+todoboards.kanban.completed	Выполненные
+todoboards.kanban.expandCompleted	Показать столбец выполненных (всего {n})
+todoboards.kanban.shownOf	Показано {shown} из {total} самых новых
+todoboards.gantt.month	{n} мес.
+todoboards.gantt.overdueBar	Просрочено
+todoboards.gantt.barTitle	{range}{overdue} · {status}
+todoboards.gantt.overdueSuffix	(просрочено)
+todoboards.jar.title	Сбор дня
+todoboards.jar.carried	сложено
+todoboards.jar.piece	штук
+todoboards.jar.settled	на дне
+todoboards.jar.overflow	Банка полна · {n} не помещается|Банка полна · {n} не помещается||Банка полна · {n} не помещается|Банка полна · {n} не помещаются
+todoboards.jar.settledToday	На дне · выполнено сегодня {n}
+todoboards.jar.legendHard	Валун · трудно
+todoboards.jar.legendMedium	Камешек · средне
+todoboards.jar.legendSimple	Песчинка · просто
+todoboards.jar.tagline	Сначала крупные камни, потом песок.
+todoboards.jar.jarAria	Банка задач на сегодня
+todoboards.jar.empty	На сегодня ничего не запланировано
+todoboards.jar.emptyHint	Начните с большого камня (срок или дата плана = сегодня)
+todoboards.stickies.empty	На стене нет ни одной заметки
+todoboards.stickies.emptyHint	Нажмите «Новая задача», чтобы приклеить первую
+todoboards.stickies.dblClickHint	Двойной щелчок — посмотреть или изменить заметки
+todoboards.aria.markDone	Отметить как выполненную
+todoboards.aria.markUndone	Отметить как невыполненную
+todoboards.card.overdueBy	Просрочено на {n} дня|Просрочено на {n} день||Просрочено на {n} дня|Просрочено на {n} дней
+todoboards.card.today	Сегодня
+todoboards.card.due	Срок {date}
+todoboards.card.planned	План {date}
+todoboards.card.start	Начало {date}
+language.title	Выбор языка
+language.subtitle	Поменять можно в любой момент в настройках
+language.start	Начать
+language.settingsLabel	Язык
+layers.scheduleLegacy	Записи (старые)
+layers.important	Важные даты
+layers.coloring	Заливка заполненности
+layers.holiday	Праздничные дни
+layers.todo	Задачи
+layers.todoDone	Задачи · выполненные
+layers.work	Работа
+layers.course	Учёба
+layers.sport	Спорт
+layers.play	Досуг
+layers.misc	Прочее
+layers.scheduleTodoList	Задачи по записям
+layers.defaultTaskList	Задачи
