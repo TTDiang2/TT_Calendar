@@ -52,16 +52,21 @@ describe('AppGate 门控（门3 条件1：纯 UI 路径，必须穿过「开始�
   it('未确认 → 选择页（App 不挂载）', () => {
     mountGate()
     expect(hasChosenLang()).toBe(false)
-    expect(screen.getByText('开始使用')).toBeTruthy()
+    expect(screen.getByRole('radiogroup')).toBeTruthy()          // 选择页在
+    expect(screen.queryByRole('button', { name: /开始使用|Get started|始める/ })).toBeTruthy()
   })
 
   it('纯 UI 确认流：点「日本語」→点「开始使用」→ tt.lang 持久化+选择页消失（App 分支挂载）', () => {
     mountGate()
     fireEvent.click(screen.getByText('日本語'))
-    fireEvent.click(screen.getByText('开始使用'))
+    // 按钮文案随所选语言（ja）变化 → 按唯一 button role 定位（语言无关）
+    const btns = screen.getAllByRole('button')
+    const startBtn = btns.find(b => /開始使用|Get started|はじめる|始める|시작하기|Commencer|Empezar|Начать|Empezar/.test(b.textContent || ''))
+    if (!startBtn) throw new Error('start button not found')
+    fireEvent.click(startBtn)
     expect(hasChosenLang()).toBe(true)
     expect(localStorage.getItem('tt.lang')).toBe('ja')
     // 选择页退场 = AppGate 切到 App 分支（删掉按钮 onClick 本用例必红）
-    expect(screen.queryByText('开始使用')).toBeNull()
+    expect(screen.queryByRole('radiogroup')).toBeNull()
   })
 })

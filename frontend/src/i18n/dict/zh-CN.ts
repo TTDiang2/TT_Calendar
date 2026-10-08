@@ -11,6 +11,7 @@ import { dialogs } from './fragments/dialogs'
 import { todoDetail } from './fragments/todoDetail'
 import { settings } from './fragments/settings'
 import { language } from './fragments/language'
+import { layers } from './fragments/layers'
 import { terms } from './fragments/terms'
 import { topbar } from './fragments/topbar'
 import { shell } from './fragments/shell'
@@ -48,6 +49,7 @@ export const zhCN = {
   todoview: todoview.zh,
   todoboards: todoboards.zh,
   language: language.zh,
+  layers: layers.zh,
 } as const
 
 export type Dict = typeof zhCN

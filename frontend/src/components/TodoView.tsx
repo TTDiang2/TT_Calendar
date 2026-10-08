@@ -6,6 +6,7 @@ import { getTodoLists, getTodos, getTodoStats, createTodo, updateTodo, deleteTod
 import { todayStr, labelOf } from '../utils/todoLogic'
 import type { Todo, TodoList, TodoSort, TodoViewMode } from '../types'
 import { useT, type TxKey } from '../i18n'
+import { layerLabel } from '../i18n/adapt/layerLabel'
 import { TodoDetailPanel, type TodoDetailPanelRef } from './TodoDetailPanel'
 import { TodoMatrixView } from './todo/TodoMatrixView'
 import { TodoKanbanView } from './todo/TodoKanbanView'
@@ -310,7 +311,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
                     className="flex-1 min-w-0 bg-white border border-blue-300 rounded px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
                   />
                 ) : (
-                  l.display_name
+                  layerLabel(l, t)
                 )}
               </span>
               <span className="flex items-center gap-1">

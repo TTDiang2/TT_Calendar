@@ -373,7 +373,7 @@ def build_view(
     important = [e.date for e in events if e.layer_id == LayerID.IMPORTANT]
     # 倒数日挂钩重要日期染色：未来 countdown 的 next_date 当天也染目标色
     for cd in db.fetch_countdowns(conn):
-        nxt, _, passed = _next_occurrence(cd.base_date, cd.repeat_yearly, cd.milestone_rule, today,
+        nxt, _, passed, _lk = _next_occurrence(cd.base_date, cd.repeat_yearly, cd.milestone_rule, today,
                                           getattr(cd, "repeat_type", "solar"))
         if not passed:
             important.append(nxt)
@@ -452,6 +452,25 @@ def build_countdown(conn) -> str:
     return "暂无倒数日"
 
 
+def build_countdown_banner(conn) -> dict:
+    """侧栏倒计时横幅的结构化形态（20261004 i18n：中文串改前端按语言组装）。
+
+    kind: today=今天是 / until=距离 N 天 / passed=已过 N 天 / empty=无倒数日。
+    name 是用户数据原样；旧 text 字段（中文拼串）保留于路由层做兼容。
+    """
+    items = build_countdown_list(conn)
+    upcoming = [i for i in items if not i["passed"]]
+    if upcoming:
+        nearest = upcoming[0]
+        if nearest["is_today"]:
+            return {"kind": "today", "name": nearest["name"], "days": 0}
+        return {"kind": "until", "name": nearest["name"], "days": nearest["days_left"]}
+    if items:
+        latest = items[-1]
+        return {"kind": "passed", "name": latest["name"], "days": -latest["days_left"]}
+    return {"kind": "empty", "name": None, "days": None}
+
+
 def _next_occurrence(
     base: date,
     repeat_yearly: bool,
@@ -470,6 +489,7 @@ def _next_occurrence(
     """
 
     candidates: list[tuple[date, str]] = []
+
 
     if repeat_yearly:
         if repeat_type == "lunar":
@@ -500,10 +520,14 @@ def _next_occurrence(
                 candidates.append((target, f"{days} 天"))
 
     if not candidates:
-        return base, "", (base < today)
+        return base, "", (base < today), None
 
     best = min(candidates, key=lambda c: (c[0] - today).days)
-    return best[0], best[1], False
+    # label_kind：标签的结构化形态（i18n 前端按语言组装；zh 的 next_label 保留兼容）
+    kind_map = {"今年": ("this_year", None), "农历周年": ("lunar_anniv", None)}
+    kind, n = kind_map.get(best[1], ("years" if "周年" in best[1] else "days",
+                                      int(best[1].split()[0]) if " " in best[1] else None))
+    return best[0], best[1], False, {"kind": kind, "n": n}
 
 
 def build_countdown_list(conn) -> list[dict]:
@@ -518,7 +542,7 @@ def build_countdown_list(conn) -> list[dict]:
     rows = db.fetch_countdowns(conn)
     out = []
     for cd in rows:
-        next_date, label, passed = _next_occurrence(
+        next_date, label, passed, label_kind = _next_occurrence(
             cd.base_date, cd.repeat_yearly, cd.milestone_rule, today,
             getattr(cd, "repeat_type", "solar"),
         )
@@ -539,6 +563,7 @@ def build_countdown_list(conn) -> list[dict]:
             "color": cd.color,
             "next_date": next_date.isoformat(),
             "next_label": label if show_label else "",
+            "label_kind": label_kind if show_label else None,
             "display": display,
             "days_left": days_left,
             "is_today": days_left == 0,

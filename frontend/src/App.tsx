@@ -370,6 +370,7 @@ export default function App() {
               layers={layers}
               onToggle={toggleLayerFn}
               countdown={countdownData?.text ?? '…'}
+              banner={countdownData?.banner}
             />
             <main className="flex-1 flex flex-col p-4 min-w-0">
               {isLoading || !monthData ? (

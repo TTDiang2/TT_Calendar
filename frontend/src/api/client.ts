@@ -117,7 +117,13 @@ export const moveDay = (src: string, dst: string) =>
 export const searchEvents = (q: string) => get<CalEvent[]>(`/search?q=${encodeURIComponent(q)}`)
 
 // 倒数日（独立 countdown 表）
-export const getCountdown = () => get<{ text: string }>('/countdown')
+export interface CountdownBanner {
+  kind: 'today' | 'until' | 'passed' | 'empty'
+  name: string | null
+  days: number | null
+}
+export const getCountdown = () =>
+  get<{ text: string; banner?: CountdownBanner }>('/countdown')
 export const getCountdownList = () => get<CountdownItem[]>('/countdown/list')
 export interface CountdownInput {
   name: string

@@ -3,6 +3,7 @@ import { Trash2, X } from 'lucide-react'
 import clsx from 'clsx'
 import type { Todo, TodoList } from '../types'
 import { useT, type TxKey } from '../i18n'
+import { layerLabel } from '../i18n/adapt/layerLabel'
 import { NotesEditorModal } from './NotesEditorModal'
 
 interface Props {
@@ -265,7 +266,7 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
             <span className="block mb-1">{t('todoDetail.field.list')}</span>
             <select className="tt-input" value={listId} onChange={(e) => setListId(e.target.value)}>
               {lists.map((l) => (
-                <option key={l.id} value={l.id}>{l.display_name}</option>
+                <option key={l.id} value={l.id}>{layerLabel(l, t)}</option>
               ))}
             </select>
           </label>

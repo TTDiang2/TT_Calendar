@@ -8,15 +8,25 @@ import { COLOR_PRESETS, GRADED_PALETTES } from '../data'
 import { Modal, Field } from './ui/Modal'
 import { useT, type TxKey } from '../i18n'
 import { paletteLabelKey } from '../i18n/adapt/labels'
+import { layerLabel } from '../i18n/adapt/layerLabel'
 
 interface Props {
   layers: Layer[]
   onToggle: (layerId: string) => void
   countdown: string
+  /** 后端 /api/countdown 的结构化横幅（P2.5）；缺省时回落 text */
+  banner?: { kind: string; name: string | null; days: number | null } | null
 }
 
-export function Sidebar({ layers, onToggle, countdown }: Props) {
+export function Sidebar({ layers, onToggle, countdown, banner }: Props) {
   const t = useT()
+  // 侧栏倒计时横幅：后端 banner 结构化 → 前端按语言组装；旧 text 兜底
+  const bannerText = banner
+    ? (banner.kind === 'today' ? t('countdown.banner.today', { name: banner.name ?? '' })
+      : banner.kind === 'until' ? t('countdown.banner.until', { name: banner.name ?? '', n: banner.days ?? 0 })
+      : banner.kind === 'passed' ? t('countdown.banner.passed', { name: banner.name ?? '', n: banner.days ?? 0 })
+      : t('countdown.banner.empty'))
+    : countdown
   const qc = useQueryClient()
   const [showCreate, setShowCreate] = useState(false)
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {
@@ -180,7 +190,7 @@ export function Sidebar({ layers, onToggle, countdown }: Props) {
       <div className="mt-auto">
         <div className="rounded-lg bg-gray-100 p-3">
           <p className="text-[11px] text-gray-400 mb-1">{t('shell.countdownLabel')}</p>
-          <p className="text-sm text-gray-600 font-medium select-text">{countdown}</p>
+          <p className="text-sm text-gray-600 font-medium select-text">{bannerText}</p>
         </div>
       </div>
 
@@ -190,13 +200,14 @@ export function Sidebar({ layers, onToggle, countdown }: Props) {
 }
 
 function LayerRow({ layer, onToggle }: { layer: Layer; onToggle: (id: string) => void }) {
+  const t = useT()
   return (
     <div className="flex items-center gap-2 px-1 py-1.5 rounded-md hover:bg-gray-50">
       <span
         className="w-2.5 h-2.5 rounded-full flex-shrink-0"
         style={{ backgroundColor: layer.color ?? '#9ca3af' }}
       />
-      <span className="flex-1 text-sm text-gray-700 truncate">{layer.display_name}</span>
+      <span className="flex-1 text-sm text-gray-700 truncate">{layerLabel(layer, t)}</span>
       <button
         onClick={() => onToggle(layer.layer_id)}
         aria-pressed={layer.enabled}

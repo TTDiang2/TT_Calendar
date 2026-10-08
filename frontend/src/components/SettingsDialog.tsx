@@ -10,7 +10,7 @@ import {
   getSyncConfig, getSyncStatus, saveSyncConfig, testSync, syncNow, resolveSync,
   type SyncResult,
 } from '../api/client'
-import { useT, useTPlural, type I18n, type TxKey } from '../i18n'
+import { useT, useTPlural, chooseLang, activeLang, LANGS, LANG_META, type I18n, type Lang, type TxKey } from '../i18n'
 import type { Layer } from '../types'
 
 interface Props {
@@ -42,6 +42,7 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
   return (
     <Modal title={t('settings.title')} onClose={onClose} width={720}>
       <div className="flex flex-col gap-5">
+        <LanguageSection />
         <section>
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.import.sectionTitle')}</h3>
           <div className="flex gap-2 mb-2">
@@ -693,5 +694,24 @@ function LayerSubActions({ layer }: { layer: Layer }) {
         </>
       )}
     </div>
+  )
+}
+
+
+function LanguageSection() {
+  const t = useT()
+  return (
+    <section>
+      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('language.settingsLabel')}</h3>
+      <select
+        className="tt-input"
+        value={activeLang()}
+        onChange={(e) => chooseLang(e.target.value as Lang)}
+      >
+        {LANGS.map((lang) => (
+          <option key={lang} value={lang}>{LANG_META[lang].endonym}</option>
+        ))}
+      </select>
+    </section>
   )
 }

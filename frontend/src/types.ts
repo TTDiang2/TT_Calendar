@@ -143,6 +143,8 @@ export interface CountdownItem {
   next_date: string
   next_label: string
   display: string
+  /** 标签结构化形态（P2.5 i18n）：前端按语言组装，display/next_label 为兼容保留 */
+  label_kind?: { kind: 'years' | 'this_year' | 'lunar_anniv' | 'days'; n?: number } | null
   days_left: number
   is_today: boolean
   passed: boolean

@@ -10,13 +10,14 @@
 import { useState } from 'react'
 import { Check, Languages } from 'lucide-react'
 import { clsx } from 'clsx'
-import { chooseLang, systemLang, LANGS, LANG_META, activeLang, useT, type Lang } from '../i18n'
+import { chooseLang, systemLang, LANGS, LANG_META, activeLang, useT, makeI18n, type Lang } from '../i18n'
 
 export function LanguagePickerScreen() {
   const t = useT()
   const [picked, setPicked] = useState<Lang>(systemLang())
-  // 说明文字跟随当前生效语言（未确认前 = 系统语言）
-  const uiLang = activeLang()
+  // 说明文字跟随所选语言即时切换（用户反馈 20261004：选 English 后提示仍是中文不直观）
+  const uiLang = picked
+  const tp = makeI18n(uiLang).t
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gradient-to-b from-blue-50 to-indigo-100 overflow-y-auto">
@@ -26,10 +27,10 @@ export function LanguagePickerScreen() {
             <Languages size={26} className="text-blue-500" />
           </span>
           <h1 className="text-xl font-semibold text-gray-800">
-            {t('language.title')}
+            {tp('language.title')}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            {t('language.subtitle')}
+            {tp('language.subtitle')}
           </p>
         </div>
 
@@ -70,7 +71,7 @@ export function LanguagePickerScreen() {
           onClick={() => chooseLang(picked)}
           className="w-full py-3 rounded-2xl bg-blue-500 text-white text-sm font-semibold shadow-sm hover:bg-blue-600 active:bg-blue-600 transition"
         >
-          {t('language.start')}
+          {tp('language.start')}
         </button>
       </div>
     </div>

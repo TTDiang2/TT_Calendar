@@ -22,6 +22,18 @@ export const countdown = {
     createShort: '新建',
     /** 列表空态提示 */
     empty: '暂无倒数日，点「新建」添加',
+    banner: {
+      today: '🎉 今天是「{name}」',
+      until: '距离「{name}」还有 {n} 天',
+      passed: '「{name}」已过 {n} 天',
+      empty: '暂无倒数日',
+    },
+    label: {
+      years: '{n} 周年',
+      thisYear: '今年',
+      lunarAnniv: '农历周年',
+      days: '{n} 天',
+    },
     /** 删除确认（confirm 弹窗） */
     confirmDelete: '删除该倒数日？',
 
@@ -86,6 +98,18 @@ export const countdown = {
     titleWithCat: 'Countdowns · {cat}',
     createShort: 'New',
     empty: 'No countdowns yet — tap "New" to add one',
+    banner: {
+      today: '🎉 Today is "{name}"',
+      until: '{n} days until "{name}"',
+      passed: '"{name}" was {n} days ago',
+      empty: 'No countdowns yet',
+    },
+    label: {
+      years: '{n} year anniversary',
+      thisYear: 'This year',
+      lunarAnniv: 'Lunar anniversary',
+      days: '{n} days',
+    },
     confirmDelete: 'Delete this countdown?',
 
     cardToday: '🎉 Today is the day',

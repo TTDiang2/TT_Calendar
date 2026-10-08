@@ -4,6 +4,15 @@ import { AlarmClock, CalendarClock, Infinity as InfinityIcon, Plus, Repeat, Spar
 import clsx from 'clsx'
 import { getCountdownList, createCountdown, updateCountdown, deleteCountdown } from '../api/client'
 import type { CountdownItem } from '../types'
+
+/** label_kind → 按语言组装的标签后缀（zh: ' 2 周年' 等；display 兼容字段不再直接渲染） */
+function labelSuffix(lk: CountdownItem['label_kind'], t: (k: TxKey, p?: Record<string, string | number>) => string): string {
+  if (!lk) return ''
+  if (lk.kind === 'years') return ' ' + t('countdown.label.years', { n: lk.n ?? 0 })
+  if (lk.kind === 'days') return ' ' + t('countdown.label.days', { n: lk.n ?? 0 })
+  if (lk.kind === 'this_year') return ' ' + t('countdown.label.thisYear')
+  return ' ' + t('countdown.label.lunarAnniv')
+}
 import { useT, useTPlural, type I18n, type TxKey } from '../i18n'
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -193,7 +202,7 @@ function CountdownCard({ item, selected, onSelect }: { item: CountdownItem; sele
           {item.never_expire && <span title={t('countdown.neverTitle')}><InfinityIcon size={12} className="text-gray-400" /></span>}
         </div>
       </div>
-      <p className="text-sm font-medium text-gray-800 break-words leading-snug">{item.display}</p>
+      <p className="text-sm font-medium text-gray-800 break-words leading-snug">{item.name}{labelSuffix(item.label_kind, t)}</p>
       <p className="text-xs text-gray-400">{item.next_date}</p>
       <p className={clsx(
         'text-lg font-bold leading-none mt-1 text-gray-700',

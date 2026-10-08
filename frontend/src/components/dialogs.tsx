@@ -27,6 +27,7 @@ import {
   createTodoList,
 } from '../api/client'
 import { useT, type TxKey } from '../i18n'
+import { layerLabel } from '../i18n/adapt/layerLabel'
 import { Plus, Trash2 } from 'lucide-react'
 import { COLORING_COLORS, dateRange } from '../data'
 import type { CalEvent, Layer, Schedule, ScheduleItem } from '../types'
@@ -121,7 +122,7 @@ export function EventEditor({
               <select className="tt-input" value={layerId} onChange={(e) => setLayerId(e.target.value)}>
                 {builtinLayers.map((l) => (
                   <option key={l.layer_id} value={l.layer_id}>
-                    {l.display_name}
+                    {layerLabel(l, t)}
                   </option>
                 ))}
               </select>
@@ -928,14 +929,14 @@ export function DayEntryDialog({
                 {scheduleCatLayers.length > 0 && (
                   <optgroup label={t('dialogs.dayEntry.groupSchedule')}>
                     {scheduleCatLayers.map((l) => (
-                      <option key={l.layer_id} value={l.layer_id}>{l.display_name}{l.enabled ? '' : t('dialogs.hiddenSuffix')}</option>
+                      <option key={l.layer_id} value={l.layer_id}>{layerLabel(l, t)}{l.enabled ? '' : t('dialogs.hiddenSuffix')}</option>
                     ))}
                   </optgroup>
                 )}
                 {otherDotLayers.length > 0 && (
                   <optgroup label={t('dialogs.dayEntry.groupOther')}>
                     {otherDotLayers.map((l) => (
-                      <option key={l.layer_id} value={l.layer_id}>{l.display_name}{l.enabled ? '' : t('dialogs.hiddenSuffix')}</option>
+                      <option key={l.layer_id} value={l.layer_id}>{layerLabel(l, t)}{l.enabled ? '' : t('dialogs.hiddenSuffix')}</option>
                     ))}
                   </optgroup>
                 )}
@@ -974,7 +975,7 @@ export function DayEntryDialog({
                 {colorGroups.map((g) => g.items.length > 0 ? (
                   <optgroup key={g.labelKey} label={t(g.labelKey)}>
                     {g.items.map((l) => (
-                      <option key={l.layer_id} value={l.layer_id}>{l.display_name}{l.enabled ? '' : t('dialogs.hiddenSuffix')}</option>
+                      <option key={l.layer_id} value={l.layer_id}>{layerLabel(l, t)}{l.enabled ? '' : t('dialogs.hiddenSuffix')}</option>
                     ))}
                   </optgroup>
                 ) : null)}
@@ -1030,7 +1031,7 @@ export function DayEntryDialog({
           <span className="text-sm text-gray-700">
             {t('dialogs.dayEntry.autoTodo')}
             <span className="block text-[11px] text-gray-500 mt-0.5">
-              {t('dialogs.dayEntry.autoTodoDetail', { list: SCHEDULE_TODO_LIST, start: startDate, end: isMulti ? lastDate : startDate })}
+              {t('dialogs.dayEntry.autoTodoDetail', { list: t('layers.scheduleTodoList'), start: startDate, end: isMulti ? lastDate : startDate })}
               {autoTodo && !todoTitle && t('dialogs.dayEntry.autoTodoTitleHint', { title: t('dialogs.dayEntry.scheduleWord') })}
             </span>
           </span>

@@ -343,7 +343,9 @@ def search(q: str = Query(..., min_length=1), conn=Depends(get_db)):
 
 @router.get("/countdown")
 def countdown(conn=Depends(get_db)):
-    return {"text": aggregator.build_countdown(conn)}
+    # text=中文拼串（兼容保留）；banner=结构化形态（前端按语言组装）
+    return {"text": aggregator.build_countdown(conn),
+            "banner": aggregator.build_countdown_banner(conn)}
 
 
 @router.get("/countdown/list")
