@@ -62,7 +62,7 @@ export function Sidebar({ layers, onToggle, countdown, banner }: Props) {
     return byKind
   }, [layers])
 
-  // 订阅超级组：组名与订阅 display_name 相同的图层组（集思录等）挂在「订阅」下
+  // 订阅超级组：组名与订阅 display_name 相同的图层组挂在「订阅」下
   const { data: subs = [] } = useQuery({ queryKey: ['subscriptions'], queryFn: getSubscriptions })
   const subNames = useMemo(() => new Set(subs.map((s) => s.display_name)), [subs])
 

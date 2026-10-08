@@ -4,7 +4,7 @@ import clsx from 'clsx'
 import { Trash2 } from 'lucide-react'
 import { Modal, Field } from './ui/Modal'
 import {
-  toggleLayer, importJisilu, getLayerSubActions, updateLayerConfig, deleteLayer,
+  toggleLayer, importSource, getSources, getLayerSubActions, updateLayerConfig, deleteLayer,
   getTodoBusyConfig, setTodoBusyConfig, recomputeTodoBusy, type TodoBusyConfig,
   getTodoReminderConfig, setTodoReminderConfig, type TodoReminderConfig,
   getSyncConfig, getSyncStatus, saveSyncConfig, testSync, syncNow, resolveSync,
@@ -27,17 +27,27 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
   const [start, setStart] = useState(defaultStart)
   const [end, setEnd] = useState(defaultEnd)
   const [result, setResult] = useState<string | null>(null)
+  const [importSourceId, setImportSourceId] = useState('')
+  const { data: sources } = useQuery({ queryKey: ['sources'], queryFn: getSources })
 
   const importMut = useMutation({
-    mutationFn: () => importJisilu(start, end),
+    mutationFn: () => importSource(importSourceId, start, end),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['view'] })
       setResult(res.error ? t('settings.import.resultError', { n: res.inserted, error: res.error }) : t('settings.import.resultOk', { n: res.inserted }))
     },
   })
 
-  const jisilu = layers.filter((l) => l.sort_order >= 10).sort((a, b) => a.display_name.localeCompare(b.display_name))
+  // 数据源图层：由插件声明 manual_pickable=false（不靠 sort_order / 图层 id 前缀猜）
+  const sourceLayers = layers
+    .filter((l) => (l.config as Record<string, unknown> | undefined)?.manual_pickable === false)
+    .sort((a, b) => a.display_name.localeCompare(b.display_name))
   const customLayers = layers.filter((l) => l.layer_id.startsWith('custom_'))
+
+  // 默认导入第一个可用源（单源安装下无需用户选择）
+  useEffect(() => {
+    if (!importSourceId && sources?.length) setImportSourceId(sources[0].source_id)
+  }, [sources, importSourceId])
 
   return (
     <Modal title={t('settings.title')} onClose={onClose} width={720}>
@@ -46,6 +56,17 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
         <section>
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.import.sectionTitle')}</h3>
           <div className="flex gap-2 mb-2">
+            <Field label={t('settings.import.fieldSource')}>
+              <select
+                className="tt-input"
+                value={importSourceId}
+                onChange={(e) => { setImportSourceId(e.target.value); setResult(null) }}
+              >
+                {(sources ?? []).map((s) => (
+                  <option key={s.source_id} value={s.source_id}>{s.display_name}</option>
+                ))}
+              </select>
+            </Field>
             <Field label={t('settings.import.fieldStart')}>
               <input
                 type="date"
@@ -69,7 +90,7 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
           <div className="flex items-center gap-2">
             <button
               onClick={() => importMut.mutate()}
-              disabled={importMut.isPending}
+              disabled={importMut.isPending || !importSourceId}
               className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40"
             >
               {importMut.isPending ? t('settings.import.running') : t('settings.import.start')}
@@ -78,11 +99,11 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
           </div>
         </section>
 
-        {jisilu.length > 0 && (
+        {sourceLayers.length > 0 && (
           <section>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.jisilu.sectionTitle')}</h3>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.layerFilters.sectionTitle')}</h3>
             <div className="flex flex-col gap-1">
-              {jisilu.map((l) => (
+              {sourceLayers.map((l) => (
                 <LayerAccordion key={l.layer_id} layer={l} onToggle={onToggleLayer} />
               ))}
             </div>
@@ -540,7 +561,7 @@ function LayerAccordion({ layer, onToggle }: { layer: Layer; onToggle: (id: stri
           onClick={() => setOpen((v) => !v)}
           className="text-[11px] text-blue-600 hover:text-blue-700 px-2"
         >
-          {open ? t('settings.jisilu.collapse') : hasMinImportance ? t('settings.jisilu.expandStar') : t('settings.jisilu.expandSub')}
+          {open ? t('settings.layerFilters.collapse') : hasMinImportance ? t('settings.layerFilters.expandStar') : t('settings.layerFilters.expandSub')}
         </button>
         <button
           onClick={() => onToggle(layer.layer_id)}
@@ -580,15 +601,15 @@ function LayerMinImportance({ layer }: { layer: Layer }) {
     },
   })
   const options: { v: number; labelKey: TxKey }[] = [
-    { v: 0, labelKey: 'settings.jisilu.starAll' },
-    { v: 1, labelKey: 'settings.jisilu.star1' },
-    { v: 2, labelKey: 'settings.jisilu.star2' },
-    { v: 3, labelKey: 'settings.jisilu.star3' },
+    { v: 0, labelKey: 'settings.layerFilters.starAll' },
+    { v: 1, labelKey: 'settings.layerFilters.star1' },
+    { v: 2, labelKey: 'settings.layerFilters.star2' },
+    { v: 3, labelKey: 'settings.layerFilters.star3' },
   ]
   return (
     <div className="border-t border-gray-200 bg-gray-50 px-3 py-2">
       <div className="flex items-center gap-1.5 flex-wrap">
-        <span className="text-[11px] text-gray-500">{t('settings.jisilu.minStar')}</span>
+        <span className="text-[11px] text-gray-500">{t('settings.layerFilters.minStar')}</span>
         {options.map((o) => (
           <button
             key={o.v}
@@ -636,7 +657,6 @@ function LayerSubActions({ layer }: { layer: Layer }) {
   })
 
   const currentSet = new Set(current.map((r) => `${r.qtype}::${r.sub_action ?? ''}`))
-  const allKey = `${layer.layer_id.replace('jisilu_', '')}::`
 
   const isChecked = (q: string, s: string | null) => {
     if (current.length === 0) return true  // 空 = 不过滤 = 全选
@@ -662,16 +682,16 @@ function LayerSubActions({ layer }: { layer: Layer }) {
 
   return (
     <div className="border-t border-gray-200 bg-gray-50 px-3 py-2">
-      {isLoading && <p className="text-xs text-gray-400">{t('settings.jisilu.subLoading')}</p>}
+      {isLoading && <p className="text-xs text-gray-400">{t('settings.layerFilters.subLoading')}</p>}
       {!isLoading && pairs.length === 0 && (
-        <p className="text-xs text-gray-400">{t('settings.jisilu.subEmpty')}</p>
+        <p className="text-xs text-gray-400">{t('settings.layerFilters.subEmpty')}</p>
       )}
       {!isLoading && pairs.length > 0 && (
         <>
           <div className="flex items-center justify-between mb-1.5">
-            <p className="text-[11px] text-gray-500">{isAllOn ? t('settings.jisilu.subAllOn') : t('settings.jisilu.subFiltered', { n: current.length, total: pairs.length })}</p>
+            <p className="text-[11px] text-gray-500">{isAllOn ? t('settings.layerFilters.subAllOn') : t('settings.layerFilters.subFiltered', { n: current.length, total: pairs.length })}</p>
             {!isAllOn && (
-              <button onClick={resetAll} className="text-[11px] text-blue-600 hover:text-blue-700">{t('settings.jisilu.subReset')}</button>
+              <button onClick={resetAll} className="text-[11px] text-blue-600 hover:text-blue-700">{t('settings.layerFilters.subReset')}</button>
             )}
           </div>
           <div className="flex flex-wrap gap-1.5">

@@ -162,27 +162,28 @@ settings.title	Ajustes
 settings.saving	Guardando…
 settings.loading	Cargando…
 settings.import.sectionTitle	Importar eventos
+settings.import.fieldSource	Fuente de datos
 settings.import.fieldStart	Inicio
 settings.import.fieldEnd	Fin
-settings.import.desc	Obtiene de Jisilu las IPO, convertibles, dividendos y opciones del intervalo. Las capas desactivadas se omiten.
+settings.import.desc	Obtiene los eventos de este intervalo desde la fuente de datos seleccionada. Las capas desactivadas se omiten.
 settings.import.running	Importando…
 settings.import.start	Empezar la importación
 settings.import.resultOk	{n} elemento(s) importado(s)
 settings.import.resultError	{n} elemento(s) importado(s); error: {error}
-settings.jisilu.sectionTitle	Calendario de inversión de Jisilu
-settings.jisilu.collapse	Contraer
-settings.jisilu.expandStar	Mostrar el filtro por estrellas
-settings.jisilu.expandSub	Mostrar las subacciones
-settings.jisilu.minStar	Estrellas mínimas
-settings.jisilu.starAll	Todas
-settings.jisilu.star1	1★ o más
-settings.jisilu.star2	2★ o más
-settings.jisilu.star3	3★
-settings.jisilu.subLoading	Leyendo las subacciones…
-settings.jisilu.subEmpty	Esta capa no tiene datos de eventos, así que no se pueden listar las subacciones. Ejecuta primero una importación en "Importar eventos".
-settings.jisilu.subAllOn	Mostrando todas
-settings.jisilu.subFiltered	{n}/{total} mostradas
-settings.jisilu.subReset	Restablecer todo
+settings.layerFilters.sectionTitle	Capas de fuente de datos
+settings.layerFilters.collapse	Contraer
+settings.layerFilters.expandStar	Mostrar el filtro por estrellas
+settings.layerFilters.expandSub	Mostrar las subacciones
+settings.layerFilters.minStar	Estrellas mínimas
+settings.layerFilters.starAll	Todas
+settings.layerFilters.star1	1★ o más
+settings.layerFilters.star2	2★ o más
+settings.layerFilters.star3	3★
+settings.layerFilters.subLoading	Leyendo las subacciones…
+settings.layerFilters.subEmpty	Esta capa no tiene datos de eventos, así que no se pueden listar las subacciones. Ejecuta primero una importación en "Importar eventos".
+settings.layerFilters.subAllOn	Mostrando todas
+settings.layerFilters.subFiltered	{n}/{total} mostradas
+settings.layerFilters.subReset	Restablecer todo
 settings.layers.sectionTitle	Capas personalizadas
 settings.layers.empty	Aún no hay capas personalizadas. Crea una con "Nueva capa" en la barra lateral del calendario.
 settings.layers.deleteTitle	Eliminar la capa (el marcado no se conservará)

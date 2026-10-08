@@ -223,16 +223,17 @@ export const ko: DeepPartialDict<Dict> = {
     loading: '불러오는 중…',
     import: {
       sectionTitle: '이벤트 가져오기',
+    fieldSource: '데이터 소스',
       fieldStart: '시작',
       fieldEnd: '종료',
-      desc: '지정 기간의 신주·전환사채·배당·옵션 등 데이터를 Jisilu에서 가져옵니다. 비활성화된 레이어는 건너뜁니다.',
+      desc: '선택한 데이터 소스에서 이 기간의 이벤트를 가져옵니다. 비활성화된 레이어는 건너뜁니다.',
       running: '가져오는 중…',
       start: '가져오기 시작',
       resultOk: '{n}개를 가져왔습니다',
       resultError: '{n}개를 가져왔습니다. 오류: {error}',
     },
-    jisilu: {
-      sectionTitle: 'Jisilu 투자 캘린더',
+    layerFilters: {
+      sectionTitle: '데이터 소스 레이어',
       collapse: '접기',
       expandStar: '별점 필터 펼치기',
       expandSub: '하위 동작 펼치기',

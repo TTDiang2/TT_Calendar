@@ -743,9 +743,9 @@ export function DayEntryDialog({
   const lastDate = dates[dates.length - 1]!
 
   // ---- 点点侧 ----
-  // 排除 jisilu_* 外部数据源（手动加会被同步覆盖）和已弃用的顶层 schedule 图层
+  // 排除数据源驱动的图层（手动加会被同步覆盖）与已弃用的顶层 schedule 图层
   const dotLayers = layers.filter((l) =>
-    l.kind === 'dot' && !l.layer_id.startsWith('jisilu_') && l.layer_id !== 'schedule',
+    l.kind === 'dot' && cfgOf(l).manual_pickable !== false && l.layer_id !== 'schedule',
   )
   const scheduleCatLayers = dotLayers.filter((l) => SCHEDULE_CATEGORIES.includes(cfgOf(l).category as string ?? ''))
   const otherDotLayers = dotLayers.filter((l) => !SCHEDULE_CATEGORIES.includes(cfgOf(l).category as string ?? ''))
@@ -764,7 +764,7 @@ export function DayEntryDialog({
   // ---- 涂色侧 ----
   const AUTO_LAYERS = ['holiday', 'important', 'todo', 'todo_done']
   const colorLayers = layers.filter((l) =>
-    l.kind === 'color' && !l.layer_id.startsWith('jisilu_') && !AUTO_LAYERS.includes(l.layer_id),
+    l.kind === 'color' && cfgOf(l).manual_pickable !== false && !AUTO_LAYERS.includes(l.layer_id),
   )
   const firstColor =
     colorLayers.find((l) => l.layer_id === 'coloring') ??

@@ -100,7 +100,7 @@ export default function App() {
       } catch {
         /* 网络异常等，静默跳过 */
       }
-      // 订阅自动更新：enabled+auto_update+今日未刷的订阅静默拉取（如集思录）
+      // 订阅自动更新：enabled+auto_update+今日未刷的订阅静默拉取
       try {
         const r = await refreshDueSubscriptions()
         if (r.refreshed.some((x) => x.ok && (x.inserted ?? 0) > 0)) {

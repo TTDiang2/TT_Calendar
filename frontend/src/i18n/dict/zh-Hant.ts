@@ -1,5 +1,5 @@
 /**
- * zh-Hant 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 560 条）。
+ * zh-Hant 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 561 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.zh-Hant.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -214,16 +214,17 @@ export const zhHant: DeepPartialDict<Dict> = {
     loading: '加載中…',
     import: {
       sectionTitle: '事件匯入',
+      fieldSource: '資料來源',
       fieldStart: '開始',
       fieldEnd: '結束',
-      desc: '從集思錄抓取該區間的新股/可轉債/分紅/期權等數據。已禁用的圖層會跳過。',
+      desc: '按區間從所選資料來源抓取事件。已停用的圖層會跳過。',
       running: '匯入中…',
       start: '開始匯入',
       resultOk: '匯入 {n} 條',
       resultError: '匯入 {n} 條；錯誤：{error}',
     },
-    jisilu: {
-      sectionTitle: '集思錄投資日曆',
+    layerFilters: {
+      sectionTitle: '資料來源圖層',
       collapse: '收起',
       expandStar: '展開星級過濾',
       expandSub: '展開子動作',

@@ -17,9 +17,10 @@ export const settings = {
     /** ── 事件导入分区（老端独有） ───────────────────────── */
     import: {
       sectionTitle: '事件导入',
+    fieldSource: '数据源',
       fieldStart: '开始',
       fieldEnd: '结束',
-      desc: '从集思录抓取该区间的新股/可转债/分红/期权等数据。已禁用的图层会跳过。',
+      desc: '按区间从所选数据源抓取事件。已禁用的图层会跳过。',
       running: '导入中…',
       start: '开始导入',
       /** 导入成功提示，{n} 为新增条数 */
@@ -29,8 +30,8 @@ export const settings = {
     },
 
     /** ── 集思录投资日历分区（老端独有） ─────────────────── */
-    jisilu: {
-      sectionTitle: '集思录投资日历',
+    layerFilters: {
+      sectionTitle: '数据源图层',
       /** 手风琴收起 */
       collapse: '收起',
       /** 手风琴展开（带星级过滤配置的图层） */
@@ -132,17 +133,18 @@ export const settings = {
 
     import: {
       sectionTitle: 'Event import',
+    fieldSource: 'Data source',
       fieldStart: 'Start',
       fieldEnd: 'End',
-      desc: 'Fetch new IPOs, convertible bonds, dividends, options and more from Jisilu for this range. Disabled layers are skipped.',
+      desc: 'Fetch events for this range from the selected data source. Disabled layers are skipped.',
       running: 'Importing…',
       start: 'Start import',
       resultOk: 'Imported {n} items',
       resultError: 'Imported {n} items; errors: {error}',
     },
 
-    jisilu: {
-      sectionTitle: 'Jisilu investment calendar',
+    layerFilters: {
+      sectionTitle: 'Data source layers',
       collapse: 'Collapse',
       expandStar: 'Star filter',
       expandSub: 'Sub-actions',

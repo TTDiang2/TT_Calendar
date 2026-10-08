@@ -89,6 +89,9 @@ class LayerSpec:
     group: str = ""
     config: dict[str, Any] = field(default_factory=dict)
     sub_filter: SubFilterSpec | None = None
+    # False = 该图层由数据源填充，用户不应手工往上放事件（会被下次同步覆盖）。
+    # 落到 config_json 的 manual_pickable，前端按此过滤选择器，不靠图层 id 前缀猜。
+    manual_pickable: bool = True
 
 
 class Source(ABC):
@@ -129,11 +132,7 @@ class Source(ABC):
         group = self.group or self.display_name
         for spec in self.layer_specs():
             declared: dict[str, Any] = dict(spec.config)
-            if spec.sub_filter is not None:
-                declared["sub_filter"] = {
-                    "group_key": spec.sub_filter.group_key,
-                    "title_pattern": spec.sub_filter.title_pattern,
-                }
+            managed = self._managed_keys(spec, declared)
             row = conn.execute(
                 "SELECT display_name, config_json FROM layer_config WHERE layer_id=?",
                 (spec.layer_id,),
@@ -160,15 +159,29 @@ class Source(ABC):
                     (spec.display_name, spec.color, group, spec.sort_order, spec.kind,
                      spec.layer_id),
                 )
-            if "sub_filter" in declared:
-                self._merge_sub_filter(conn, spec.layer_id, row["config_json"],
-                                       declared["sub_filter"])
+            if managed:
+                self._merge_declared_keys(conn, spec.layer_id, row["config_json"], managed)
 
     @staticmethod
-    def _merge_sub_filter(
-        conn: Any, layer_id: str, config_json: str | None, sub_filter: dict[str, Any]
+    def _managed_keys(spec: LayerSpec, declared: dict[str, Any]) -> dict[str, Any]:
+        """核心托管、需与声明保持一致的 config 键（其余键属用户数据，不碰）。"""
+        managed: dict[str, Any] = {}
+        if spec.sub_filter is not None:
+            managed["sub_filter"] = {
+                "group_key": spec.sub_filter.group_key,
+                "title_pattern": spec.sub_filter.title_pattern,
+            }
+        if not spec.manual_pickable:
+            managed["manual_pickable"] = False
+        for k, v in managed.items():
+            declared[k] = v
+        return managed
+
+    @staticmethod
+    def _merge_declared_keys(
+        conn: Any, layer_id: str, config_json: str | None, managed: dict[str, Any]
     ) -> None:
-        """把 sub_filter 声明补进已有行的 config_json，保留其余键（含用户的 sub_qtypes）。"""
+        """把核心托管的键补进已有行的 config_json，保留其余键（含用户的 sub_qtypes）。"""
         import json
 
         try:
@@ -177,9 +190,9 @@ class Source(ABC):
             current = {}
         if not isinstance(current, dict):
             current = {}
-        if current.get("sub_filter") == sub_filter:
+        if all(current.get(k) == v for k, v in managed.items()):
             return
-        current["sub_filter"] = sub_filter
+        current.update(managed)
         conn.execute(
             "UPDATE layer_config SET config_json=? WHERE layer_id=?",
             (json.dumps(current, ensure_ascii=False), layer_id),

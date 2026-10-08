@@ -162,27 +162,28 @@ settings.title	設定
 settings.saving	儲存中…
 settings.loading	加載中…
 settings.import.sectionTitle	事件匯入
+settings.import.fieldSource	資料來源
 settings.import.fieldStart	開始
 settings.import.fieldEnd	結束
-settings.import.desc	從集思錄抓取該區間的新股/可轉債/分紅/期權等數據。已禁用的圖層會跳過。
+settings.import.desc	按區間從所選資料來源抓取事件。已停用的圖層會跳過。
 settings.import.running	匯入中…
 settings.import.start	開始匯入
 settings.import.resultOk	匯入 {n} 條
 settings.import.resultError	匯入 {n} 條；錯誤：{error}
-settings.jisilu.sectionTitle	集思錄投資日曆
-settings.jisilu.collapse	收起
-settings.jisilu.expandStar	展開星級過濾
-settings.jisilu.expandSub	展開子動作
-settings.jisilu.minStar	最低星級
-settings.jisilu.starAll	全部
-settings.jisilu.star1	1★ 以上
-settings.jisilu.star2	2★ 以上
-settings.jisilu.star3	3★
-settings.jisilu.subLoading	讀取子動作中…
-settings.jisilu.subEmpty	該圖層暫無事件數據，無法列出子動作。請先在「事件匯入」拉取一次。
-settings.jisilu.subAllOn	當前全部顯示
-settings.jisilu.subFiltered	已過濾 {n}/{total}
-settings.jisilu.subReset	恢復全部
+settings.layerFilters.sectionTitle	資料來源圖層
+settings.layerFilters.collapse	收起
+settings.layerFilters.expandStar	展開星級過濾
+settings.layerFilters.expandSub	展開子動作
+settings.layerFilters.minStar	最低星級
+settings.layerFilters.starAll	全部
+settings.layerFilters.star1	1★ 以上
+settings.layerFilters.star2	2★ 以上
+settings.layerFilters.star3	3★
+settings.layerFilters.subLoading	讀取子動作中…
+settings.layerFilters.subEmpty	該圖層暫無事件數據，無法列出子動作。請先在「事件匯入」拉取一次。
+settings.layerFilters.subAllOn	當前全部顯示
+settings.layerFilters.subFiltered	已過濾 {n}/{total}
+settings.layerFilters.subReset	恢復全部
 settings.layers.sectionTitle	自訂圖層
 settings.layers.empty	暫無自訂圖層。可在日曆左側邊欄點「新建圖層」創建。
 settings.layers.deleteTitle	刪除圖層（標記數據不會保留）

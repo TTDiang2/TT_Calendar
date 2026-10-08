@@ -1,5 +1,5 @@
 /**
- * fr 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 560 条）。
+ * fr 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 561 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.fr.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -218,16 +218,17 @@ export const fr: DeepPartialDict<Dict> = {
     loading: 'Chargement…',
     import: {
       sectionTitle: 'Import d\'événements',
+      fieldSource: 'Source de données',
       fieldStart: 'Début',
       fieldEnd: 'Fin',
-      desc: 'Récupère sur Jisilu les introductions, obligations convertibles, dividendes et options de la période. Les calques désactivés sont ignorés.',
+      desc: 'Récupère les événements de cette plage depuis la source de données sélectionnée. Les calques désactivés sont ignorés.',
       running: 'Import en cours…',
       start: 'Lancer l\'import',
       resultOk: '{n} élément(s) importé(s)',
       resultError: '{n} élément(s) importé(s) ; erreur : {error}',
     },
-    jisilu: {
-      sectionTitle: 'Calendrier d\'investissement Jisilu',
+    layerFilters: {
+      sectionTitle: 'Calques de source de données',
       collapse: 'Replier',
       expandStar: 'Afficher le filtre par étoiles',
       expandSub: 'Afficher les sous-actions',

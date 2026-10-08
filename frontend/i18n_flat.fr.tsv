@@ -162,27 +162,28 @@ settings.title	Paramètres
 settings.saving	Enregistrement…
 settings.loading	Chargement…
 settings.import.sectionTitle	Import d'événements
+settings.import.fieldSource	Source de données
 settings.import.fieldStart	Début
 settings.import.fieldEnd	Fin
-settings.import.desc	Récupère sur Jisilu les introductions, obligations convertibles, dividendes et options de la période. Les calques désactivés sont ignorés.
+settings.import.desc	Récupère les événements de cette plage depuis la source de données sélectionnée. Les calques désactivés sont ignorés.
 settings.import.running	Import en cours…
 settings.import.start	Lancer l'import
 settings.import.resultOk	{n} élément(s) importé(s)
 settings.import.resultError	{n} élément(s) importé(s) ; erreur : {error}
-settings.jisilu.sectionTitle	Calendrier d'investissement Jisilu
-settings.jisilu.collapse	Replier
-settings.jisilu.expandStar	Afficher le filtre par étoiles
-settings.jisilu.expandSub	Afficher les sous-actions
-settings.jisilu.minStar	Étoiles minimales
-settings.jisilu.starAll	Toutes
-settings.jisilu.star1	1★ et plus
-settings.jisilu.star2	2★ et plus
-settings.jisilu.star3	3★
-settings.jisilu.subLoading	Lecture des sous-actions…
-settings.jisilu.subEmpty	Aucune donnée d'événement pour ce calque : impossible de lister les sous-actions. Lancez d'abord un import dans « Import d'événements ».
-settings.jisilu.subAllOn	Toutes affichées
-settings.jisilu.subFiltered	{n}/{total} affichées
-settings.jisilu.subReset	Tout rétablir
+settings.layerFilters.sectionTitle	Calques de source de données
+settings.layerFilters.collapse	Replier
+settings.layerFilters.expandStar	Afficher le filtre par étoiles
+settings.layerFilters.expandSub	Afficher les sous-actions
+settings.layerFilters.minStar	Étoiles minimales
+settings.layerFilters.starAll	Toutes
+settings.layerFilters.star1	1★ et plus
+settings.layerFilters.star2	2★ et plus
+settings.layerFilters.star3	3★
+settings.layerFilters.subLoading	Lecture des sous-actions…
+settings.layerFilters.subEmpty	Aucune donnée d'événement pour ce calque : impossible de lister les sous-actions. Lancez d'abord un import dans « Import d'événements ».
+settings.layerFilters.subAllOn	Toutes affichées
+settings.layerFilters.subFiltered	{n}/{total} affichées
+settings.layerFilters.subReset	Tout rétablir
 settings.layers.sectionTitle	Calques personnalisés
 settings.layers.empty	Aucun calque personnalisé. Créez-en un via « Nouveau calque » dans la barre latérale du calendrier.
 settings.layers.deleteTitle	Supprimer le calque (les marquages seront perdus)

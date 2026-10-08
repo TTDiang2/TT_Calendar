@@ -609,7 +609,7 @@ def stats_summary(conn=Depends(get_db)):
 
 
 # ---------------------------------------------------------------------------
-# 导入
+# 按区间导入某个源的事件（通用）
 # ---------------------------------------------------------------------------
 
 
@@ -619,18 +619,17 @@ class ImportBody(BaseModel):
     qtypes: Optional[list[str]] = None
 
 
-@router.post("/import/jisilu")
-async def import_jisilu(body: ImportBody, conn=Depends(get_db)):
-    """按 [start, end] 区间导入集思录事件，只写入已启用的图层。
+@router.post("/import/{source_id}")
+async def import_source(source_id: str, body: ImportBody, conn=Depends(get_db)):
+    """按 [start, end] 区间导入某个源的事件，只写入已启用的图层。
 
-    TODO(插件化待续)：这是一条按源硬编码的路由。前端"事件导入"区块的 i18n
-    文案本身写死了集思录，要通用化需先让该区块支持"选择源"，不能只改路径。
+    body.qtypes 用于一次只拉指定分组；源的 fetch 未声明该参数则忽略。
     """
     source = None
     try:
-        source = get_source("jisilu")
+        source = get_source(source_id)
         if source is None:
-            return {"inserted": 0, "error": "jisilu source unavailable"}
+            return {"inserted": 0, "error": f"{source_id} source unavailable"}
         start = parse_date(body.start)
         end = parse_date(body.end)
         kwargs: dict = {}

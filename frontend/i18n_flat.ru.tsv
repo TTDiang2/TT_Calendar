@@ -163,27 +163,28 @@ settings.title	Настройки
 settings.saving	Сохранение…
 settings.loading	Загрузка…
 settings.import.sectionTitle	Импорт событий
+settings.import.fieldSource	Источник данных
 settings.import.fieldStart	Начало
 settings.import.fieldEnd	Конец
-settings.import.desc	Забирает с Jisilu IPO, облигации, дивиденды и опционы за указанный период. Отключённые слои пропускаются.
+settings.import.desc	Получает события за этот период из выбранного источника данных. Отключённые слои пропускаются.
 settings.import.running	Импорт…
 settings.import.start	Начать импорт
 settings.import.resultOk	Импортировано: {n}
 settings.import.resultError	Импортировано: {n}; ошибка: {error}
-settings.jisilu.sectionTitle	Инвестиционный календарь Jisilu
-settings.jisilu.collapse	Свернуть
-settings.jisilu.expandStar	Показать фильтр по звёздам
-settings.jisilu.expandSub	Показать поддействия
-settings.jisilu.minStar	Минимум звёзд
-settings.jisilu.starAll	Все
-settings.jisilu.star1	1★ и выше
-settings.jisilu.star2	2★ и выше
-settings.jisilu.star3	3★
-settings.jisilu.subLoading	Чтение поддействий…
-settings.jisilu.subEmpty	В этом слое нет данных о событиях, поэтому поддействия не показать. Сначала выполните импорт в разделе «Импорт событий».
-settings.jisilu.subAllOn	Показаны все
-settings.jisilu.subFiltered	Показано {n}/{total}
-settings.jisilu.subReset	Сбросить всё
+settings.layerFilters.sectionTitle	Слои источника данных
+settings.layerFilters.collapse	Свернуть
+settings.layerFilters.expandStar	Показать фильтр по звёздам
+settings.layerFilters.expandSub	Показать поддействия
+settings.layerFilters.minStar	Минимум звёзд
+settings.layerFilters.starAll	Все
+settings.layerFilters.star1	1★ и выше
+settings.layerFilters.star2	2★ и выше
+settings.layerFilters.star3	3★
+settings.layerFilters.subLoading	Чтение поддействий…
+settings.layerFilters.subEmpty	В этом слое нет данных о событиях, поэтому поддействия не показать. Сначала выполните импорт в разделе «Импорт событий».
+settings.layerFilters.subAllOn	Показаны все
+settings.layerFilters.subFiltered	Показано {n}/{total}
+settings.layerFilters.subReset	Сбросить всё
 settings.layers.sectionTitle	Свои слои
 settings.layers.empty	Своих слоёв пока нет. Создайте слой кнопкой «Новый слой» на боковой панели календаря.
 settings.layers.deleteTitle	Удалить слой (отметки не сохранятся)

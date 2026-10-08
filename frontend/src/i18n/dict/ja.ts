@@ -230,16 +230,17 @@ export const ja: DeepPartialDict<Dict> = {
     loading: '読み込み中…',
     import: {
       sectionTitle: 'イベント取り込み',
+    fieldSource: 'データソース',
       fieldStart: '開始',
       fieldEnd: '終了',
-      desc: '指定期間の新株・転換社債・配当・オプションなどのデータをJisiluから取得します。無効なレイヤーはスキップされます。',
+      desc: '選択したデータソースからこの期間分のイベントを取得します。無効なレイヤーはスキップされます。',
       running: '取り込み中…',
       start: '取り込み開始',
       resultOk: '{n}件を取り込みました',
       resultError: '{n}件を取り込みました。エラー：{error}',
     },
-    jisilu: {
-      sectionTitle: 'Jisilu投資カレンダー',
+    layerFilters: {
+      sectionTitle: 'データソースのレイヤー',
       collapse: '折りたたむ',
       expandStar: '星評価フィルターを展開',
       expandSub: 'サブアクションを展開',
