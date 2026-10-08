@@ -54,6 +54,45 @@ class MyHolidaySource(Source):
         return events, result
 ```
 
+### LayerSpec 字段
+
+| 字段 | 必需 | 说明 |
+|---|---|---|
+| `layer_id` | ✅ | 完整 id，事件用它归层 |
+| `display_name` | ✅ | 侧栏显示名 |
+| `color` / `enabled` / `sort_order` / `kind` / `group` | ❌ | 常规图层属性 |
+| `config` | ❌ | 任意附加元数据，随图层存进 `layer_config.config_json` |
+| `sub_filter` | ❌ | `SubFilterSpec(group_key=..., title_pattern=...)`，声明本图层可按「子动作」再过滤（见下） |
+| `manual_pickable` | ❌ | 默认 `True`；填 `False` 表示该图层由数据源填充，不该让用户手工往上放事件 |
+
+**`sub_filter`：子动作过滤**
+
+有些源把事件进一步细分成子动作（集思录把「申购日/赎回日/上市日」写在标题的
+`【】` 里）。核心不认识任何具体源，只按你声明的规则从事件标题提取子动作，
+与用户在设置页勾选的集合求交集：
+
+```python
+from tt_calendar.sources.base import LayerSpec, Source, SubFilterSpec
+
+_SUB_FILTER = SubFilterSpec(group_key="qtype", title_pattern=r"^【(.+?)】")
+
+def layer_specs(self):
+    return [LayerSpec(..., sub_filter=_SUB_FILTER)]
+```
+
+- `group_key`：事件 `extra` 里承载分组值的键名（如集思录的 `qtype`）。
+- `title_pattern`：从标题提取子动作的正则，**须含恰好一个捕获组**。
+
+> ⚠️ **不声明 = 该功能静默失效**（不报错，只是不生效）。同理，源填充的图层建议声明
+> `manual_pickable=False`，否则用户手工加的标记会被下次同步覆盖——核心过去是靠
+> 图层 id 前缀猜的，现在一律看声明。
+
+两个字段都存进图层行，所以源被卸载后规则仍在。`ensure_layers` 只写这两个键
+与你自己的 `config`，**不会**动用户数据（例如已勾选的子动作）。
+
+> 需要带 `SubFilterSpec` 的 app 版本；旧版加载插件会记一条 `plugin load failed`
+> 并跳过该插件，已有图层照常工作。
+
 ### Event 字段约定
 
 | 字段 | 必需 | 说明 |
