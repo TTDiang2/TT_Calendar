@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import clsx from 'clsx'
-import type { Day, Layer, MonthData } from '../types'
+import type { Layer, MonthData } from '../types'
 import { COLORING_COLORS, getBusyColors, parseDate, todayStr } from '../data'
 import { getTodoBusyConfig } from '../api/client'
 import { useT, useLang, fmtDate } from '../i18n'
