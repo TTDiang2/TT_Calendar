@@ -3,7 +3,9 @@
  *
  * 需求：所有用户首次打开 App 必须经过语言选择；系统语言只做预选高亮，
  * 必须显式点确认才进入主界面。选择持久化到 localStorage（tt.lang）。
- * 语言名用 endonym（日本語/Français…），示例句是各语言本体数据——都永不走翻译。
+ * 语言名用 endonym（日本語/한국어…），示例句是各语言本体数据——都永不走翻译。
+ * 只列「已有字典」的语言（SELECTABLE_LANGS）：无字典的语言选了会静默回落中文，
+ * 属于虚假选项（20261008 用户实测：设置里能点繁中/法语等但界面不变）。
  * 说明文字跟随所选语言即时切换（makeI18n(picked)，20261004 用户反馈：
  * 选 English 后提示仍是中文不直观——Neo 原版的 activeLang 方案已弃用）。
  * 视觉：老端蓝色系（Neo 为粉色系），其余结构逐字对齐。
@@ -11,7 +13,7 @@
 import { useState } from 'react'
 import { Check, Languages } from 'lucide-react'
 import { clsx } from 'clsx'
-import { chooseLang, systemLang, LANGS, LANG_META, makeI18n, type Lang } from '../i18n'
+import { chooseLang, systemLang, SELECTABLE_LANGS, LANG_META, makeI18n, type Lang } from '../i18n'
 
 export function LanguagePickerScreen() {
   const [picked, setPicked] = useState<Lang>(systemLang())
@@ -39,7 +41,7 @@ export function LanguagePickerScreen() {
           role="radiogroup"
           aria-label={LANG_META[uiLang] ? LANG_META[uiLang].endonym : 'language'}
         >
-          {LANGS.map((lang) => {
+          {SELECTABLE_LANGS.map((lang) => {
             const meta = LANG_META[lang]
             const selected = picked === lang
             return (

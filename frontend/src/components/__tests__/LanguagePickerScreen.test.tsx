@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AppGate } from '../../AppGate'
 import { LanguagePickerScreen } from '../LanguagePickerScreen'
-import { hasChosenLang } from '../../i18n'
+import { hasChosenLang, LANG_META, PENDING_TRANSLATIONS, SELECTABLE_LANGS } from '../../i18n'
 import { _resetForTest } from '../../i18n/store'
 
 describe('LanguagePickerScreen（P2 首启动选择页）', () => {
@@ -17,16 +17,16 @@ describe('LanguagePickerScreen（P2 首启动选择页）', () => {
     cleanup()
   })
 
-  it('渲染 8 语言 endonym+示例句（本体数据不走翻译）', () => {
+  it('只渲染「已有字典」的语言（endonym+示例句走本体数据，不走翻译）', () => {
     render(<LanguagePickerScreen />)
-    expect(screen.getByText('简体中文')).toBeTruthy()
-    expect(screen.getByText('繁體中文')).toBeTruthy()
-    expect(screen.getByText('English')).toBeTruthy()
-    expect(screen.getByText('日本語')).toBeTruthy()
-    expect(screen.getByText('한국어')).toBeTruthy()
-    expect(screen.getByText('Français')).toBeTruthy()
-    expect(screen.getByText('Español')).toBeTruthy()
-    expect(screen.getByText('Русский')).toBeTruthy()
+    for (const lang of SELECTABLE_LANGS) {
+      expect(screen.getByText(LANG_META[lang].endonym)).toBeTruthy()
+    }
+    // 台账 PENDING 的语言暂无字典，不得作为选项出现（选了只会回落中文）
+    expect(SELECTABLE_LANGS).toEqual(['zh-CN', 'en', 'ja', 'ko'])
+    for (const lang of PENDING_TRANSLATIONS) {
+      expect(screen.queryByText(LANG_META[lang].endonym)).toBeNull()
+    }
   })
 })
 

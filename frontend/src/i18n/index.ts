@@ -4,7 +4,7 @@
  */
 export { resolveLang, fallbackChain, isCJK, pluralCategories, makeI18n, interpolate } from './core'
 export type { Lang, I18n, TParams } from './core'
-export { LANGS, LANG_META } from './core'
+export { LANGS, LANG_META, SELECTABLE_LANGS, PENDING_TRANSLATIONS, isLangAvailable } from './core'
 export {
   getChosenLang,
   systemLang,

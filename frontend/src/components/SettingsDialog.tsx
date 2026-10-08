@@ -10,7 +10,7 @@ import {
   getSyncConfig, getSyncStatus, saveSyncConfig, testSync, syncNow, resolveSync,
   type SyncResult,
 } from '../api/client'
-import { useT, useTPlural, chooseLang, activeLang, LANGS, LANG_META, type I18n, type Lang, type TxKey } from '../i18n'
+import { useT, useTPlural, chooseLang, activeLang, SELECTABLE_LANGS, LANG_META, type I18n, type Lang, type TxKey } from '../i18n'
 import type { Layer } from '../types'
 
 interface Props {
@@ -708,7 +708,7 @@ function LanguageSection() {
         value={activeLang()}
         onChange={(e) => chooseLang(e.target.value as Lang)}
       >
-        {LANGS.map((lang) => (
+        {SELECTABLE_LANGS.map((lang) => (
           <option key={lang} value={lang}>{LANG_META[lang].endonym}</option>
         ))}
       </select>

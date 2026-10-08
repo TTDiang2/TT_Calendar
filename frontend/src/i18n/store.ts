@@ -4,7 +4,7 @@
  * - chooseLang() 持久化并广播；I18nProvider 用 useSyncExternalStore 订阅，
  *   移动端壳用 onLangChange 同步 App Group / 重排通知。
  */
-import { resolveLang, type Lang } from './core'
+import { isLangAvailable, resolveLang, type Lang } from './core'
 
 const LS_KEY = 'tt.lang'
 
@@ -14,7 +14,11 @@ const subs = new Set<() => void>()
 function readStored(): Lang | null {
   try {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(LS_KEY) : null
-    return raw ? resolveLang(raw) : null
+    if (!raw) return null
+    const lang = resolveLang(raw)
+    // 旧版本可能把「无字典」的语言写进来（UI 曾提供 fr/es/ru/zh-Hant 选项）：
+    // 快照到 zh-CN 而不是 null——用户已做过选择，不必再弹一次语言选择页
+    return isLangAvailable(lang) ? lang : 'zh-CN'
   } catch {
     return null
   }
@@ -27,7 +31,11 @@ export function getChosenLang(): Lang | null {
 /** 系统语言（无 navigator 的测试/SSR 环境回落 zh-CN；jsdom 测试须显式传 locale，勿依赖此值）。 */
 export function systemLang(): Lang {
   try {
-    if (typeof navigator !== 'undefined' && navigator.language) return resolveLang(navigator.language)
+    if (typeof navigator !== 'undefined' && navigator.language) {
+      const lang = resolveLang(navigator.language)
+      // 法语/俄语系统等：字典还没产出，快照到中文主字典，绝不出现空白 UI
+      if (isLangAvailable(lang)) return lang
+    }
   } catch {
     /* ignore */
   }
@@ -41,6 +49,9 @@ export function activeLang(): Lang {
 
 /** 用户确认语言（首启动选择页与设置页都走这里）。 */
 export function chooseLang(lang: Lang): void {
+  // 无字典的语言不接受：否则界面语言标记与实际渲染（回落中文）不一致，
+  // 且会写入一个下拉框里不存在的值
+  if (!isLangAvailable(lang)) return
   if (chosen === lang) return
   chosen = lang
   try {

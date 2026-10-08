@@ -30,6 +30,21 @@ export const LANG_META: Record<Lang, { endonym: string; sample: string }> = {
   ru: { endonym: 'Русский', sample: 'Всё важное — в одном месте' },
 }
 
+/**
+ * 声明了但还没有字典的语言（台账 docs/i18n-ledger.md A4：fr/es/ru/zh-Hant 暂无翻译）。
+ * 这份清单必须与 DICTS 的缺席项严格一致——i18n-availability 测试据此守门：
+ * 翻译产出并在 dict/index.ts 注册后，须同步从这里移除。
+ */
+export const PENDING_TRANSLATIONS: readonly Lang[] = ['zh-Hant', 'fr', 'es', 'ru']
+
+/** 该语言是否已有字典（缺字典时 t() 会静默回落中文，UI 不得把它当选项提供给用户）。 */
+export function isLangAvailable(lang: Lang): boolean {
+  return Boolean(DICTS[lang])
+}
+
+/** 可选语言 = 已注册字典的语言。首启动选择页与设置页都只应列这些。 */
+export const SELECTABLE_LANGS: readonly Lang[] = LANGS.filter(isLangAvailable)
+
 /** 系统语言标签 → 支持的语言。精确匹配 → 主语言匹配 → zh-CN 兜底（绝不出现空白 UI）。 */
 export function resolveLang(input: string | null | undefined): Lang {
   if (!input) return 'zh-CN'

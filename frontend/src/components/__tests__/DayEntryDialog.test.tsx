@@ -67,8 +67,8 @@ beforeEach(() => {
   vi.mocked(createTodo).mockImplementation(async (d) => ({
     id: 'todo-1', list_id: d.list_id, title: d.title, body: d.body ?? null,
     status: 'notStarted', importance: 'normal', due_date: d.due_date ?? null,
-    planned_date: d.planned_date ?? null, start_date: null, complexity: 'medium',
-    tags: null, created_at: null, completed_at: null, sort_order: 0,
+    planned_date: d.planned_date ?? null, start_date: null, repeat: d.repeat ?? null,
+    complexity: 'medium', tags: null, created_at: null, completed_at: null, sort_order: 0,
   }))
   vi.mocked(createTodoList).mockImplementation(async (display_name) => ({
     id: 'list-schedule', display_name, sort_order: 0, created_at: null,
