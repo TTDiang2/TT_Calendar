@@ -171,7 +171,7 @@ export function TodoKanbanView({ openTodos, completedTodos, completedCount, list
   const listName = useMemo(() => {
     const m = new Map(lists.map((l) => [l.id, layerLabel(l, t)]))
     return (td: Todo) => m.get(td.list_id)
-  }, [lists])
+  }, [lists, t])
 
   const droppable = dim === 'status'
 

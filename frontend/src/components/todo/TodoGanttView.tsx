@@ -91,7 +91,7 @@ export function TodoGanttView({ todos, lists, selectedTodoId, onSelect }: Props)
   const listName = useMemo(() => {
     const m = new Map(lists.map((l) => [l.id, layerLabel(l, t)]))
     return (id: string) => m.get(id)
-  }, [lists])
+  }, [lists, t])
 
   if (rows.length === 0) {
     return <div className="h-full flex items-center justify-center text-sm text-gray-300">{t('todoboards.empty.none')}</div>
