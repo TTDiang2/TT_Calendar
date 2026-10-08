@@ -1084,7 +1084,8 @@ def ensure_default_layer_configs(conn: sqlite3.Connection) -> None:
         if existing == 0:
             defaults: list[tuple[str, str, str, int, str, str | None]] = [
                 # (layer_id, display_name, color, sort_order, kind, group)
-                (cfg.LayerID.SCHEDULE,  "日程（旧）",   LAYER_COLORS[cfg.LayerID.SCHEDULE],  0, "dot", "日程"),
+                # 顶层 'schedule'（AM/PM/EV 三段）已拆成 schedule_items，不再播种；
+                # 存量库由 _drop_legacy_schedule_layer 在 init_db 时清理。
                 (cfg.LayerID.IMPORTANT, "重要日期",   LAYER_COLORS[cfg.LayerID.IMPORTANT], 1, "color", None),
                 (cfg.LayerID.COLORING,  "充实度染色", LAYER_COLORS[cfg.LayerID.COLORING],  2, "color", None),
                 (cfg.LayerID.HOLIDAY,   "公共节假日", LAYER_COLORS[cfg.LayerID.HOLIDAY],   3, "color", None),
@@ -1095,7 +1096,7 @@ def ensure_default_layer_configs(conn: sqlite3.Connection) -> None:
                     LayerConfig(
                         layer_id=layer_id,
                         display_name=name,
-                        enabled=False if layer_id == cfg.LayerID.SCHEDULE else True,
+                        enabled=True,
                         color=color,
                         sort_order=order,
                         kind=kind,
