@@ -4,6 +4,7 @@ import { AlertTriangle, CalendarClock, Coffee, Hourglass } from 'lucide-react'
 import type { Todo, TodoList } from '../../types'
 import { dueInDays, isImportant, urgencyOf } from '../../utils/todoLogic'
 import { useI18n, type I18n, type TxKey } from '../../i18n'
+import { layerLabel } from '../../i18n/adapt/layerLabel'
 import { TodoMiniCard } from './TodoMiniCard'
 
 interface Props {
@@ -54,7 +55,8 @@ const QUADRANTS: {
 
 function subText(t: Todo, lists: TodoList[], ia: I18n): string {
   const parts: string[] = []
-  const listName = lists.find((l) => l.id === t.list_id)?.display_name
+  const l0 = lists.find((l) => l.id === t.list_id)
+  const listName = l0 ? layerLabel(l0, ia.t) : undefined
   if (listName) parts.push(listName)
   const din = dueInDays(t)
   if (t.due_date && din !== null) {

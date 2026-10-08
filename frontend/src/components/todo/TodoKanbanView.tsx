@@ -4,6 +4,7 @@ import { CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Todo, TodoList } from '../../types'
 import { COMPLEXITY_KEYS, IMPORTANCE_KEYS, STATUS_KEYS, labelOf, todayStr } from '../../utils/todoLogic'
 import { useT, type I18n, type TxKey } from '../../i18n'
+import { layerLabel } from '../../i18n/adapt/layerLabel'
 import { TodoMiniCard } from './TodoMiniCard'
 
 type Dim = 'status' | 'planned' | 'importance' | 'complexity' | 'tag'
@@ -168,8 +169,8 @@ export function TodoKanbanView({ openTodos, completedTodos, completedCount, list
   const today = todayStr()
   const columns = useMemo(() => buildColumns(openTodos, dim, today, t), [openTodos, dim, today, t])
   const listName = useMemo(() => {
-    const m = new Map(lists.map((l) => [l.id, l.display_name]))
-    return (t: Todo) => m.get(t.list_id)
+    const m = new Map(lists.map((l) => [l.id, layerLabel(l, t)]))
+    return (td: Todo) => m.get(td.list_id)
   }, [lists])
 
   const droppable = dim === 'status'

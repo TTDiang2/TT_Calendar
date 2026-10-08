@@ -4,6 +4,7 @@ import { CheckCircle2 } from 'lucide-react'
 import type { Todo, TodoList } from '../../types'
 import { ganttRange, labelOf, STATUS_KEYS } from '../../utils/todoLogic'
 import { useT } from '../../i18n'
+import { layerLabel } from '../../i18n/adapt/layerLabel'
 
 interface Props {
   todos: Todo[]
@@ -88,7 +89,7 @@ export function TodoGanttView({ todos, lists, selectedTodoId, onSelect }: Props)
   }, [viewW, todayX, laneW])
 
   const listName = useMemo(() => {
-    const m = new Map(lists.map((l) => [l.id, l.display_name]))
+    const m = new Map(lists.map((l) => [l.id, layerLabel(l, t)]))
     return (id: string) => m.get(id)
   }, [lists])
 
