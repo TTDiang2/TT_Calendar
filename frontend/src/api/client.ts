@@ -145,6 +145,8 @@ export const deleteCountdown = (id: number) => del<{ ok: boolean }>(`/countdown/
 export const getStatsSummary = () => get<StatsSummary>('/stats/summary')
 
 // 集思录导入
+// TODO(插件化待续)：后端仍是一条按源硬编码的 /import/jisilu。要通用化需先让
+// 设置页「事件导入」区块支持选择源（其 i18n 文案也写死了集思录）。
 export const importJisilu = (start: string, end: string, qtypes?: string[]) =>
   post<{ inserted: number; error: string | null }>('/import/jisilu', { start, end, qtypes })
 

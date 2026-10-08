@@ -10,7 +10,6 @@ from .builtin import (
     ColoringLayer,
     HolidayLayer,
     ImportantLayer,
-    JisiluLayer,
     ScheduleLayer,
 )
 from ..models import LayerConfig
@@ -23,7 +22,6 @@ __all__ = [
     "ColoringLayer",
     "HolidayLayer",
     "ImportantLayer",
-    "JisiluLayer",
     "ScheduleLayer",
     "build_default_layers",
     "build_layer",
@@ -33,19 +31,13 @@ __all__ = [
 def build_layer(config: LayerConfig) -> Layer:
     """根据 layer_id 模式构造图层实例。"""
 
-    lid = config.layer_id
-
-    # 集思录子图层（jisilu_<qtype>）
-    if lid.startswith("jisilu_"):
-        return JisiluLayer(config)
-
     factory = {
         "schedule":  ScheduleLayer,
         "important": ImportantLayer,
         "coloring":  ColoringLayer,
         "holiday":   HolidayLayer,
     }
-    cls = factory.get(lid)
+    cls = factory.get(config.layer_id)
     if cls is None:
         # 未知图层：用一个不贡献任何东西的占位
         return Layer(config)

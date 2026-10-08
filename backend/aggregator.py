@@ -16,16 +16,19 @@ import chinese_calendar as cc
 from tt_calendar import db
 from tt_calendar.config import LayerID
 from tt_calendar.models import Event, ScheduleEntry
+from tt_calendar.sources.base import sub_filter_pattern
 from tt_calendar.utils.date_utils import month_grid, month_range
 from tt_calendar.utils.lunar_utils import lunar_display
 
 
-_SUB_ACTION_RE = re.compile(r"^【(.+?)】")
+def _sub_filter_of(layer_cfg: dict | None) -> tuple[str, re.Pattern[str]] | None:
+    """读取图层声明的子动作规则；未声明/非法则 None。解析实现在协议层。"""
+    return sub_filter_pattern(layer_cfg)
 
 
-def _sub_action_of(title: str) -> str | None:
-    """从事件标题里提取【子动作】。例：【申购日】天脉转债 → '申购日'"""
-    m = _SUB_ACTION_RE.match(title or "")
+def _sub_action_of(pattern: re.Pattern[str], title: str) -> str | None:
+    """按图层声明的正则从标题提取子动作；不匹配则 None。"""
+    m = pattern.match(title or "")
     return m.group(1) if m else None
 
 
@@ -74,18 +77,21 @@ def _event_passes_layer_filter(
                 imp = 0
             if imp < min_imp:
                 return False
-    if "sub_qtypes" not in layer_cfg:
-        return True
     sq = layer_cfg.get("sub_qtypes") or []
     if not sq:
         return True
-    ev_q = (ev.extra or {}).get("qtype")
-    if not ev_q:
-        # 没有 qtype 的事件（如 manual）不归集思录层控制
+    sf = _sub_filter_of(layer_cfg)
+    if sf is None:
         return True
-    ev_sa = _sub_action_of(ev.title)
+    group_key, pattern = sf
+    ev_group = (ev.extra or {}).get(group_key)
+    if not ev_group:
+        # 事件不属于任何子动作分组（如手工建的日程）→ 不受该层控制
+        return True
+    ev_sa = _sub_action_of(pattern, ev.title)
     for rule in sq:
-        if rule.get("qtype") != ev_q:
+        # 规则项的 "qtype" 是历史落库字段名，语义上等于本层声明的 group_key
+        if rule.get("qtype") != ev_group:
             continue
         rule_sa = rule.get("sub_action")
         if rule_sa is None or rule_sa == "":

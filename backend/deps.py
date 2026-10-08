@@ -26,5 +26,4 @@ def connect_db():
     db.ensure_default_layer_configs(conn)
     db.ensure_todo_layer(conn)
     db.ensure_todo_done_layer(conn)
-    db.ensure_builtin_subscription(conn)
     return conn

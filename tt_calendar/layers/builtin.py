@@ -7,7 +7,7 @@ from datetime import date as date_t
 
 from .. import config as cfg
 from ..models import Event
-from ..utils.text_utils import first_line, strip_brackets
+from ..utils.text_utils import first_line
 from .base import CellContribution, Layer, LayerContext
 
 
@@ -145,50 +145,4 @@ class HolidayLayer(Layer):
         if made_up:
             contrib.badges.append("班")
             contrib.tooltips.append("调休补班日")
-        return contrib
-
-
-# ---------------------------------------------------------------------------
-# 集思录图层（每个 qtype 一个实例）
-# ---------------------------------------------------------------------------
-
-
-class JisiluLayer(Layer):
-    """集思录单类型事件图层。
-
-    layer_id 形如 'jisilu_CNV'。从 ctx.events_by_date 取出该 layer 的事件，
-    显示为色点 + 数量徽章。当日事件多时仅展示前 N 个标题。
-    """
-
-    MAX_LABELS_PER_DAY: int = 2  # 当日最多显示几个事件名（避免格子里太挤）
-
-    def contribute(self, d: date_t, ctx: LayerContext) -> CellContribution:
-        events = [e for e in ctx.events_by_date.get(d, []) if e.layer_id == self.layer_id]
-        if not events:
-            return CellContribution()
-        contrib = CellContribution()
-        color = self.color or "#FFB300"
-        contrib.dots.append(color)
-
-        # 按事件类型（title 前的【...】）分组
-        types_seen: dict[str, int] = {}
-        for ev in events:
-            t, _ = strip_brackets(ev.title)
-            types_seen[t] = types_seen.get(t, 0) + 1
-
-        # 显示前 N 个事件简略（去掉【...】，便于排版）
-        for ev in events[: self.MAX_LABELS_PER_DAY]:
-            _, body = strip_brackets(ev.title)
-            if body:
-                contrib.labels.append(body[:14])
-            else:
-                contrib.labels.append(ev.title[:14])
-
-        if len(events) > self.MAX_LABELS_PER_DAY:
-            contrib.badges.append(f"+{len(events) - self.MAX_LABELS_PER_DAY}")
-
-        # 悬停 tooltip
-        for ev in events:
-            contrib.tooltips.append(ev.title)
-
         return contrib

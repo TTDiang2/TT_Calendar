@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import logging
 import sqlite3
+import uuid
 from collections import defaultdict
 from contextlib import contextmanager
 from datetime import date as date_t, datetime, timedelta
@@ -222,6 +223,8 @@ def init_db(conn: sqlite3.Connection) -> None:
         _ensure_schedule_item_columns(cur)
         _ensure_layer_config_columns(cur)
         _drop_legacy_schedule_layer(cur)
+
+    migrate_builtin_subscriptions(conn)
 
 
 def _drop_legacy_schedule_layer(cur: sqlite3.Cursor) -> None:
@@ -1199,8 +1202,6 @@ def backfill_layer_kind_group(conn: sqlite3.Connection) -> None:
             continue
         if lid.startswith("schedule_"):
             new_kind, new_group = "dot", "日程"
-        elif lid.startswith("jisilu_"):
-            new_kind, new_group = "dot", "集思录"
         elif lid == cfg.LayerID.SCHEDULE:
             new_kind, new_group = "dot", "日程"
         elif lid in (cfg.LayerID.IMPORTANT, cfg.LayerID.COLORING, cfg.LayerID.HOLIDAY, cfg.LayerID.TODO):
@@ -1642,20 +1643,28 @@ def touch_subscription_synced(conn: sqlite3.Connection, sub_id: str,
         )
 
 
-def ensure_builtin_subscription(conn: sqlite3.Connection) -> None:
-    """内置集思录订阅（幂等）。"""
-    from .models import Subscription
+def migrate_builtin_subscriptions(conn: sqlite3.Connection) -> None:
+    """把历史遗留的 builtin:* 订阅改写为普通用户订阅（幂等）。
 
-    if get_subscription(conn, "builtin:jisilu") is None:
-        upsert_subscription(conn, Subscription(
-            id="builtin:jisilu",
-            display_name="集思录",
-            source_key="jisilu",
-            enabled=True,
-            auto_update=True,
-            status="active",
-        ))
-        conn.commit()
+    集思录曾是内置源：核心在每次启动时无条件播种一条 builtin:jisilu，导致
+    全新安装也会冒出一个「集思录」。插件化后核心不再为任何具体源播种订阅，
+    这里把存量库里那条 builtin:* 换成普通 uuid，使其可由用户在 UI 自行删除
+    （此前 routes 对 builtin:* 有"不可删除"的硬编码保护）。
+    已抓取的事件、图层行、以及用户勾选的子动作一律保留 —— 只改订阅行的 id。
+    """
+    rows = conn.execute(
+        "SELECT id FROM subscriptions WHERE id LIKE 'builtin:%'"
+    ).fetchall()
+    if not rows:
+        return
+    with cursor(conn) as cur:
+        for (old_id,) in rows:
+            cur.execute(
+                "UPDATE subscriptions SET id=?, updated_at=datetime('now','localtime') "
+                "WHERE id=?",
+                (str(uuid.uuid4()), old_id),
+            )
+    conn.commit()
 
 
 _CN_DIGITS = "零一二三四五六七八九"

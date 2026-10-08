@@ -25,12 +25,55 @@
 
 from __future__ import annotations
 
+import logging
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import date as date_t
 from typing import Any, Iterable
 
 from ..models import Event, ImportResult
+
+log = logging.getLogger(__name__)
+
+
+@dataclass
+class SubFilterSpec:
+    """图层声明的「子动作」过滤规则。
+
+    有些源把事件进一步细分成子动作（集思录的「申购日/赎回日/上市日」写在
+    标题的 【】 里）。核心不认识任何具体源，只按本声明从事件标题提取子动作，
+    并与用户在设置页勾选的子动作集合做过滤。
+
+    group_key: 事件 extra 中承载分组值的键（如集思录的 "qtype"）。
+    title_pattern: 从事件标题提取子动作的正则，**须含恰好一个捕获组**。
+    """
+
+    group_key: str
+    title_pattern: str
+
+
+def sub_filter_pattern(
+    config: dict[str, Any] | None,
+) -> tuple[str, re.Pattern[str]] | None:
+    """从图层 config 解析子动作声明 (group_key, pattern)。
+
+    未声明、字段缺失或正则非法一律返回 None（调用方据此判定"该图层不支持
+    子动作过滤"）。config 即 layer_config.config_json 反序列化后的字典。
+    """
+    sf = (config or {}).get("sub_filter")
+    if not isinstance(sf, dict):
+        return None
+    group_key, pattern = sf.get("group_key"), sf.get("title_pattern")
+    if not isinstance(group_key, str) or not isinstance(pattern, str):
+        return None
+    if not group_key or not pattern:
+        return None
+    try:
+        return group_key, re.compile(pattern)
+    except re.error:
+        log.warning("图层 sub_filter 的 title_pattern 不是合法正则：%r", pattern)
+        return None
 
 
 @dataclass
@@ -45,6 +88,7 @@ class LayerSpec:
     kind: str = "dot"
     group: str = ""
     config: dict[str, Any] = field(default_factory=dict)
+    sub_filter: SubFilterSpec | None = None
 
 
 class Source(ABC):
@@ -76,14 +120,22 @@ class Source(ABC):
 
         默认实现：缺失才插；display_name/color/group 与声明不一致时更新
         （源改名升级场景），但绝不覆盖用户手动设置的 enabled。
+        sub_filter 以「只补该键」的方式合入 config —— config_json 里同时存着
+        用户在设置页勾选的子动作集合（sub_qtypes），整体覆盖会抹掉用户数据。
         特殊迁移需求（如 ID 体系更换）由源覆盖此方法。
         """
         from .. import db
 
         group = self.group or self.display_name
         for spec in self.layer_specs():
+            declared: dict[str, Any] = dict(spec.config)
+            if spec.sub_filter is not None:
+                declared["sub_filter"] = {
+                    "group_key": spec.sub_filter.group_key,
+                    "title_pattern": spec.sub_filter.title_pattern,
+                }
             row = conn.execute(
-                "SELECT display_name FROM layer_config WHERE layer_id=?",
+                "SELECT display_name, config_json FROM layer_config WHERE layer_id=?",
                 (spec.layer_id,),
             ).fetchone()
             if not row:
@@ -97,16 +149,41 @@ class Source(ABC):
                         sort_order=spec.sort_order,
                         kind=spec.kind,
                         group=group,
-                        config=spec.config,
+                        config=declared,
                     ),
                 )
-            elif row["display_name"] != spec.display_name:
+                continue
+            if row["display_name"] != spec.display_name:
                 conn.execute(
                     "UPDATE layer_config SET display_name=?, color=?, group_name=?, "
                     "sort_order=?, kind=? WHERE layer_id=?",
                     (spec.display_name, spec.color, group, spec.sort_order, spec.kind,
                      spec.layer_id),
                 )
+            if "sub_filter" in declared:
+                self._merge_sub_filter(conn, spec.layer_id, row["config_json"],
+                                       declared["sub_filter"])
+
+    @staticmethod
+    def _merge_sub_filter(
+        conn: Any, layer_id: str, config_json: str | None, sub_filter: dict[str, Any]
+    ) -> None:
+        """把 sub_filter 声明补进已有行的 config_json，保留其余键（含用户的 sub_qtypes）。"""
+        import json
+
+        try:
+            current = json.loads(config_json) if config_json else {}
+        except (TypeError, ValueError):
+            current = {}
+        if not isinstance(current, dict):
+            current = {}
+        if current.get("sub_filter") == sub_filter:
+            return
+        current["sub_filter"] = sub_filter
+        conn.execute(
+            "UPDATE layer_config SET config_json=? WHERE layer_id=?",
+            (json.dumps(current, ensure_ascii=False), layer_id),
+        )
 
     # ------------------------------------------------------------------
     # 事件字段 UI 规格（阶段二：前端 schema 渲染）

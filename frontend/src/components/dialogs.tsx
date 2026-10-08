@@ -585,14 +585,12 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
                       {refreshing === s.id ? t('dialogs.subscription.refreshing') : t('dialogs.subscription.refresh')}
                     </button>
                   )}
-                  {s.id !== 'builtin:jisilu' && (
-                    <button
-                      onClick={() => { if (confirm(t('dialogs.subscription.deleteConfirm', { name: s.display_name }))) delMut.mutate(s.id) }}
-                      className="text-[11px] text-gray-400 hover:text-red-500 ml-auto"
-                    >
-                      {t('common.delete')}
-                    </button>
-                  )}
+                  <button
+                    onClick={() => { if (confirm(t('dialogs.subscription.deleteConfirm', { name: s.display_name }))) delMut.mutate(s.id) }}
+                    className="text-[11px] text-gray-400 hover:text-red-500 ml-auto"
+                  >
+                    {t('common.delete')}
+                  </button>
                 </div>
               </div>
             ))}

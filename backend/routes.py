@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import csv
+import inspect
 import io
+import json
 import re
 import uuid
 from datetime import date as date_t, datetime, timedelta
@@ -16,6 +18,7 @@ from tt_calendar import db
 from tt_calendar.config import LayerID
 from tt_calendar.models import ColoringEntry, Event, LayerConfig, Mark, ScheduleEntry, ScheduleItem, Todo, TodoList
 from tt_calendar.sources import get_source
+from tt_calendar.sources.base import sub_filter_pattern
 from tt_calendar.utils.date_utils import parse_date, shift_month
 
 from backend import aggregator
@@ -244,21 +247,35 @@ def update_layer_config(layer_id: str, body: LayerConfigBody, conn=Depends(get_d
 
 @router.get("/layers/{layer_id}/sub-actions")
 def list_layer_sub_actions(layer_id: str, conn=Depends(get_db)):
-    """扫描 DB 中该图层（jisilu_ 前缀）下出现过的 (qtype, sub_action) 组合，供设置页勾选用。"""
-    if not layer_id.startswith("jisilu_"):
-        raise HTTPException(400, "只支持 jisilu_ 图层")
-    qtype = layer_id[len("jisilu_"):]
+    """扫描该图层下出现过的子动作，供设置页勾选。
+
+    分组值与子动作的提取方式由图层自己声明（layer_config.config_json.sub_filter），
+    核心不硬编码任何具体源；未声明该规则的图层不支持子动作过滤。
+    """
+    row = conn.execute(
+        "SELECT config_json FROM layer_config WHERE layer_id = ?", (layer_id,)
+    ).fetchone()
+    if not row:
+        raise HTTPException(404, f"layer {layer_id} not found")
+    try:
+        layer_cfg = json.loads(row["config_json"]) if row["config_json"] else {}
+    except (TypeError, ValueError):
+        layer_cfg = {}
+    if not isinstance(layer_cfg, dict):
+        layer_cfg = {}
+    sf = sub_filter_pattern(layer_cfg)
+    if sf is None:
+        raise HTTPException(400, "该图层未声明子动作规则，不支持子动作过滤")
+    group_key, pattern = sf
     rows = conn.execute(
         "SELECT title FROM events WHERE layer_id = ?",
         (layer_id,),
     ).fetchall()
-    pairs: set[tuple[str, str]] = set()
-    for (t,) in rows:
-        m = re.match(r"^【(.+?)】", t or "")
-        if m:
-            pairs.add((qtype, m.group(1)))
-    # 没事件时给一个空集合，让前端知道没数据
-    return [{"qtype": q, "sub_action": s} for q, s in sorted(pairs)]
+    sub_actions = sorted({
+        m.group(1) for (t,) in rows if (m := pattern.match(t or ""))
+    })
+    # 键名沿用历史的 qtype（= 声明里的 group_key 对应的分组值）
+    return [{"qtype": layer_cfg.get(group_key), "sub_action": sa} for sa in sub_actions]
 
 
 class CreateLayerBody(BaseModel):
@@ -592,7 +609,7 @@ def stats_summary(conn=Depends(get_db)):
 
 
 # ---------------------------------------------------------------------------
-# 集思录导入
+# 导入
 # ---------------------------------------------------------------------------
 
 
@@ -604,6 +621,11 @@ class ImportBody(BaseModel):
 
 @router.post("/import/jisilu")
 async def import_jisilu(body: ImportBody, conn=Depends(get_db)):
+    """按 [start, end] 区间导入集思录事件，只写入已启用的图层。
+
+    TODO(插件化待续)：这是一条按源硬编码的路由。前端"事件导入"区块的 i18n
+    文案本身写死了集思录，要通用化需先让该区块支持"选择源"，不能只改路径。
+    """
     source = None
     try:
         source = get_source("jisilu")
@@ -611,7 +633,10 @@ async def import_jisilu(body: ImportBody, conn=Depends(get_db)):
             return {"inserted": 0, "error": "jisilu source unavailable"}
         start = parse_date(body.start)
         end = parse_date(body.end)
-        events, result = await source.fetch(start, end, qtypes=body.qtypes)
+        kwargs: dict = {}
+        if body.qtypes and "qtypes" in inspect.signature(source.fetch).parameters:
+            kwargs["qtypes"] = body.qtypes
+        events, result = await source.fetch(start, end, **kwargs)
         enabled_ids = {l.layer_id for l in db.fetch_layer_configs(conn) if l.enabled}
         inserted = 0
         for ev in events:
@@ -802,8 +827,6 @@ def patch_subscription(sub_id: str, body: SubscriptionPatch, conn=Depends(get_db
 
 @router.delete("/subscriptions/{sub_id}")
 def delete_subscription(sub_id: str, conn=Depends(get_db)):
-    if sub_id == "builtin:jisilu":
-        raise HTTPException(400, "内置订阅不可删除（可关闭）")
     if not db.get_subscription(conn, sub_id):
         raise HTTPException(404, "订阅不存在")
     db.delete_subscription(conn, sub_id)
