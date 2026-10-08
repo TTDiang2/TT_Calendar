@@ -31,11 +31,10 @@ export const LANG_META: Record<Lang, { endonym: string; sample: string }> = {
 }
 
 /**
- * 声明了但还没有字典的语言（台账 docs/i18n-ledger.md A4：fr/es/ru/zh-Hant 暂无翻译）。
- * 这份清单必须与 DICTS 的缺席项严格一致——i18n-availability 测试据此守门：
- * 翻译产出并在 dict/index.ts 注册后，须同步从这里移除。
+ * 声明了但还没有字典的语言 —— 必须与 DICTS 的缺席项严格一致，i18n-availability 据此守门。
+ * A4 收官：8 种语言全部产出并注册，故此清单为空；后续若新增语言又未产出，在此登记。
  */
-export const PENDING_TRANSLATIONS: readonly Lang[] = ['zh-Hant', 'fr', 'es', 'ru']
+export const PENDING_TRANSLATIONS: readonly Lang[] = []
 
 /** 该语言是否已有字典（缺字典时 t() 会静默回落中文，UI 不得把它当选项提供给用户）。 */
 export function isLangAvailable(lang: Lang): boolean {

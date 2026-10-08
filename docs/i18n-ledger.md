@@ -42,7 +42,7 @@
 
 - **A3（P2 语言选择页）**：✅ 已落地（a41abd4+返工 07e0880）。
 - **批⑤（Python 侧结构化，独立批次）**：按 `docs/i18n-python-survey.md` 清单实施（错误码化 ~33 条/协议键迁移 D2/lunar 结构化+D3 升格/db.py 种子显示映射/layerLabel 老端版）。开工前置=本台账 D1 已核销 ✅。
-- **A4（P3 翻译生产）**：en 已随批产出；**ja/ko ✅（见下 A4 批次记录）**；fr/es/ru/zh-Hant 待时间窗。
+- **A4（P3 翻译生产）**：**8 语全部产出 ✅**（en 随批；ja/ko 见下 A4 批次记录；zh-Hant/fr/es/ru 见下 A4 批次记录·第二批）——`PENDING_TRANSLATIONS` 已清空。
 
 ## A4 批次记录（P3 翻译生产，ja/ko）
 
@@ -59,6 +59,28 @@
   同名 key 译文（同槽位 Neo 实证+冻结术语），已登记为沿用例外；ko 零超限。
 - 边界：未碰 i18n 运行时/zh/en fragments/测试文件；Day.lunar 农历串仍为后端中文透传（D3，等批⑤
   结构化后升格，老端 lunar 不进字典，与 A2 裁决一致）。
+
+## A4 批次记录·第二批（20261008，zh-Hant/fr/es/ru 收官）
+
+- 产出：`dict/zh-Hant.ts`、`dict/fr.ts`、`dict/es.ts`、`dict/ru.ts`，各 **560 条叶子（含 16 条复数条目）**，
+  全部挂入 `dict/index.ts`；`core.ts` 的 `PENDING_TRANSLATIONS` 清空（保留导出，使「pending 为空」成为有效断言）。
+- 方法：改用**扁平对照表 + 生成器**（`i18n_flat.<lang>.tsv` → `scripts/gen_dict.ts` → 嵌套字典），
+  取代第一批「仓外工作区手写嵌套对象」的做法——嵌套层级与键集由脚本保证，不会手滑。
+- 复数类别按 `pluralCategories()` 采样口径给全：zh-Hant 仅 other；fr/es 为 one+many+other；
+  **ru 为 one+few/many+other 四类，且数词后名词真实变格**（`через 1 день` / `через 2 дня` / `через 5 дней`）。
+- 口径：zh-Hant 取**纯简→繁字形转换**（与 `LANG_META['zh-Hant'].sample` 一致），不做地区术语替换
+  （故为「數據源」而非「資料來源」）；若日后要做台港术语，那是独立的一遍刻意 pass。
+- 质检：`gen_dict.ts` 生成前门禁四检（键集与 zh-CN 完全一致 / 复数类别齐全 / 占位符集合一致 /
+  **首尾空格一致**）；`i18n-structure` 30 检全绿；vitest 108 passed·25 skipped；tsc 0 error。
+- 过程中修掉的真问题：**首尾空格被工具链 trim**（`autosavePrefix` 尾空格、7 条前导空格条目在 fr/ru 上二次踩坑）
+  → TSV 尾部空格用 `\s` 显式表达 + 生成器把边界空白纳入常驻校验（560 行 diff 里肉眼不可见的那类错）。
+  另修 10 处误用 `(s)` 规避复数的条目（zh-CN 里本就是复数条目，必须给全类别）。
+- 测试改造：`i18n-availability` 的 store 组原以「fr 无字典」为前提，8 语齐备后**语义反转**，
+  改为 `delete DICTS.fr` 模拟字典缺席以保住守卫覆盖；`readStored` 那条因在模块 import 时执行、
+  `vi.resetModules()` 会连 `DICTS` 一并重建而无法用此手法，改为逐语言正例覆盖
+  （「无字典时快照到 zh-CN」分支由 `chooseLang`/`systemLang` 两条调用时守卫承担）。
+- 落地：`dist/assets/index-BEd4e023.js` → `TT Calendar.exe`（9,059,840 字节）；已核验 bundle 内含
+  8 语特征串及 ru/fr/es 复数变体；实机启动正常（窗口 `TT Calendar`，30MB）。
 
 ### 门4(老端) 条件登记（20261004，A4 39dae14 有条件放行）
 

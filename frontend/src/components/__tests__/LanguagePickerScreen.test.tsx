@@ -23,7 +23,7 @@ describe('LanguagePickerScreen（P2 首启动选择页）', () => {
       expect(screen.getByText(LANG_META[lang].endonym)).toBeTruthy()
     }
     // 台账 PENDING 的语言暂无字典，不得作为选项出现（选了只会回落中文）
-    expect(SELECTABLE_LANGS).toEqual(['zh-CN', 'en', 'ja', 'ko'])
+    expect(SELECTABLE_LANGS).toEqual(['zh-CN', 'zh-Hant', 'en', 'ja', 'ko', 'fr', 'es', 'ru'])
     for (const lang of PENDING_TRANSLATIONS) {
       expect(screen.queryByText(LANG_META[lang].endonym)).toBeNull()
     }

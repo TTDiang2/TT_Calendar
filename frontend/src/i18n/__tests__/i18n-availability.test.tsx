@@ -44,12 +44,12 @@ describe('i18n 语言可选性', () => {
     }
   })
 
-  it('当前可选语言恰为 4 种已产出语言', () => {
-    expect([...SELECTABLE_LANGS]).toEqual(['zh-CN', 'en', 'ja', 'ko'])
+  it('当前可选语言恰为全部 8 种已产出语言', () => {
+    expect([...SELECTABLE_LANGS]).toEqual(['zh-CN', 'zh-Hant', 'en', 'ja', 'ko', 'fr', 'es', 'ru'])
   })
 })
 
-describe('store 语言快照：无字典语言不得生效', () => {
+describe('store 语言快照', () => {
   beforeEach(() => {
     localStorage.clear()
     _resetForTest()
@@ -58,44 +58,71 @@ describe('store 语言快照：无字典语言不得生效', () => {
     _resetForTest()
   })
 
+  it('chooseLang 接受每种可选语言并落盘', () => {
+    for (const lang of SELECTABLE_LANGS) {
+      chooseLang(lang)
+      expect(localStorage.getItem('tt.lang')).toBe(lang)
+      expect(activeLang()).toBe(lang)
+    }
+  })
+
   it('chooseLang 拒绝无字典语言（不写 localStorage、不改生效语言）', () => {
-    chooseLang('zh-CN')
-    chooseLang('fr')
-    expect(localStorage.getItem('tt.lang')).toBe('zh-CN')
-    expect(activeLang()).toBe('zh-CN')
+    // 8 种语言现已全部产出，用临时摘掉字典来真实触发这条守卫（防「新增语言忘配字典」回归）
+    const held = DICTS.fr
+    delete DICTS.fr
+    try {
+      expect(isLangAvailable('fr')).toBe(false)
+      chooseLang('zh-CN')
+      chooseLang('fr')
+      expect(localStorage.getItem('tt.lang')).toBe('zh-CN')
+      expect(activeLang()).toBe('zh-CN')
+    } finally {
+      DICTS.fr = held as NonNullable<typeof held>
+    }
   })
 
-  it('localStorage 里的旧无效值（fr）读取时快照到 zh-CN', async () => {
-    // 旧版本 UI 提供过 fr 选项，用户点过一次就留下了 tt.lang=fr
-    localStorage.setItem('tt.lang', 'fr')
-    vi.resetModules() // 让 store 模块级 chosen = readStored() 重新执行
-    const store = await import('../store')
-    expect(store.activeLang()).toBe('zh-CN')
-    expect(store.hasChosenLang()).toBe(true) // 不再弹一次语言选择页
-    expect(store.getChosenLang()).toBe('zh-CN')
+  it('localStorage 里的每个可选语言都照常生效', async () => {
+    for (const lang of SELECTABLE_LANGS) {
+      localStorage.setItem('tt.lang', lang)
+      vi.resetModules() // 让 store 模块级 chosen = readStored() 重新执行
+      const store = await import('../store')
+      expect(store.activeLang()).toBe(lang)
+    }
   })
 
-  it('localStorage 里的有效值（ja）照常生效', async () => {
-    localStorage.setItem('tt.lang', 'ja')
-    vi.resetModules()
-    const store = await import('../store')
-    expect(store.activeLang()).toBe('ja')
-  })
-
-  it('系统语言无字典时快照到中文主字典，有字典时原样跟随', () => {
+  it('系统语言有字典时原样跟随', () => {
     const orig = navigator.language
     const setLang = (v: string) =>
       Object.defineProperty(navigator, 'language', { value: v, configurable: true })
     try {
       setLang('fr-FR')
-      expect(systemLang()).toBe('zh-CN') // 法语无字典 → 中文，绝不空白
+      expect(systemLang()).toBe('fr')
       setLang('ru-RU')
-      expect(systemLang()).toBe('zh-CN')
+      expect(systemLang()).toBe('ru')
+      setLang('zh-Hant-HK')
+      expect(systemLang()).toBe('zh-Hant')
       setLang('ja-JP')
-      expect(systemLang()).toBe('ja') // 有字典 → 跟随系统
+      expect(systemLang()).toBe('ja')
       setLang('en-US')
       expect(systemLang()).toBe('en')
     } finally {
+      setLang(orig)
+    }
+  })
+
+  it('系统语言无字典或无法识别时回落中文，绝不空白', () => {
+    const orig = navigator.language
+    const setLang = (v: string) =>
+      Object.defineProperty(navigator, 'language', { value: v, configurable: true })
+    const held = DICTS.ru
+    delete DICTS.ru
+    try {
+      setLang('ru-RU')
+      expect(systemLang()).toBe('zh-CN')
+      setLang('xx-XX') // 完全不认识的标签（与上一行「标签可识别但字典缺席」是两条分支）
+      expect(systemLang()).toBe('zh-CN')
+    } finally {
+      DICTS.ru = held as NonNullable<typeof held>
       setLang(orig)
     }
   })
