@@ -249,6 +249,9 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
     e.target.value = ''
   }
 
+  // 门5 P3：列表名显示映射（map 回调的 (t) 是待办对象，会遮蔽翻译 t —— 在外层先绑定）
+  const listLabelOf = (todo: Todo) => layerLabel(lists.find((l) => l.id === todo.list_id) ?? { display_name: '' }, t)
+
   const completedCount = stats?.completed ?? (showCompleted ? completed.length : undefined)
 
   return (
@@ -331,7 +334,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
                   <Pencil size={12} />
                 </button>
                 <button
-                  onClick={(e) => { e.stopPropagation(); if (confirm(t('todoview.lists.deleteConfirm', { name: l.display_name }))) deleteListMut.mutate(l.id) }}
+                  onClick={(e) => { e.stopPropagation(); if (confirm(t('todoview.lists.deleteConfirm', { name: layerLabel(l, t) }))) deleteListMut.mutate(l.id) }}
                   className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"
                 >
                   <Trash2 size={12} />
@@ -456,7 +459,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
                 <p className="text-sm text-gray-400 text-center py-4">{t('todoview.empty.noneOpen')}</p>
               )}
               {filteredIncomplete.map((t) => {
-                const listName = lists.find((l) => l.id === t.list_id)?.display_name
+                const listName = listLabelOf(t)
                 const overdue = t.due_date && new Date(t.due_date) < new Date(new Date().toDateString())
                 return (
                   <div
@@ -519,7 +522,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
                     <div className="mt-1 flex flex-col gap-1">
                       {loadingCompleted && <p className="text-xs text-gray-400 px-3 py-1">{t('common.loading')}</p>}
                       {completed.map((t) => {
-                        const listName = lists.find((l) => l.id === t.list_id)?.display_name
+                        const listName = listLabelOf(t)
                         return (
                           <TodoRow
                             key={t.id}

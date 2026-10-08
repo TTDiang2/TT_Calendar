@@ -65,9 +65,19 @@
 - [x] ja「订阅」术语分流裁决登记（ja.ts 头注）：标签位（弹窗标题/terms 徽章）サブスクリプション×2、行文位（intro/toggle/deleteConfirm 等）購読×9——有意分流非失统一，依 Neo spec §2 自带追加条款登记（Neo 仓只读不回改）；ko 不动（구독 全文统一）。
 - [x] 引据更正：术语表「订阅」行真实出处=Neo dict terms.subscription 字典值+终审清单 4 词目录（Neo spec §2 原表无此行）——ja.ts 头注与台账同步更正。引据失准计口径记录（实体虚报四笔+引据失准一笔），最终警告持续生效。
 
+### 门5(P2.5) 批次记录（20261004，用户英文界面实测六账 → 513469e/清偿提交）
+
+- 六账闭环：①选择页提示随所选语言（makeI18n(picked)）②设置页 LanguageSection ③倒数日横幅+label 结构化（后端 banner/label_kind，text 保留兼容）④内置图层名 layerLabel 映射（BY_ID 11 项+BY_NAME 日程待办/任务）⑤yyyy/mm/日+中文小日历=浏览器原生控件边界（见发版批次）⑥日程待办显示映射。
+- **类型坑（§8.3 复发，进手册候选）**：layers 命名空间含键 `other` 撞 PluralEntry.other → 整棵子树被 SimplePaths 剔除 TxKey → 改键 `misc`。
+- autoTodoDetail 存储取舍：显示映射名/存储单一 zh 列表名（防数据分裂）；dialogs.tsx:799 colorCfg.display_name 流入待办标题同属"存储名"政策（已登记）。
+- 事故：_next_occurrence 四元组改造漏第二调用点（aggregator:376 染色钩子）→ /api/view/month 500（pytest 未覆盖，实机炸出）→ 修复+回归测试 test_aggregator_countdown_structured.py（DB 隔离）。
+- 实测数字（冻结树复跑）：vitest 83 passed|25 skipped；pytest 71 passed；白名单 0；tsc 3 存量。
+- **申报纪律**：本批申报"17 存量 warnings"实为 19（2 条本批引入，LanguagePicker 未用 import/变量）——智者实测抓出，已清偿并更正注释；申报数字一律以冻结树复跑为准。
+
 ## 发版批次（门3 建议3，20261004 真实登记）
 
 - [ ] **发版说明必须注明**：老用户升级后首次打开会见到语言选择页（系统语言已预选，一键"开始使用"即进主界面）——手册 §0 定稿行为"所有用户必须显式确认"；**禁止**添加"检测老用户自动跳过"之类逻辑（破坏显式确认语义）。
+- [ ] **发版说明同步注明**：日期选择框的占位格式与点开的日历面板是**浏览器原生控件**，跟浏览器/系统语言走（App 内语言设置不改变它）——用户实测反馈已说明（20261004 门5 账5 定性：原生控件边界，非代码缺陷）。
 
 ## 环境
 

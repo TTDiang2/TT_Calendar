@@ -5,6 +5,7 @@ import type { CalEvent, Day, Layer } from '../types'
 import { COLORING_COLORS, parseDate, TODO_BUSY_PREDICT_COLORS, TODO_BUSY_DONE_COLORS } from '../data'
 import { deleteEvent, deleteMark, deleteScheduleItem, getSources, getTodoBusyConfig, updateTodo, type SourceFieldSpec } from '../api/client'
 import { useT, useLang, fmtWeekday } from '../i18n'
+import { layerLabel } from '../i18n/adapt/layerLabel'
 import { lunarDisplay } from '../i18n/adapt/labels'
 import { SourceFields } from './SourceFields'
 
@@ -76,7 +77,10 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
     .filter(([lid]) => (lid === 'important' || enabledSet.has(lid)) && !colorLayerIds.has(lid))
     .flatMap(([, evs]) => evs)
   const layerColor = (lid: string) => layers.find((l) => l.layer_id === lid)?.color ?? '#9ca3af'
-  const layerName = (lid: string) => layers.find((l) => l.layer_id === lid)?.display_name ?? lid
+  const layerName = (lid: string) => {
+    const l = layers.find((x) => x.layer_id === lid)
+    return l ? layerLabel(l, t) : lid
+  }
 
   return (
     <aside className="w-72 bg-white border-l border-gray-200 p-4 overflow-y-auto">

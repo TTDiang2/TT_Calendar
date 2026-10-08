@@ -4,6 +4,7 @@ import type { Day, Layer, MonthData } from '../types'
 import { COLORING_COLORS, getBusyColors, parseDate, todayStr } from '../data'
 import { getTodoBusyConfig } from '../api/client'
 import { useT, useLang, fmtDate } from '../i18n'
+import { layerLabel } from '../i18n/adapt/layerLabel'
 
 interface Props {
   monthData: MonthData
@@ -133,7 +134,7 @@ export function DayView({ monthData, layers, selectedDate, onSelect, onDoubleCli
                     <span className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: ev.color ?? l?.color ?? '#9ca3af' }} />
                     <div>
                       <p className="text-sm font-medium">{ev.title}</p>
-                      {l && <p className="text-[11px] text-gray-400">{l.display_name}</p>}
+                      {l && <p className="text-[11px] text-gray-400">{layerLabel(l, t)}</p>}
                       {ev.description && <p className="text-xs text-gray-500 mt-0.5">{ev.description}</p>}
                     </div>
                   </li>
