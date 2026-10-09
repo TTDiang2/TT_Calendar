@@ -140,3 +140,26 @@ def test_todo_list_create_and_reorder(client: TestClient) -> None:
     assert client.put("/api/todo/lists/reorder",
                       json={"ordered_ids": list(reversed(ids))}).status_code == 200
     assert [x["id"] for x in client.get("/api/todo/lists").json()] == list(reversed(ids))
+
+
+def test_layer_toggle_persists(client: TestClient) -> None:
+    """关掉再打开，每次都要真正落库并能回读。
+
+    原 http_integration 脚本也「验证」过这件事，但它只 print 状态码、不断言，
+    且依赖已装插件才存在的 layer_id——在干净环境下是 404 也照样「通过」。
+    """
+    def enabled_of(layer_id: str) -> bool:
+        return next(l["enabled"] for l in client.get("/api/layers").json()
+                    if l["layer_id"] == layer_id)
+
+    assert enabled_of("jisilu_CNV") is True
+    assert client.put("/api/layers/jisilu_CNV", json={"enabled": False}).status_code == 200
+    assert enabled_of("jisilu_CNV") is False, "关闭未持久化"
+    assert client.put("/api/layers/jisilu_CNV", json={"enabled": True}).status_code == 200
+    assert enabled_of("jisilu_CNV") is True, "重新打开未持久化"
+
+
+def test_layer_toggle_unknown_layer_is_404(client: TestClient) -> None:
+    """图层不存在必须明确 404，而不是静默成功。"""
+    r = client.put("/api/layers/no_such_layer", json={"enabled": False})
+    assert r.status_code == 404, r.text
