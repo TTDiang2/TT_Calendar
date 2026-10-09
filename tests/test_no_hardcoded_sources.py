@@ -55,9 +55,26 @@ def _registered_source_ids() -> set[str]:
     return {cls.source_id for cls in list_sources() if cls.source_id}
 
 
+# 已知数据源 id 的静态基线。plugins/*.py 是 gitignored 的可选扩展，干净 clone 上
+# 一个插件都没有——若只依赖「已注册源」来圈定检查范围，门禁在那种环境里会因集合
+# 为空而空转（正是 F-001 的成因）。有了这份基线，无论插件装没装，本门禁都握着
+# 同一批必须禁止出现的字面量。
+#
+# 新增数据源时同步加一行；这是刻意的：它让「核心不认识具体源」成为可静态审计的
+# 约定，而不用依赖运行时的插件安装状态。
+KNOWN_SOURCE_IDS: frozenset[str] = frozenset({
+    "jisilu",
+    "investing",
+    # 历史内置订阅标记，已由 migrate_builtin_subscriptions 迁走
+    "builtin:jisilu",
+})
+
+
 def test_core_has_no_source_id_literals() -> None:
-    source_ids = _registered_source_ids()
-    assert source_ids, "至少应有一个已注册数据源，否则本门禁形同虚设"
+    # 检查范围 = 静态基线 ∪ 当前已注册源。前者保证门禁永不为空，
+    # 后者覆盖本地装了、但还没进基线的新插件。
+    source_ids = set(KNOWN_SOURCE_IDS) | _registered_source_ids()
+    assert source_ids, "检查范围为空，门禁形同虚设——这不该发生，请检查本文件是否被改坏"
 
     offences: list[str] = []
     for rel_dir in CORE_DIRS:
