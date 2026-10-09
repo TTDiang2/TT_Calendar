@@ -494,6 +494,33 @@ def upsert_event(conn: sqlite3.Connection, event: Event) -> Event:
                 )
                 event.id = existing["id"]
                 return event
+        # 无source_ref 的事件（用户手动创建的常态）没有自然键可去重，而下面的
+        # INSERT 并不带 id 列——于是 PUT /api/events/{id} 会把「编辑」变成「复制」：
+        # 旧行原封不动留着，新行另拿一个自增 id，接口还照样返回 200。故显式按 id 更新。
+        # 放在 source_ref 分支之后：带 source_ref 的行仍按自然键走，两种语义都正确。
+        if event.id is not None:
+            by_id = cur.execute(
+                "SELECT id FROM events WHERE id = ?", (event.id,)
+            ).fetchone()
+            if by_id:
+                cur.execute(
+                    "UPDATE events SET layer_id=?, source=?, date=?, title=?, "
+                    "description=?, color=?, extra_json=?, sort_key=?, updated_at=? "
+                    "WHERE id=?",
+                    (
+                        event.layer_id,
+                        event.source,
+                        event.date.isoformat(),
+                        event.title,
+                        event.description,
+                        event.color,
+                        extra_json,
+                        event.sort_key,
+                        datetime.now().isoformat(timespec="seconds"),
+                        event.id,
+                    ),
+                )
+                return event
         cur.execute(
             "INSERT INTO events(layer_id, source, date, title, description, color, "
             "extra_json, source_ref, sort_key) VALUES(?,?,?,?,?,?,?,?,?)",
