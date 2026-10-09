@@ -178,7 +178,7 @@ npm run dev
    - 桌面窗口没变 → **exe 是旧的，需要重新 tauri build**（见上）
 2. 验证 exe 内嵌代码版本：扫描 exe 找 dist hash（如 `index-Px0O-vE5`）
 3. 检查 vite 5173：`Get-NetTCPConnection -LocalPort 5173`
-4. 检查 backend 8765：`Invoke-WebRequest http://localhost:8765/api/health`
+4. 检查 backend 8765：`Invoke-WebRequest http://localhost:8765/health`
 
 ## 路径速查
 
