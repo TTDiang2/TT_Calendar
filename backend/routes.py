@@ -28,6 +28,20 @@ from tt_calendar.sync.providers import GitHubProvider
 
 router = APIRouter()
 
+# GitHub 的 owner / repo 名不允许这些字符，故可用作白名单锚点。
+# 用 \Z 而非 $ 收尾：Python 的 $ 允许「末尾恰好一个换行」，会让 "owner/repo\n"
+# 这类值蒙混过关。
+_REPO_RE = re.compile(r"^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+\Z")
+_BRANCH_RE = re.compile(r"^[A-Za-z0-9._/-]+\Z")
+
+
+def _branch_ok(branch: str) -> bool:
+    """分支名合法性。除字符集外还要挡下路径语义：
+    git ref 里 ".." 属于保留序列，且 libgit2/服务端在拼接路径时可能据此跳目录。
+    """
+    return bool(_BRANCH_RE.match(branch)) and ".." not in branch \
+        and not branch.startswith("/") and not branch.endswith("/")
+
 
 # ---------------------------------------------------------------------------
 # 视图聚合
@@ -533,8 +547,17 @@ def sync_get_config(conn=Depends(get_db)):
 
 @router.put("/sync/config")
 def sync_put_config(body: dict, conn=Depends(get_db)):
+    repo = body.get("repo", "")
+    branch = body.get("branch", "main") or "main"
+    # 只放行 owner/repo 形态：repo 决定数据被推到哪，而本进程持有可写 PAT 的
+    # 操作能力。若放任任意字符串，攻击者（或误粘贴的 URL/带路径的仓库名）能把
+    # 用户数据写进非预期仓库。GitHub 的 owner 与 repo 名本身不允许这些字符。
+    if not _REPO_RE.match(repo or ""):
+        raise HTTPException(400, "仓库格式应为 owner/repo")
+    if not _branch_ok(branch):
+        raise HTTPException(400, "分支名含非法字符")
     sync_engine.save_sync_config(
-        conn, body.get("repo", ""), body.get("branch", "main") or "main",
+        conn, repo, branch,
         body.get("token"), bool(body.get("auto_on_start", True)),
         bool(body.get("sync_on_close", True)))
     return {"ok": True}
