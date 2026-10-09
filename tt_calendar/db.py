@@ -323,7 +323,10 @@ def get_todo_busy_config(conn) -> dict:
         for k, v in DEFAULT_TODO_BUSY_CONFIG.items():
             cfg.setdefault(k, v)
         return cfg
-    except Exception:
+    except Exception as e:
+        # 配置损坏时退回默认值：用户的调参被无声重置，且看不出是「没设过」还是
+        # 「存坏了」。不记日志的话，重置后功能表现异常却无从追因。
+        log.warning("todo-busy 配置损坏，退回默认值（原因：%s）", e)
         return DEFAULT_TODO_BUSY_CONFIG
 
 
@@ -359,7 +362,8 @@ def get_todo_reminder_config(conn) -> dict:
         except ValueError:
             time_str = DEFAULT_TODO_REMINDER_CONFIG["time"]
         return {"enabled": enabled, "time": time_str}
-    except Exception:
+    except Exception as e:
+        log.warning("todo-reminder 配置损坏，退回默认值（原因：%s）", e)
         return dict(DEFAULT_TODO_REMINDER_CONFIG)
 
 

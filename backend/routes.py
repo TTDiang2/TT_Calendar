@@ -6,6 +6,7 @@ import csv
 import inspect
 import io
 import json
+import logging
 import re
 import uuid
 from datetime import date as date_t, datetime, timedelta
@@ -27,6 +28,7 @@ from tt_calendar.sync import engine as sync_engine
 from tt_calendar.sync.providers import GitHubProvider
 
 router = APIRouter()
+log = logging.getLogger(__name__)
 
 # GitHub 的 owner / repo 名不允许这些字符，故可用作白名单锚点。
 # 用 \Z 而非 $ 收尾：Python 的 $ 允许「末尾恰好一个换行」，会让 "owner/repo\n"
@@ -602,14 +604,25 @@ def _recompute_day_busy(conn) -> int:
         "WHERE due_date IS NOT NULL OR planned_date IS NOT NULL OR completed_at IS NOT NULL"
     ).fetchall()
     dates: set[date_t] = set()
+    dirty: list[str] = []
     for r in rows:
         for col in ("due_date", "planned_date"):
             if r[col]:
-                try: dates.add(parse_date(r[col]))
-                except Exception: pass
+                try:
+                    dates.add(parse_date(r[col]))
+                except Exception as e:
+                    dirty.append(f"todo#{r['id']}.{col}={r[col]!r} ({e})")
         if r["completed_at"]:
-            try: dates.add(datetime.fromisoformat(r["completed_at"]).date())
-            except Exception: pass
+            try:
+                dates.add(datetime.fromisoformat(r["completed_at"]).date())
+            except Exception as e:
+                dirty.append(f"todo#{r['id']}.completed_at={r['completed_at']!r} ({e})")
+    if dirty:
+        # 这些天的充实度色块会永久缺失。原先 except: pass 把它吞得干干净净，
+        # 用户只会看到「那天没颜色」，日志里一个字都没有——正是 backend.log
+        # 存在之后也不该留的洞。
+        log.warning("重建 day_busy 跳过 %d 个脏日期（对应色块将缺失）：%s",
+                    len(dirty), "; ".join(dirty[:5]))
     written = 0
     for d in dates:
         predict_todos = [t for t in db.fetch_todos_between(conn, d, d).get(d, [])
@@ -828,8 +841,11 @@ def _refresh_one_subscription(conn, sub) -> dict:
     if sub.last_synced_at:
         try:
             start = max(start, datetime.fromisoformat(sub.last_synced_at).date())
-        except Exception:
-            pass
+        except Exception as e:
+            # 退回窗口起点意味着整段区间被重抓一遍；不记日志的话，用户只会看到
+            # 「数据没变」或重复抓取，而原因无从追溯。
+            log.warning("订阅 %s 的 last_synced_at 无法解析（%s），退回窗口起点 %s",
+                        sub.id, sub.last_synced_at, start)
     end = today + timedelta(days=source.refresh_future_days)
     try:
         inserted, err = asyncio_run(_fetch_source_range(conn, source, start, end))
@@ -899,9 +915,13 @@ def list_subscriptions(conn=Depends(get_db)):
         cfg = {}
         if s.config_json:
             try:
-                cfg = __import__("json").loads(s.config_json)
-            except Exception:
-                pass
+                cfg = json.loads(s.config_json)
+            except Exception as e:
+                # 解析失败时 last_error 会静默变成 None：订阅看起来「一切正常」，
+                # 而上次失败的原因被彻底抹掉，正是最难排查的一类症状。
+                log.warning("订阅 %s 的 config_json 无法解析，last_error 将显示为空：%s",
+                            s.id, e)
+                cfg = {}
         d["last_error"] = cfg.get("last_error")
         out.append(d)
     return out
