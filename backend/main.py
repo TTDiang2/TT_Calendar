@@ -14,6 +14,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.requests import Request as StarletteRequest
 from starlette.responses import Response as StarletteResponse
 
@@ -38,6 +39,23 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="TT Calendar API", version="2.0.0", lifespan=lifespan)
+
+# 本地 sidecar API 无认证，故必须校验 Host 头：否则恶意网页用 DNS rebinding 把
+# 域名解析到 127.0.0.1 后，同源即可读写本机全部个人数据，并改写同步目标仓库
+# （本进程持有可写 GitHub PAT 的操作能力）。CORS 挡不住这个——它只约束 JS 读响应，
+# 不阻止请求发出；真正生效的是 Host 校验。
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=[
+        "127.0.0.1",
+        "localhost",
+        "[::1]",
+        "tauri.localhost",   # Tauri 生产 origin（Windows）
+        "testserver",        # fastapi TestClient
+        # Pake 打包版以 tauri://localhost 或本地文件协议加载
+        "tauri",
+    ],
+)
 
 app.add_middleware(
     CORSMiddleware,
