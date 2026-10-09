@@ -6,11 +6,9 @@ import {
   createEvent,
   updateEvent,
   deleteEvent,
-  upsertSchedule,
   upsertColoring,
   deleteColoring,
   upsertMark,
-  deleteMark,
   searchEvents,
   getSubscriptions,
   createSubscription,
@@ -30,7 +28,7 @@ import { useT, type TxKey } from '../i18n'
 import { layerLabel } from '../i18n/adapt/layerLabel'
 import { Plus, Trash2 } from 'lucide-react'
 import { COLORING_COLORS, dateRange } from '../data'
-import type { CalEvent, Layer, Schedule, ScheduleItem } from '../types'
+import type { CalEvent, Layer, ScheduleItem } from '../types'
 
 /** 充实度 5 档的字典 key（labelKey 模式：渲染时 t(m.labelKey)，模块常量不存文案） */
 const COLORING_LABELS: { key: string; labelKey: TxKey }[] = [

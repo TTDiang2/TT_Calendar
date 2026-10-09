@@ -161,7 +161,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173 in a browser, or run `npm run tauri dev` for the desktop window.
+Open http://localhost:5173 in a browser, or run `npm run tauri:dev` for the desktop window.
 
 ---
 

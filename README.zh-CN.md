@@ -159,7 +159,7 @@ npm install
 npm run dev
 ```
 
-浏览器打开 http://localhost:5173，或 `npm run tauri dev` 打开桌面窗口。
+浏览器打开 http://localhost:5173，或 `npm run tauri:dev` 打开桌面窗口。
 
 ---
 
