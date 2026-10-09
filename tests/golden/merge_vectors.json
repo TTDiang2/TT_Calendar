@@ -4,7 +4,41 @@
   {
    "name": "no_change",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "2026-01-01 10:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "remote": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "2026-01-01 10:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "local": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "2026-01-01 10:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "base_tombs": {},
+    "remote_tombs": {},
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "todo": [
@@ -29,7 +63,41 @@
   {
    "name": "pull_only",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "2026-01-01 10:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "remote": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a2",
+       "updated_at": "2026-01-01 11:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "local": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "2026-01-01 10:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "base_tombs": {},
+    "remote_tombs": {},
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "todo": [
@@ -54,7 +122,41 @@
   {
    "name": "push_only",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "2026-01-01 10:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "remote": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "2026-01-01 10:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "local": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a3",
+       "updated_at": "2026-01-01 12:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "base_tombs": {},
+    "remote_tombs": {},
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "todo": [
@@ -79,7 +181,41 @@
   {
    "name": "conflict_local_newer",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "2026-01-01 10:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "remote": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "r-edit",
+       "updated_at": "2026-01-01 11:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "local": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "l-edit",
+       "updated_at": "2026-01-01 12:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "base_tombs": {},
+    "remote_tombs": {},
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "todo": [
@@ -104,7 +240,41 @@
   {
    "name": "conflict_remote_newer",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "2026-01-01 10:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "remote": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "r-edit",
+       "updated_at": "2026-01-01 13:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "local": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "l-edit",
+       "updated_at": "2026-01-01 12:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "base_tombs": {},
+    "remote_tombs": {},
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "todo": [
@@ -129,7 +299,41 @@
   {
    "name": "conflict_tie_local_wins",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "2026-01-01 10:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "remote": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "r-edit",
+       "updated_at": "2026-01-01 12:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "local": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "l-edit",
+       "updated_at": "2026-01-01 12:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "base_tombs": {},
+    "remote_tombs": {},
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "todo": [
@@ -154,7 +358,26 @@
   {
    "name": "missing_ts_remote_wins_over_absent",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "todo": []
+    },
+    "remote": {
+     "todo": [
+      {
+       "id": "t9",
+       "title": "no-ts",
+       "updated_at": ""
+      }
+     ]
+    },
+    "local": {
+     "todo": []
+    },
+    "base_tombs": {},
+    "remote_tombs": {},
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "todo": [
@@ -178,7 +401,34 @@
   {
    "name": "both_add_different_rows",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "todo": []
+    },
+    "remote": {
+     "todo": [
+      {
+       "id": "r1",
+       "title": "remote-new",
+       "updated_at": "11:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "local": {
+     "todo": [
+      {
+       "id": "l1",
+       "title": "local-new",
+       "updated_at": "12:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "base_tombs": {},
+    "remote_tombs": {},
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "todo": [
@@ -209,7 +459,34 @@
   {
    "name": "both_add_same_key",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "todo": []
+    },
+    "remote": {
+     "todo": [
+      {
+       "id": "x1",
+       "title": "from-remote",
+       "updated_at": "11:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "local": {
+     "todo": [
+      {
+       "id": "x1",
+       "title": "from-local",
+       "updated_at": "12:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "base_tombs": {},
+    "remote_tombs": {},
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "todo": [
@@ -234,7 +511,34 @@
   {
    "name": "both_add_identical",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "todo": []
+    },
+    "remote": {
+     "todo": [
+      {
+       "id": "x1",
+       "title": "same",
+       "updated_at": "11:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "local": {
+     "todo": [
+      {
+       "id": "x1",
+       "title": "same",
+       "updated_at": "11:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "base_tombs": {},
+    "remote_tombs": {},
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "todo": [
@@ -259,7 +563,36 @@
   {
    "name": "remote_delete_wins",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "2026-01-01 10:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "remote": {
+     "todo": []
+    },
+    "local": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "2026-01-01 10:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "base_tombs": {},
+    "remote_tombs": {
+     "todo|t1": "2026-01-01 11:00:00"
+    },
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "todo": []
@@ -279,7 +612,36 @@
   {
    "name": "local_edit_beats_tombstone",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "2026-01-01 10:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "remote": {
+     "todo": []
+    },
+    "local": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "edited",
+       "updated_at": "2026-01-01 12:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "base_tombs": {},
+    "remote_tombs": {
+     "todo|t1": "2026-01-01 11:00:00"
+    },
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "todo": [
@@ -304,7 +666,36 @@
   {
    "name": "tombstone_newer_beats_edit",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "2026-01-01 10:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "remote": {
+     "todo": []
+    },
+    "local": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "edited",
+       "updated_at": "2026-01-01 12:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "base_tombs": {},
+    "remote_tombs": {
+     "todo|t1": "2026-01-01 13:00:00"
+    },
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "todo": []
@@ -324,7 +715,36 @@
   {
    "name": "tombstone_equal_revives",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "2026-01-01 10:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "remote": {
+     "todo": []
+    },
+    "local": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "edited",
+       "updated_at": "2026-01-01 12:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "base_tombs": {},
+    "remote_tombs": {
+     "todo|t1": "2026-01-01 12:00:00"
+    },
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "todo": [
@@ -349,7 +769,36 @@
   {
    "name": "local_delete_pushes",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "2026-01-01 10:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "remote": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "2026-01-01 10:00:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "local": {
+     "todo": []
+    },
+    "base_tombs": {},
+    "remote_tombs": {},
+    "local_tombs": {
+     "todo|t1": "2026-01-01 12:00:00"
+    }
+   },
    "expect": {
     "data": {
      "todo": []
@@ -369,7 +818,25 @@
   {
    "name": "tombstone_union_newer_wins",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "todo": []
+    },
+    "remote": {
+     "todo": []
+    },
+    "local": {
+     "todo": []
+    },
+    "base_tombs": {},
+    "remote_tombs": {
+     "todo|t1": "2026-01-01 13:00:00",
+     "todo|t2": "2026-01-01 09:00:00"
+    },
+    "local_tombs": {
+     "todo|t1": "2026-01-01 10:00:00"
+    }
+   },
    "expect": {
     "data": {
      "todo": []
@@ -390,7 +857,22 @@
   {
    "name": "tombstone_for_absent_row_kept",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "todo": []
+    },
+    "remote": {
+     "todo": []
+    },
+    "local": {
+     "todo": []
+    },
+    "base_tombs": {},
+    "remote_tombs": {
+     "todo|ghost": "2026-01-01 10:00:00"
+    },
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "todo": []
@@ -410,7 +892,43 @@
   {
    "name": "auto_table_merge",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "marks": [
+      {
+       "sync_uid": "u1",
+       "title": "m-a",
+       "updated_at": "10:00"
+      }
+     ]
+    },
+    "remote": {
+     "marks": [
+      {
+       "sync_uid": "u1",
+       "title": "m-r",
+       "updated_at": "11:00"
+      }
+     ]
+    },
+    "local": {
+     "marks": [
+      {
+       "sync_uid": "u1",
+       "title": "m-a",
+       "updated_at": "10:00"
+      },
+      {
+       "sync_uid": "u2",
+       "title": "new-local",
+       "updated_at": "12:00"
+      }
+     ]
+    },
+    "base_tombs": {},
+    "remote_tombs": {},
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "marks": [
@@ -439,7 +957,62 @@
   {
    "name": "multi_table",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "10:00",
+       "status": "notStarted"
+      }
+     ],
+     "coloring": [
+      {
+       "date": "2026-01-01",
+       "level": 2,
+       "updated_at": "10:00"
+      }
+     ]
+    },
+    "remote": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "10:00",
+       "status": "notStarted"
+      }
+     ],
+     "coloring": [
+      {
+       "date": "2026-01-01",
+       "level": 4,
+       "updated_at": "11:00"
+      }
+     ]
+    },
+    "local": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a-rw",
+       "updated_at": "12:00",
+       "status": "notStarted"
+      }
+     ],
+     "coloring": [
+      {
+       "date": "2026-01-01",
+       "level": 2,
+       "updated_at": "10:00"
+      }
+     ]
+    },
+    "base_tombs": {},
+    "remote_tombs": {},
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "coloring": [
@@ -471,7 +1044,48 @@
   {
    "name": "local_only_table_in_merge",
    "kind": "merge",
-   "input": {},
+   "input": {
+    "base": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "10:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "remote": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a2",
+       "updated_at": "11:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "local": {
+     "todo": [
+      {
+       "id": "t1",
+       "title": "a",
+       "updated_at": "10:00",
+       "status": "notStarted"
+      }
+     ],
+     "marks": [
+      {
+       "sync_uid": "u9",
+       "title": "local-only",
+       "updated_at": "10:00"
+      }
+     ]
+    },
+    "base_tombs": {},
+    "remote_tombs": {},
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "marks": [
@@ -503,7 +1117,37 @@
   {
    "name": "first_bind_pull_overwrite",
    "kind": "first_bind",
-   "input": {},
+   "input": {
+    "mode": "pull_overwrite",
+    "remote": {
+     "todo": [
+      {
+       "id": "r1",
+       "title": "remote",
+       "updated_at": "11:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "local": {
+     "todo": [
+      {
+       "id": "l1",
+       "title": "local",
+       "updated_at": "12:00",
+       "status": "notStarted"
+      },
+      {
+       "id": "r1",
+       "title": "local-older",
+       "updated_at": "09:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "remote_tombs": {},
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "todo": [
@@ -528,7 +1172,38 @@
   {
    "name": "first_bind_pull_overwrite_local_only_table",
    "kind": "first_bind",
-   "input": {},
+   "input": {
+    "mode": "pull_overwrite",
+    "remote": {
+     "todo": [
+      {
+       "id": "r1",
+       "title": "remote",
+       "updated_at": "11:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "local": {
+     "todo": [
+      {
+       "id": "r1",
+       "title": "local-older",
+       "updated_at": "09:00",
+       "status": "notStarted"
+      }
+     ],
+     "marks": [
+      {
+       "sync_uid": "u1",
+       "title": "m",
+       "updated_at": "10:00"
+      }
+     ]
+    },
+    "remote_tombs": {},
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "marks": [],
@@ -554,7 +1229,31 @@
   {
    "name": "first_bind_merge_push_union",
    "kind": "first_bind",
-   "input": {},
+   "input": {
+    "mode": "merge_push",
+    "remote": {
+     "todo": [
+      {
+       "id": "r1",
+       "title": "remote",
+       "updated_at": "11:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "local": {
+     "todo": [
+      {
+       "id": "l1",
+       "title": "local",
+       "updated_at": "12:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "remote_tombs": {},
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "todo": [
@@ -585,7 +1284,31 @@
   {
    "name": "first_bind_merge_push_conflict_lww",
    "kind": "first_bind",
-   "input": {},
+   "input": {
+    "mode": "merge_push",
+    "remote": {
+     "todo": [
+      {
+       "id": "x1",
+       "title": "from-remote",
+       "updated_at": "13:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "local": {
+     "todo": [
+      {
+       "id": "x1",
+       "title": "from-local",
+       "updated_at": "12:00",
+       "status": "notStarted"
+      }
+     ]
+    },
+    "remote_tombs": {},
+    "local_tombs": {}
+   },
    "expect": {
     "data": {
      "todo": [

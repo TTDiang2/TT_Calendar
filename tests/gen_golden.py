@@ -218,33 +218,41 @@ def key_str(k):
     return f"{table}|{row_key}"
 
 
+_MERGE_KEYS = ("base", "remote", "local", "base_tombs", "remote_tombs",
+               "local_tombs")
+_BIND_KEYS = ("mode", "remote", "local", "remote_tombs", "local_tombs")
+
+
 def run():
     build_vectors()
     out = []
     for v in VECTORS:
+        # 必须先把输入取出来再算：原先用 v.pop(...) 就地取参，算完再用 v.items()
+        # 构造 input——此时键已被 pop 干净，每个向量的 input 都成了{}，向量文件
+        # 根本没法驱动任何测试。
+        keys = _MERGE_KEYS if v["kind"] == "merge" else _BIND_KEYS
+        inputs = {k: v[k] for k in keys}
         if v["kind"] == "merge":
-            result = merge(v.pop("base"), v.pop("remote"), v.pop("local"),
-                           v.pop("base_tombs"), v.pop("remote_tombs"),
-                           v.pop("local_tombs"))
+            result = merge(inputs["base"], inputs["remote"], inputs["local"],
+                           inputs["base_tombs"], inputs["remote_tombs"],
+                           inputs["local_tombs"])
         else:
-            result = first_bind_bind(v)
+            result = first_bind_merge(inputs["mode"], inputs["remote"],
+                                      inputs["local"], inputs["remote_tombs"],
+                                      inputs["local_tombs"])
         out.append({
             "name": v["name"],
             "kind": v["kind"],
-            "input": {k: _norm(x) for k, x in v.items() if k not in ("name", "kind")},
+            "input": {k: _norm(inputs[k]) for k in keys},
             "expect": {
                 "data": {t: sorted(rows, key=lambda r: json.dumps(r, sort_keys=True))
                          for t, rows in sorted(result["data"].items())},
-                "tombstones": {key_str(k): dt for k, dt in sorted(result["tombstones"].items())},
+                "tombstones": {key_str(k): dt
+                               for k, dt in sorted(result["tombstones"].items())},
                 "report": result["report"],
             },
         })
     return out
-
-
-def first_bind_bind(v):
-    return first_bind_merge(v.pop("mode"), v.pop("remote"), v.pop("local"),
-                            v.pop("remote_tombs"), v.pop("local_tombs"))
 
 
 def _norm(x):
