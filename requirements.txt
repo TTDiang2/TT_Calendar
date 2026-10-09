@@ -1,11 +1,16 @@
-fastapi>=0.115.0
-uvicorn>=0.32.0
-pydantic>=2.9.0
-python-multipart>=0.0.12
-chinese-calendar>=1.9.0
-borax>=4.1
-beautifulsoup4>=4.12.0
-python-dateutil>=2.9.0
-httpx>=0.27.0
-curl-cffi>=0.13.0
-pyinstaller>=6.0.0
+# 上界是刻意的：本项目用 PyInstaller 打包成随包分发的桌面应用，构建期不会自动
+# 跑测试。若某次 pip 装到了 fastapi/pydantic 的下一个大版本，源码照样能跑、但打
+# 出来的 exe 在用户机器上崩溃，而 CI 不覆盖打包流程 —— 只能靠用户反馈发现。
+# 库项目不该设上界（会挡住下游），应用项目应该。
+fastapi>=0.115.0,<1.0
+uvicorn>=0.32.0,<1.0
+pydantic>=2.9.0,<3.0
+# UploadFile 端点必需：缺失时 FastAPI 在导入期就 RuntimeError
+python-multipart>=0.0.12,<0.1
+chinese-calendar>=1.9.0,<2.0
+borax>=4.1,<5.0
+beautifulsoup4>=4.12.0,<5.0
+python-dateutil>=2.9.0,<3.0
+httpx>=0.27.0,<1.0
+curl-cffi>=0.13.0,<1.0
+pyinstaller>=6.0.0,<7.0
