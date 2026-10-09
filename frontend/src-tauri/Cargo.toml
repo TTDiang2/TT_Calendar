@@ -21,5 +21,11 @@ tauri-build = { version = "2.6.3", features = [] }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
-tauri = { version = "2.11.3", features = ["custom-protocol", "devtools"] }
+tauri = { version = "2.11.3", features = ["custom-protocol"] }
 tauri-plugin-log = "2"
+
+# devtools 不进默认 feature 集：写在 tauri 的 features 里会让 release 也带上调试器，
+# 用户右键即可执行任意 JS、查看本地数据，绕过前端能做的所有约束。故改为显式
+# opt-in——开发用 `npm run tauri:dev` 带上，release 不带。
+[features]
+devtools = ["tauri/devtools"]
