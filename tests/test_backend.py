@@ -145,18 +145,23 @@ def test_todo_list_create_and_reorder(client: TestClient) -> None:
 def test_layer_toggle_persists(client: TestClient) -> None:
     """关掉再打开，每次都要真正落库并能回读。
 
-    原 http_integration 脚本也「验证」过这件事，但它只 print 状态码、不断言，
-    且依赖已装插件才存在的 layer_id——在干净环境下是 404 也照样「通过」。
-    """
-    def enabled_of(layer_id: str) -> bool:
-        return next(l["enabled"] for l in client.get("/api/layers").json()
-                    if l["layer_id"] == layer_id)
+    原 http_integration 脚本也「验证」过这件事，但它只 print 状态码、不断言。
 
-    assert enabled_of("jisilu_CNV") is True
-    assert client.put("/api/layers/jisilu_CNV", json={"enabled": False}).status_code == 200
-    assert enabled_of("jisilu_CNV") is False, "关闭未持久化"
-    assert client.put("/api/layers/jisilu_CNV", json={"enabled": True}).status_code == 200
-    assert enabled_of("jisilu_CNV") is True, "重新打开未持久化"
+    图层必须挑内置的（holiday），不能用 jisilu_* / investing_*：那些图层只在
+    装了对应插件时才被播种，而插件不进仓库——用它们会让本用例在本地（有插件）
+    通过、在 CI 的干净 checkout 上因图层不存在而 StopIteration。
+    """
+    layer_id = "holiday"
+
+    def enabled_of(lid: str) -> bool:
+        return next(l["enabled"] for l in client.get("/api/layers").json()
+                    if l["layer_id"] == lid)
+
+    assert enabled_of(layer_id) is True
+    assert client.put(f"/api/layers/{layer_id}", json={"enabled": False}).status_code == 200
+    assert enabled_of(layer_id) is False, "关闭未持久化"
+    assert client.put(f"/api/layers/{layer_id}", json={"enabled": True}).status_code == 200
+    assert enabled_of(layer_id) is True, "重新打开未持久化"
 
 
 def test_layer_toggle_unknown_layer_is_404(client: TestClient) -> None:
