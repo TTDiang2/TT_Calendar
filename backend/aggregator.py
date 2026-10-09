@@ -161,23 +161,6 @@ def compute_todo_busy_level(
     return level if score >= thresholds[0] else None
 
 
-
-
-
-    """用 chinese_calendar 判定节假日 + 调休补班。"""
-
-    try:
-        on_h, name = cc.get_holiday_detail(d)
-    except Exception:
-        return None
-    out: dict = {}
-    if on_h and name:
-        out["name"] = name
-    if cc.is_workday(d) and d.weekday() >= 5:
-        out["is_workday_made_up"] = True
-    return out or None
-
-
 def _custom_layer_color(
     d: date,
     ev_by_layer: dict,
