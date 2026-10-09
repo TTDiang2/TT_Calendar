@@ -12,7 +12,7 @@ from datetime import date as date_t, datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from tt_calendar import db
 from tt_calendar.config import LayerID
@@ -150,7 +150,9 @@ def delete_schedule_item(item_id: int, conn=Depends(get_db)):
 
 
 class ColoringBody(BaseModel):
-    level: int
+    # 0..4 是硬约束而非约定：db 的 coloring.level 列注释、前端 COLORING_COLORS
+    # 的索引都按 5 档写死，越界会取到 undefined 并把非法值持久化进库。
+    level: int = Field(ge=0, le=4)
 
 
 @router.put("/coloring/{d}")
@@ -174,10 +176,12 @@ def delete_coloring(d: str, conn=Depends(get_db)):
 
 
 class MarkBody(BaseModel):
-    layer_id: str
-    date: str
-    level: Optional[int] = None
-    note: Optional[str] = None
+    # layer_id 会进 SQL 与层名映射，note 直接落库渲染；两者都不该无上限。
+    layer_id: str = Field(min_length=1, max_length=64)
+    date: str = Field(min_length=1, max_length=32)
+    # None = solid（打勾）；0..4 = graded，与 coloring 同为 5 档
+    level: Optional[int] = Field(default=None, ge=0, le=4)
+    note: Optional[str] = Field(default=None, max_length=500)
 
 
 @router.post("/marks")
@@ -462,9 +466,90 @@ def get_todo_busy_config(conn=Depends(get_db)):
     return db.get_todo_busy_config(conn)
 
 
+class _GradesPatch(BaseModel):
+    high: Optional[float] = None
+    medium: Optional[float] = None
+    low: Optional[float] = None
+
+
+class _WeightsPatch(BaseModel):
+    due_date: Optional[float] = Field(default=None, ge=0, le=100)
+    planned_date: Optional[float] = Field(default=None, ge=0, le=100)
+    importance: Optional[_GradesPatch] = None
+    complexity: Optional[_GradesPatch] = None
+
+
+class TodoBusyConfigBody(BaseModel):
+    """部分更新载荷。
+
+    extra="forbid" 是这里的关键：原先签名是 `body: dict`，任意键都会被
+    `DEFAULT | body` 塞进配置并落库。
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    weights: Optional[_WeightsPatch] = None
+    thresholds: Optional[list[float]] = Field(default=None, min_length=5, max_length=5)
+    predict_colors: Optional[list[str]] = Field(default=None, min_length=5, max_length=5)
+    done_colors: Optional[list[str]] = Field(default=None, min_length=5, max_length=5)
+
+
+class _Grades(BaseModel):
+    high: float
+    medium: float
+    low: float
+
+
+class _Weights(BaseModel):
+    due_date: float = Field(ge=0, le=100)
+    planned_date: float = Field(ge=0, le=100)
+    importance: _Grades
+    complexity: _Grades
+
+
+class _TodoBusyMerged(BaseModel):
+    """合并后的完整配置，按下游 aggregator 的实际取值形状校验。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    weights: _Weights
+    thresholds: list[float] = Field(min_length=5, max_length=5)
+    predict_colors: list[str] = Field(min_length=5, max_length=5)
+    done_colors: list[str] = Field(min_length=5, max_length=5)
+
+    @field_validator("predict_colors", "done_colors")
+    @classmethod
+    def _hex_color(cls, v: list[str]) -> list[str]:
+        # 颜色最终作为 CSS 值渲染，非十六进制串可逃逸出色值位置做样式注入
+        for c in v:
+            if not re.fullmatch(r"#[0-9A-Fa-f]{6}", c):
+                raise ValueError(f"颜色须为 #RRGGBB 形式：{c!r}")
+        return v
+
+    @field_validator("thresholds")
+    @classmethod
+    def _ascending(cls, v: list[float]) -> list[float]:
+        # aggregator 从 i=4 倒序找第一个 score >= thresholds[i]，升序是语义前提
+        if any(b < a for a, b in zip(v, v[1:])):
+            raise ValueError("thresholds 须升序")
+        return v
+
+
+def _deep_merge(base: dict, patch: dict) -> dict:
+    out = dict(base)
+    for k, v in patch.items():
+        out[k] = _deep_merge(out[k], v) if isinstance(v, dict) and isinstance(out.get(k), dict) else v
+    return out
+
+
 @router.put("/settings/todo-busy")
-def put_todo_busy_config(body: dict, conn=Depends(get_db)):
-    cfg = db.DEFAULT_TODO_BUSY_CONFIG | body
+def put_todo_busy_config(body: TodoBusyConfigBody, conn=Depends(get_db)):
+    merged = _deep_merge(db.DEFAULT_TODO_BUSY_CONFIG,
+                         body.model_dump(exclude_none=True))
+    try:
+        cfg = _TodoBusyMerged.model_validate(merged).model_dump()
+    except ValidationError as e:
+        raise HTTPException(400, f"配置不合法：{e}")
     db.set_todo_busy_config(conn, cfg)
     conn.commit()
     return cfg
@@ -486,13 +571,25 @@ def get_todo_reminder_config(conn=Depends(get_db)):
     return db.get_todo_reminder_config(conn)
 
 
+class TodoReminderConfigBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: Optional[bool] = None
+    # 小时允许 1 位：下游是 split(":") + int()，"9:05" 本就能正常工作，
+    # 硬要求两位会把这类合法输入挡在门外。
+    time: Optional[str] = Field(default=None, pattern=r"^([01]?\d|2[0-3]):[0-5]\d$")
+
+
 @router.put("/settings/todo-reminder")
-def put_todo_reminder_config(body: dict, conn=Depends(get_db)):
+def put_todo_reminder_config(body: TodoReminderConfigBody, conn=Depends(get_db)):
     cfg = db.get_todo_reminder_config(conn)
-    if "enabled" in body:
-        cfg["enabled"] = bool(body["enabled"])
-    if "time" in body and isinstance(body["time"], str):
-        cfg["time"] = body["time"]
+    patch = body.model_dump(exclude_none=True)
+    if "enabled" in patch:
+        # 原先是 bool(body["enabled"])：JSON 客户端传 "false"/"0" 会因非空字符串
+        # 恒真而把提醒打开，与调用方的意图正好相反。交给 Pydantic 严格取布尔。
+        cfg["enabled"] = patch["enabled"]
+    if "time" in patch:
+        cfg["time"] = patch["time"]
     db.set_todo_reminder_config(conn, cfg)
     conn.commit()
     return db.get_todo_reminder_config(conn)

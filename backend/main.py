@@ -6,12 +6,14 @@
 
 from __future__ import annotations
 
+import logging
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
@@ -20,6 +22,8 @@ from starlette.responses import Response as StarletteResponse
 
 from backend import deps
 from backend.routes import router
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -74,6 +78,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(ValueError)
+async def value_error_handler(request: StarletteRequest, exc: ValueError) -> JSONResponse:
+    """把路由层的裸 ValueError 归一成 400。
+
+    路径参数与请求体里的畸形日期（parse_date 对 "abc"、"2026-13-45" 等一律抛
+    ValueError）此前一律变成 500，把「客户端传错了」误报成服务端故障——既误导
+    调用方，也让真实的服务端异常被淹没在噪声里。
+
+    这里刻意记 warning 而非静默：若将来某个真正的 bug 也抛 ValueError，日志里
+    仍留有痕迹，不会被这个处理器悄悄吃掉。
+    """
+    logger.warning(
+        "请求参数被拒 %s %s -> ValueError: %s",
+        request.method, request.url.path, exc,
+    )
+    return JSONResponse(status_code=400, content={"detail": f"invalid value: {exc}"})
+
 
 app.include_router(router, prefix="/api")
 
