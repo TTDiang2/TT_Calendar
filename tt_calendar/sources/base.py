@@ -30,7 +30,7 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import date as date_t
-from typing import Any, Iterable
+from typing import Any
 
 from ..models import Event, ImportResult
 

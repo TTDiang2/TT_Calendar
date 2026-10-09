@@ -15,7 +15,7 @@ import chinese_calendar as cc
 
 from tt_calendar import db
 from tt_calendar.config import LayerID
-from tt_calendar.models import Event, ScheduleEntry
+from tt_calendar.models import Event
 from tt_calendar.sources.base import sub_filter_pattern
 from tt_calendar.utils.date_utils import month_grid, month_range
 from tt_calendar.utils.lunar_utils import lunar_display
@@ -438,7 +438,6 @@ def build_year_view(conn, year: int) -> dict:
 
 
 def build_countdown(conn) -> str:
-    today = date.today()
     items = build_countdown_list(conn)
     upcoming = [i for i in items if not i["passed"]]
     if upcoming:

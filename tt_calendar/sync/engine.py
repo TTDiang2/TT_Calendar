@@ -10,7 +10,6 @@ import socket
 import sqlite3
 import threading
 from datetime import datetime
-from pathlib import Path
 
 from tt_calendar.config import DATA_DIR
 

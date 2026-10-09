@@ -17,13 +17,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from tt_calendar import config as cfg  # noqa: E402
 from tt_calendar import db as dbmod  # noqa: E402
-from tt_calendar.models import Event, ImportResult  # noqa: E402
+from tt_calendar.models import ImportResult  # noqa: E402
 from tt_calendar.sources import (  # noqa: E402
     all_source_ids,
     get_source,
-    list_sources,
     register_source,
 )
 from tt_calendar.sources.base import LayerSpec, Source  # noqa: E402

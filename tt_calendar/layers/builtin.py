@@ -6,8 +6,6 @@ import chinese_calendar as _cc
 from datetime import date as date_t
 
 from .. import config as cfg
-from ..models import Event
-from ..utils.text_utils import first_line
 from .base import CellContribution, Layer, LayerContext
 
 

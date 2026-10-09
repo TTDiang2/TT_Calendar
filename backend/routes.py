@@ -16,16 +16,14 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from tt_calendar import db
-from tt_calendar.config import LayerID
 from tt_calendar.models import ColoringEntry, Event, LayerConfig, Mark, ScheduleEntry, ScheduleItem, Todo, TodoList
 from tt_calendar.sources import get_source
 from tt_calendar.sources.base import sub_filter_pattern
-from tt_calendar.utils.date_utils import parse_date, shift_month
+from tt_calendar.utils.date_utils import parse_date
 
 from backend import aggregator
 from backend.deps import get_db
 from tt_calendar.sync import engine as sync_engine
-from tt_calendar.sync.providers import GitHubProvider
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -841,7 +839,7 @@ def _refresh_one_subscription(conn, sub) -> dict:
     if sub.last_synced_at:
         try:
             start = max(start, datetime.fromisoformat(sub.last_synced_at).date())
-        except Exception as e:
+        except Exception:
             # 退回窗口起点意味着整段区间被重抓一遍；不记日志的话，用户只会看到
             # 「数据没变」或重复抓取，而原因无从追溯。
             log.warning("订阅 %s 的 last_synced_at 无法解析（%s），退回窗口起点 %s",
@@ -865,7 +863,8 @@ def _refresh_one_subscription(conn, sub) -> dict:
 def asyncio_run(coro):
     import asyncio as _asyncio
     try:
-        loop = _asyncio.get_running_loop()
+        # 仅为触发 RuntimeError 判断是否已在事件循环中，赋值不使用
+        _asyncio.get_running_loop()
     except RuntimeError:
         return _asyncio.run(coro)
     import concurrent.futures as _cf
@@ -1217,7 +1216,6 @@ def _recompute_day_busy_for_todo(
     if not dates:
         return
 
-    today = date_t.today()
     for d in dates:
         start = end = d
         predict_todos = [t for t in db.fetch_todos_between(conn, start, end).get(d, [])

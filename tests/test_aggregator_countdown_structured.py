@@ -17,7 +17,7 @@ def test_view_month_and_countdown_banner(tmp_path, monkeypatch):
     conn = deps.connect_db()
     conn.close()
 
-    client = TestClient(app := __import__("backend.main", fromlist=["app"]).app)
+    client = TestClient(__import__("backend.main", fromlist=["app"]).app)
 
     # 造一条年重复倒数日（2020-10-12 → 下一次 2026-10-12，n 周年标签）
     r = client.post("/api/countdown", json={
