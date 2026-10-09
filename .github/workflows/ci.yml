@@ -7,8 +7,12 @@ on:
   workflow_dispatch:
 
 jobs:
+  # 必须跑 Windows：tt_calendar/sync/secrets.py 在导入期就用 ctypes.WinDLL 调
+  # DPAPI，且 @esbuild/win32-x64 把 esbuild 二进制钉死在 win32。在 Linux 上跑
+  # 会以「模块导入即 AttributeError」和 npm EBADPLATFORM 两种形态失败，而这两条
+  # 与本项目无关——它本来就只发布 Windows 版。
   python:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -21,7 +25,7 @@ jobs:
       - run: python -m pytest tests -q
 
   frontend:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     defaults:
       run:
         working-directory: frontend
