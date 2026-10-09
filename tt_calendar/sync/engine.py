@@ -172,9 +172,22 @@ def _sync_now(conn: sqlite3.Connection, on_imported) -> dict:
                 files = P.encode_files(result["data"], result["tombstones"], device)
                 commit_url = prov.push(files, msg)
             except ProviderError as e:
-                if "并发冲突" in str(e) and attempt == 1:
-                    continue
-                report["warning"] = f"推送失败（本地已合并）：{e}"
+                if "并发冲突" in str(e):
+                    if attempt == 1:
+                        continue
+                    # 重试耗尽：交给循环末尾统一 raise，保持既有语义
+                    raise
+                # 非并发失败（网络/鉴权/仓库只读等）：不落 base。base 的语义是
+                # 「上次同步完成时的数据形态」，push 失败还记 base 会让 base 领先
+                # 于远端，下一轮三方合并把这批变更判成 brow == lrow（无需推送），
+                # 于是永远补不上去——静默丢数据。保留 warning 说明「本地已合并、
+                # 远端未更新」，重试即可补推。
+                report["warning"] = f"推送失败（本地已合并，重试将重新推送）：{e}"
+                S.prune_tombstones(conn)
+                status = {"at": datetime.now().isoformat(timespec="seconds"),
+                          "ok": False, "report": report, "commit": None}
+                _save_status(conn, status)
+                return {"result": "partial", **report, "commit_url": None}
         _save_base(result["data"], result["tombstones"])
         S.prune_tombstones(conn)
 
