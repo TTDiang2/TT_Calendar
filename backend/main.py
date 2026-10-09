@@ -102,23 +102,53 @@ app.add_middleware(
     ],
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:5175",
-        "http://localhost:5176",
-        "http://localhost:5177",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174",
-        "http://tauri.localhost",  # Tauri 生产环境 origin (Windows)
-        "https://tauri.localhost",  # Tauri 生产环境 origin (macOS/Linux)
-        "tauri://localhost",  # 兼容旧版 Tauri origin
-    ],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Origin 白名单：CORS 与下面的跨站守卫共用同一份，避免两套名单漂移。
+# 除 Tauri 与 vite dev 外，必须包含后端自身的 origin——Pake 版直接加载
+# http://127.0.0.1:8765，此时页面与 API 同源，请求带的 Origin 就是它自己。
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175",
+    "http://localhost:5176",
+    "http://localhost:5177",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+    "http://tauri.localhost",   # Tauri 生产环境 origin（Windows）
+    "https://tauri.localhost",  # Tauri 生产环境 origin（macOS/Linux）
+    "tauri://localhost",        # 兼容旧版 Tauri origin
+    "http://127.0.0.1:8765",    # Pake 版与后端同源
+    "http://localhost:8765",
+]
+
+app.add_middleware(CORSMiddleware, allow_origins=ALLOWED_ORIGINS,
+                   allow_methods=["*"], allow_headers=["*"])
+
+
+@app.middleware("http")
+async def cross_site_guard(request: StarletteRequest, call_next):
+    """拒绝浏览器发起的跨站请求——TrustedHost 挡不住的那一类。
+
+    TrustedHost 校验的是 Host 头，而跨站请求的 Host 本来就是 127.0.0.1:8765
+    （浏览器按 URL 填的），所以它一路放行。CORS 也挡不住：CORS 只约束 JS 能否
+    读取响应，不阻止请求发出。于是任意网页都能对无 body 的 POST 端点发起
+    「简单请求」（不触发预检），包括 POST /api/sync/now——那会用进程内持有的
+    可写 GitHub PAT 把全部个人数据推到远端。
+
+    判定规则：
+    - 无 Origin 头 → 放行。curl / python-httpx / launcher 健康探针都不是浏览器，
+      而浏览器对 POST 与 fetch 一定会带 Origin，故缺失即非跨站。
+    - Origin 在白名单 → 放行（Tauri、Pake 同源、vite dev）。
+    - 其余（含 Origin: null，来自 sandboxed iframe 与 file:// 页面）→ 拒绝。
+      Tauri 2 用 http://tauri.localhost、Pake 用后端自身 origin，都不需要 null；
+      若将来换打包方式导致应用连不上后端，这里会留下明确的 403 与日志。
+    """
+    origin = request.headers.get("origin")
+    if origin is not None and origin not in ALLOWED_ORIGINS:
+        logger.warning("拒绝跨站请求 %s %s（Origin: %s）",
+                       request.method, request.url.path, origin)
+        return JSONResponse({"detail": "cross-site request rejected"},
+                            status_code=403)
+    return await call_next(request)
 
 @app.exception_handler(ValueError)
 async def value_error_handler(request: StarletteRequest, exc: ValueError) -> JSONResponse:
