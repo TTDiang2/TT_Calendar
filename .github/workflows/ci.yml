@@ -19,7 +19,24 @@ jobs:
         with:
           python-version: "3.10"
           cache: pip
-      - run: pip install -r requirements.txt pytest
+      - run: pip install -r requirements.txt pytest ruff
+      # ruff 只开F,E9：F 是 pyflakes（未用导入/未定义名/未用变量），E9 是语法错误。
+      # 刻意不开 B——B008 会把 FastAPI 的 Depends() 默认参数误报 61 处。
+      # 注意 ruff 抓不到不可达代码（实测确认），那一类由
+      # tests/test_no_unreachable_code.py 的 AST 守卫负责。
+      - run: ruff check --select F,E9 backend tt_calendar tests
+      # CSP 有一条不变量要对着构建产物校验：script-src 'self' 不含 unsafe-inline，
+      # 产物若出现内联脚本会直接白屏。dist 不入库，故必须先构建，否则
+      # test_built_html_has_no_inline_script 在 CI 里永远是 skip。
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
       # plugins/ 未入库，故 CI 的检出就是「无插件的全新 clone」——
       # 这里天然复现并守住插件发现门禁在干净环境下必须通过这条约束。
       - run: python -m pytest tests -q
@@ -37,6 +54,8 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      # 生产依赖零漏洞是硬要求；dev 依赖的 CVE 由 npm audit fix 处理，不阻断。
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
