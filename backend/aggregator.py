@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from collections import defaultdict
 from datetime import date, timedelta
@@ -18,6 +19,11 @@ from tt_calendar.config import LayerID
 from tt_calendar.models import Event
 from tt_calendar.sources.base import sub_filter_pattern
 from tt_calendar.utils.date_utils import month_grid, month_range
+
+log = logging.getLogger(__name__)
+
+# chinese_calendar 越界告警的按年去重集合，见 _holiday_of。
+_calendar_warned_years: set[int] = set()
 from tt_calendar.utils.lunar_utils import lunar_display
 
 
@@ -102,20 +108,28 @@ def _event_passes_layer_filter(
 
 
 def _holiday_of(d: date) -> dict | None:
-    """用 chinese_calendar 判定节假日 + 调休补班。"""
+  """用 chinese_calendar 判定节假日 + 调休补班。"""
 
-    try:
-        on_h, name = cc.get_holiday_detail(d)
-    except Exception:
-        return None
-    out: dict = {}
-    if on_h and name:
-        out["name"] = name
-    if cc.is_workday(d) and d.weekday() >= 5:
-        out["is_workday_made_up"] = True
-    return out or None
-
-
+  try:
+    on_h, name = cc.get_holiday_detail(d)
+  except NotImplementedError:
+    # chinese_calendar 的数据止于 2026，越界时它抛 NotImplementedError。原先
+    # 被 except Exception 吞掉，于是节假日图层从 2027 年起整体空白，用户只会以为
+    # 「今年没节假日」，完全无从察觉。按年去重记一次——本函数是逐日调用的
+    # （年视图一次 504 天），逐日告警会把日志刷爆。
+    if d.year not in _calendar_warned_years:
+      _calendar_warned_years.add(d.year)
+      log.warning("chinese_calendar 缺少 %d 年数据，该年节假日图层将为空白"
+                  "（依赖数据止于 2026，需升级依赖或改用可更新的数据源）", d.year)
+    return None
+  except Exception:
+    return None
+  out: dict = {}
+  if on_h and name:
+    out["name"] = name
+  if cc.is_workday(d) and d.weekday() >= 5:
+    out["is_workday_made_up"] = True
+  return out or None
 # 设置面板用三档「高/中/低」当权重键，Todo 模型却用另一套词汇：
 # importance 是 low|normal|high，complexity 是 simple|medium|hard。两套词汇没有
 # 任何映射，直接 comp.get(t.complexity) 永远 miss 并回落到 medium 权重——于是
