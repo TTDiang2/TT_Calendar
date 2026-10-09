@@ -75,3 +75,32 @@ def test_readme_version_matches_tauri_conf(readme: Path) -> None:
     text = readme.read_text(encoding="utf-8")
     assert f"v{conf['version']}" in text, \
         f"{readme.name} 未提及当前版本 v{conf['version']}"
+
+
+@pytest.mark.parametrize("readme", README_FILES, ids=lambda p: p.name)
+def test_removed_three_slot_feature_is_not_advertised(readme: Path) -> None:
+    """三段式日程已从产品中移除，README 不得再宣称它。
+
+    该功能原有 UI 与后端 PUT /api/schedule/{d} 都还在，但前端已无任何写入方——
+    日程改由 schedule-items（起止时间 + 可跨多天 + 分类）承载。留着旧宣称会让人
+    按不存在的功能去找，是「功能已删、文档未跟」的典型漂移。
+    """
+    text = readme.read_text(encoding="utf-8")
+    for phrase in ("Three-slot", "three-slot", "三段式", "上午 / 下午 / 晚上"):
+        assert phrase not in text, f"{readme.name} 仍在宣称已移除的三段式日程（{phrase}）"
+
+
+def test_busyness_tinting_is_driven_by_todos_not_schedules() -> None:
+    """充实度染色的数据来源是 todo，文档别写成日程。
+
+    day_busy 只由 todo 表算出（_recompute_day_busy 查的是 todo 的 due/planned/
+    completed_at），中文 README 曾把它描述成「按日程多少」，与实现不符。
+    """
+    calc = (ROOT / "backend" / "routes.py").read_text(encoding="utf-8")
+    assert "FROM todo" in calc, "day_busy 应仍由 todo 表驱动"
+
+    for readme in README_FILES:
+        text = readme.read_text(encoding="utf-8")
+        for wrong in ("按日程多少", "日程密度", "how many schedules"):
+            assert wrong not in text, \
+                f"{readme.name} 把充实度染色说成由日程驱动（{wrong}），实际是待办"

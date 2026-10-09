@@ -31,8 +31,8 @@ Every line of source lives in this repo. Tell any AI coding assistant what you w
 
 - 🗓️ **Four calendar views** — month / week / day / year, with drag-and-drop rescheduling
 - 🧩 **Modular subscription plugins** *(new in v2.3)* — subscribe to *any* economic calendar or market data source; plugins are shared across the community. More below.
-- 📝 **Three-slot day scheduling** — a day is just *morning / afternoon / evening*. No bloated forms.
-- 🎨 **Busyness tinting** — every day is shaded by how full it is, at a glance
+- 📝 **Time-boxed scheduling** — each entry takes a start/end time, can span multiple days, and carries a category. No bloated forms.
+- 🎨 **Busyness tinting** — every day is shaded by how many todos land on it, at a glance
 - ✅ **A todo board with 5 views** — list, matrix, kanban, gantt and stickies, sorted by due date × importance
 - ⏳ **Anniversary countdown** — mark a date once; it counts down 99 / 100 / 365 / 520 / 1000 days by itself
 - 🌔 **Lunar calendar support** — built-in Chinese lunar dates & solar terms
@@ -184,7 +184,7 @@ Don't want something? Turn it off. Want more? Turn it on:
 
 - **Chinese public holidays** — legal holidays & make-up workdays, auto-marked
 - **Investment calendars** — stock / convertible-bond / dividend / REIT / index-option events, pulled on demand
-- **Busyness tinting** — five shades of green showing how full each day is
+- **Busyness tinting** — five shades of green showing how many todos land on each day
 - **Important dates layer** — manually flagged days with countdown
 
 ---
