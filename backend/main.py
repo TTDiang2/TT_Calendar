@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import sys
 from contextlib import asynccontextmanager
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -22,8 +23,48 @@ from starlette.responses import Response as StarletteResponse
 
 from backend import deps
 from backend.routes import router
+from tt_calendar import config as cfg
 
 logger = logging.getLogger(__name__)
+
+
+_logging_ready = False
+
+
+def _configure_logging() -> None:
+    """把 Python 日志落到 data/backend.log。
+
+    打包后后端由 launcher 以 GUI 方式拉起，stderr 用户根本看不到；而此前全仓
+    没有配置任何 handler，db.py 里那些迁移告警（log.warning）实际只走了
+    logging 的 lastResort 写 stderr，等于写进虚空——用户丢掉 legacy 数据也毫无
+    察觉。补上可写文件的 handler，日志才真正可诊断。
+
+    两条约束：日志不可写（权限/只读介质）不得拦住启动；文件要有上限，否则
+    长期运行会无声撑大。
+
+    幂等靠模块级标记而非「root 有没有 handler」：后者会被 uvicorn 等库抢先
+    basicConfig 掉，导致文件日志静默失效——那正是本函数要解决的问题本身。
+    """
+    global _logging_ready
+    if _logging_ready:
+        return
+    _logging_ready = True
+
+    root = logging.getLogger()
+    fmt = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+    try:
+        cfg.DATA_DIR.mkdir(parents=True, exist_ok=True)
+        fh = RotatingFileHandler(cfg.DATA_DIR / "backend.log",
+                                 maxBytes=1_000_000, backupCount=3, encoding="utf-8")
+        fh.setFormatter(fmt)
+        root.addHandler(fh)
+    except OSError as e:
+        sys.stderr.write(f"logging: cannot open backend.log ({e})\n")
+    root.addHandler(logging.StreamHandler(sys.stderr))
+    root.setLevel(logging.INFO)
+
+
+_configure_logging()
 
 
 @asynccontextmanager

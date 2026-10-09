@@ -1,7 +1,11 @@
 """TT Calendar 后端依赖注入。"""
 
+import logging
+
 from tt_calendar import db
 from tt_calendar.sync.schema import ensure_sync_schema
+
+log = logging.getLogger(__name__)
 
 
 def get_db():
@@ -22,7 +26,11 @@ def connect_db():
     try:
         db.migrate_legacy_json(conn)
     except Exception:
-        pass
+        # 旧 JSON 迁移失败不该拦住启动（它是遗留数据的best-effort 搬运），但
+        # 绝不能静默：整个迁移中断时 legacy_migrated 标记不会置位、用户数据就此
+        # 留在旧格式而应用照常启动，事后完全无从察觉。这条日志是唯一线索。
+        # legacy_migrated 未置位，下次启动会自动重试。
+        log.exception("旧版 JSON 迁移失败，本次启动已跳过（下次启动会重试）")
     db.ensure_default_layer_configs(conn)
     db.ensure_todo_layer(conn)
     db.ensure_todo_done_layer(conn)
