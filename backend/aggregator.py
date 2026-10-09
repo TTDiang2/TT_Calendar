@@ -116,6 +116,16 @@ def _holiday_of(d: date) -> dict | None:
     return out or None
 
 
+# 设置面板用三档「高/中/低」当权重键，Todo 模型却用另一套词汇：
+# importance 是 low|normal|high，complexity 是 simple|medium|hard。两套词汇没有
+# 任何映射，直接 comp.get(t.complexity) 永远 miss 并回落到 medium 权重——于是
+# hard 与 simple 算出来完全一样，用户调「复杂度」对评分毫无作用（死键）。
+# importance 侧只是侥幸正确：normal 恰好回落到 medium 键。
+# 这里显式对齐，让设置真正生效。
+_IMPORTANCE_KEY = {"low": "low", "normal": "medium", "high": "high"}
+_COMPLEXITY_KEY = {"simple": "low", "medium": "medium", "hard": "high"}
+
+
 def compute_todo_busy_level(
     d: date,
     todos: list,
@@ -140,7 +150,8 @@ def compute_todo_busy_level(
             score += w["due_date"]
         if t.planned_date == d:
             score += w["planned_date"]
-        score += imp.get(t.importance, imp.get("medium", 1)) * comp.get(t.complexity, comp.get("medium", 1))
+        score += (imp.get(_IMPORTANCE_KEY.get(t.importance, "medium"), 1)
+                  * comp.get(_COMPLEXITY_KEY.get(t.complexity, "medium"), 1))
     thresholds = cfg["thresholds"]
     level = 0
     for i in range(4, -1, -1):
