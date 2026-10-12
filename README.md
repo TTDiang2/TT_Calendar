@@ -222,6 +222,23 @@ Deep dives: [Architecture](docs/ARCHITECTURE.md) · [Design philosophy](docs/PHI
 - External data layers are fetched on demand only when you enable them.
 - The data directory is gitignored — your personal data never enters the repo.
 
+### Trust boundary
+
+**This is a personal, single-user desktop app.** It is not built for multi-user or
+server deployment, and the API deliberately has no login.
+
+What *is* defended, because a malicious **web page** is the realistic threat:
+
+- `TrustedHostMiddleware` blocks DNS rebinding (a page resolving its own domain to `127.0.0.1`).
+- An `Origin` allowlist rejects cross-site requests to every `/api/*` route.
+- `script-src 'self'` with no `unsafe-inline`; Tauri devtools are off in release builds.
+
+What is **not** defended: any process running as *you* on your machine can call
+`http://127.0.0.1:8765` with no credentials. Adding a session token would not change
+that — your own plugins and scripts already have exactly the same access. If you ever
+distribute this to other people's machines, that assumption breaks and you would need
+real authentication first.
+
 ---
 
 ## 🛠️ Made to be modified
