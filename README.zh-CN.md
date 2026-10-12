@@ -149,13 +149,15 @@ TT Calendar 反过来做 —— **你的规则优先，而且 100% 可改**。
 ### 从源码运行（开发模式）
 
 ```bash
+# 8000 是开发端口；打包后的 sidecar 固定用 8765，两者由 import.meta.env.PROD
+# 在 frontend/src/api/client.ts 里区分，不要「统一」成同一个。
 pip install -r requirements.txt
 uvicorn backend.main:app --reload --port 8000
 ```
 
 ```bash
 cd frontend
-npm install
+npm ci        # 与 CI 一致；npm install 会在 lockfile 漂移时装出与 CI 不同的树
 npm run dev
 ```
 

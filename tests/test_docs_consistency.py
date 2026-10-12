@@ -90,6 +90,21 @@ def test_removed_three_slot_feature_is_not_advertised(readme: Path) -> None:
         assert phrase not in text, f"{readme.name} 仍在宣称已移除的三段式日程（{phrase}）"
 
 
+@pytest.mark.parametrize("readme", README_FILES, ids=lambda p: p.name)
+def test_readme_install_command_matches_ci(readme: Path) -> None:
+    """README 的安装命令须与 CI 一致。
+
+    两者不一致时，开发者按文档装出的依赖树与 CI 验证过的不是同一棵，而任何测试
+    都不会变红——这类漂移只在某天依赖出问题时才暴露，且极难归因。
+    """
+    ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    assert "npm ci" in ci, "CI 应使用 npm ci 以严格按 lockfile 安装"
+    text = readme.read_text(encoding="utf-8")
+    assert "npm ci" in text, f"{readme.name} 应写 npm ci 与 CI 保持一致"
+    assert not re.search(r"^npm install\s*$", text, re.M), \
+        f"{readme.name} 仍写 npm install：它会在 lockfile 漂移时装出与 CI 不同的依赖树"
+
+
 def test_busyness_tinting_is_driven_by_todos_not_schedules() -> None:
     """充实度染色的数据来源是 todo，文档别写成日程。
 
