@@ -138,6 +138,44 @@ def test_busy_rejects_non_ascending_thresholds(client: TestClient) -> None:
     assert r.status_code == 400, f"降序 thresholds 应被拒，实际 {r.status_code}"
 
 
+@pytest.mark.parametrize("grade", [-99, -1, -0.5, 1e9, 100.1])
+@pytest.mark.parametrize("axis", ["importance", "complexity"])
+def test_busy_rejects_out_of_range_grade_weights(
+    client: TestClient, axis: str, grade: float
+) -> None:
+    """三档权重必须有界，且与 due_date/planned_date 同口径（0..100）。
+
+    负权重会让 score 变负，而 aggregator 的 `return level if score >= thresholds[0]
+    else None` 恒不成立——当天充实度色块静默消失，接口却返回 200。极大值则让所有
+    日期染成最高档。两者都是「配错了但没人告诉你」。
+    """
+    r = client.put("/api/settings/todo-busy",
+                   json={"weights": {axis: {"high": 3, "medium": 2, "low": grade}}})
+    assert r.status_code in (400, 422), \
+        f"{axis}.low={grade} 应被拒，实际 {r.status_code}"
+
+
+@pytest.mark.parametrize("thresholds", [
+    [-9, -7, -5, -3, -1],   # 全负：score >= thresholds[0] 恒真，全染最高档
+    [-1, 3, 8, 15, 25],     # 仅首档为负：同上
+    [0, -1, 8, 15, 25],     # 中间为负（此例同时非升序）
+])
+def test_busy_rejects_negative_thresholds(client: TestClient, thresholds: list) -> None:
+    """阈值必须非负。升序校验拦不住这个——负数同样可以排成升序。"""
+    r = client.put("/api/settings/todo-busy", json={"thresholds": thresholds})
+    assert r.status_code in (400, 422), \
+        f"thresholds={thresholds} 应被拒，实际 {r.status_code}: {r.text}"
+
+
+def test_busy_boundary_weights_accepted(client: TestClient) -> None:
+    """界的两端必须仍被接受——过严的校验等于功能损坏。"""
+    for grade in (0, 100):
+        r = client.put("/api/settings/todo-busy", json={
+            "weights": {"importance": {"high": grade, "medium": grade, "low": grade}},
+        })
+        assert r.status_code == 200, f"权重 {grade} 应放行，实际 {r.status_code}"
+
+
 def test_busy_partial_weights_deep_merge(client: TestClient) -> None:
     """部分更新不能把整个 weights 换掉——下游按 w['due_date'] 等直接下标取值。"""
     r = client.put("/api/settings/todo-busy", json={

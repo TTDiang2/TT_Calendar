@@ -10,7 +10,7 @@ import logging
 import re
 import uuid
 from datetime import date as date_t, datetime, timedelta
-from typing import Optional
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
@@ -32,6 +32,9 @@ log = logging.getLogger(__name__)
 # 用 \Z 而非 $ 收尾：Python 的 $ 允许「末尾恰好一个换行」，会让 "owner/repo\n"
 # 这类值蒙混过关。
 _REPO_RE = re.compile(r"^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+\Z")
+# 充实度档位阈值：非负是硬约束。首档若为负，`score >= thresholds[0]` 对任何分数
+# 恒真，所有日期都会被染成最高档——且升序校验也拦不住（负数同样可以升序）。
+_NonNegative = Annotated[float, Field(ge=0)]
 _BRANCH_RE = re.compile(r"^[A-Za-z0-9._/-]+\Z")
 
 
@@ -489,15 +492,18 @@ class TodoBusyConfigBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     weights: Optional[_WeightsPatch] = None
-    thresholds: Optional[list[float]] = Field(default=None, min_length=5, max_length=5)
+    thresholds: Optional[list[_NonNegative]] = Field(default=None, min_length=5, max_length=5)
     predict_colors: Optional[list[str]] = Field(default=None, min_length=5, max_length=5)
     done_colors: Optional[list[str]] = Field(default=None, min_length=5, max_length=5)
 
 
 class _Grades(BaseModel):
-    high: float
-    medium: float
-    low: float
+    # 三档权重的界与 due_date/planned_date 同口径。缺了它，负权重会让 score 变负，
+    # 而 aggregator 的 `return level if score >= thresholds[0] else None` 恒不成立
+    # —— 当天充实度色块静默消失，接口照样返回 200。
+    high: float = Field(ge=0, le=100)
+    medium: float = Field(ge=0, le=100)
+    low: float = Field(ge=0, le=100)
 
 
 class _Weights(BaseModel):
@@ -513,7 +519,7 @@ class _TodoBusyMerged(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     weights: _Weights
-    thresholds: list[float] = Field(min_length=5, max_length=5)
+    thresholds: list[_NonNegative] = Field(min_length=5, max_length=5)
     predict_colors: list[str] = Field(min_length=5, max_length=5)
     done_colors: list[str] = Field(min_length=5, max_length=5)
 
