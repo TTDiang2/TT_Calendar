@@ -15,6 +15,8 @@ from __future__ import annotations
 import io
 import sqlite3
 import sys
+from datetime import date as date_t
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
@@ -230,6 +232,150 @@ def test_todo_reorder(client: TestClient) -> None:
                    json={"ordered_ids": ["t2", "t1"]})
     assert r.status_code == 200, r.text
     assert [t["id"] for t in client.get("/api/todo", headers=HOST).json()] == ["t2", "t1"]
+
+
+# ---------------------------------------------------------- 重复待办的 HTTP 编排
+
+def _repeat_todo(client: TestClient, todo_id: str, repeat: str | None = "weekly") -> dict:
+    """建一条带计划日期的重复待办。
+
+    计划日取「明天」而非固定日期：_next_repeat_date 以完成日为基准向后找下一次，
+    用过去的固定日期会被推到远超一周的将来，断言随当前日期漂移。
+    """
+    planned = (date_t.today() + timedelta(days=1)).isoformat()
+    payload = {"id": todo_id, "list_id": "L1", "title": "每周复盘",
+               "planned_date": planned, "importance": "normal",
+               "complexity": "medium"}
+    if repeat:
+        payload["repeat"] = repeat
+    r = client.post("/api/todo", headers=HOST, json=payload)
+    assert r.status_code == 200, r.text
+    return payload
+
+
+def _complete(client: TestClient, payload: dict) -> dict:
+    r = client.put(f"/api/todo/{payload['id']}", headers=HOST,
+                   json={**payload, "status": "completed"})
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def test_completing_repeating_todo_spawns_next_period(client: TestClient) -> None:
+    """完成 → 生成下一期。这是重复待办链路的唯一编排点，此前只有纯函数层测试。"""
+    payload = _repeat_todo(client, "t1")
+    body = _complete(client, payload)
+
+    assert "spawned" in body, f"应生成下一期：{body}"
+    spawned = body["spawned"]
+    assert spawned["id"] != "t1", "克隆必须是新 id"
+    assert spawned["status"] == "notStarted", "克隆应回到未开始"
+    expected = (date_t.fromisoformat(payload["planned_date"]) + timedelta(days=7)).isoformat()
+    assert spawned["planned_date"] == expected, \
+        f"计划日应推进一周：{spawned['planned_date']} != {expected}"
+    assert spawned["repeat"] == "weekly", "克隆应保持重复设置"
+
+
+def test_completing_already_completed_todo_does_not_spawn_again(client: TestClient) -> None:
+    """防重复：已完成状态再 PUT 一次不得再生成一期。
+
+    这是最容易出重复数据的地方——git 历史里同类的双重创建 bug 出现过多次。
+    """
+    payload = _repeat_todo(client, "t1")
+    first = _complete(client, payload)
+    assert "spawned" in first
+
+    second = _complete(client, payload)
+    assert "spawned" not in second, f"重复完成不得再生成一期：{second}"
+
+    # 默认列表过滤掉已完成项，故显式按状态分别查
+    done = client.get("/api/todo", headers=HOST,
+                      params={"status": "completed"}).json()
+    open_ = client.get("/api/todo", headers=HOST,
+                       params={"status": "notStarted"}).json()
+    assert len(done) == 1, f"应只有一条已完成：{done}"
+    assert len(open_) == 1, f"应只有一条未开始的下一期：{open_}"
+    assert open_[0]["repeat"] == "weekly"
+
+
+def test_completing_non_repeating_todo_does_not_spawn(client: TestClient) -> None:
+    payload = _repeat_todo(client, "t1", repeat=None)
+    body = _complete(client, payload)
+    assert "spawned" not in body, f"非重复待办不应生成下一期：{body}"
+    done = client.get("/api/todo", headers=HOST,
+                      params={"status": "completed"}).json()
+    assert len(done) == 1, done
+    assert client.get("/api/todo", headers=HOST,
+                      params={"status": "notStarted"}).json() == []
+
+
+def test_repeating_todo_without_planned_date_does_not_spawn(client: TestClient) -> None:
+    """有 repeat 但没有计划日期时不生成——无处可推进。"""
+    payload = _repeat_todo(client, "t1")
+    payload.pop("planned_date")
+    r = client.post("/api/todo", headers=HOST, json=payload)
+    assert r.status_code == 200, r.text
+
+    body = _complete(client, payload)
+    assert "spawned" not in body, f"缺 planned_date 不应生成：{body}"
+
+
+def test_repeat_rejects_unknown_mode(client: TestClient) -> None:
+    payload = _repeat_todo(client, "t1")
+    payload["repeat"] = "fortnightly-ish"
+    body = _complete(client, payload)
+    assert "spawned" not in body, f"未知 repeat 模式不应生成：{body}"
+
+
+def test_completed_at_is_preserved_across_repeat_puts(client: TestClient) -> None:
+    """重复 PUT 已完成的待办不得刷新完成时间——否则「哪天完成的」会被改写。"""
+    payload = _repeat_todo(client, "t1")
+    first = _complete(client, payload)
+    second = _complete(client, payload)
+    assert first["completed_at"] == second["completed_at"], \
+        f"完成时间被改写了：{first['completed_at']} -> {second['completed_at']}"
+
+
+def test_delete_todo_clears_it(client: TestClient) -> None:
+    _repeat_todo(client, "t1")
+    assert client.delete("/api/todo/t1", headers=HOST).status_code == 200
+    assert client.get("/api/todo", headers=HOST).json() == []
+    assert client.delete("/api/todo/t1", headers=HOST).status_code == 200
+
+
+def test_todo_list_lifecycle(client: TestClient) -> None:
+    created = client.post("/api/todo/lists", headers=HOST, json={"display_name": "工作"})
+    assert created.status_code == 200, created.text
+    lid = created.json()["id"]
+
+    assert client.put(f"/api/todo/lists/{lid}", headers=HOST,
+                      json={"display_name": "工作A"}).status_code == 200
+    assert any(x["display_name"] == "工作A"
+               for x in client.get("/api/todo/lists", headers=HOST).json())
+
+    assert client.delete(f"/api/todo/lists/{lid}", headers=HOST).status_code == 200
+    assert not any(x["id"] == lid
+                   for x in client.get("/api/todo/lists", headers=HOST).json())
+
+
+def test_countdown_lifecycle(client: TestClient) -> None:
+    created = client.post("/api/countdown", headers=HOST,
+                          json={"name": "纪念", "base_date": "2026-05-01"})
+    assert created.status_code == 200, created.text
+    cid = created.json()["id"]
+
+    assert client.put(f"/api/countdown/{cid}", headers=HOST,
+                      json={"name": "纪念日", "base_date": "2026-05-01"}).status_code == 200
+    assert client.delete(f"/api/countdown/{cid}", headers=HOST).status_code == 200
+
+
+def test_custom_layer_lifecycle(client: TestClient) -> None:
+    created = client.post("/api/layers", headers=HOST, json={"display_name": "我的层"})
+    assert created.status_code == 200, created.text
+    layer_id = created.json()["layer_id"]
+
+    assert layer_id.startswith("custom_"), layer_id
+    assert client.delete(f"/api/layers/{layer_id}", headers=HOST).status_code == 200
+    assert client.delete(f"/api/layers/{layer_id}", headers=HOST).status_code == 404
 
 
 def test_csv_import_reports_row_errors(client: TestClient) -> None:
