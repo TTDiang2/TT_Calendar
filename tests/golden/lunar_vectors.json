@@ -1,0 +1,448 @@
+{
+ "version": 1,
+ "vectors": [
+  {
+   "name": "display_1900-01-31",
+   "kind": "display",
+   "input": {
+    "date": "1900-01-31"
+   },
+   "why": "borax 下界",
+   "expect": "正月"
+  },
+  {
+   "name": "display_1900-02-01",
+   "kind": "display",
+   "input": {
+    "date": "1900-02-01"
+   },
+   "why": "borax 下界附近",
+   "expect": "正月初二"
+  },
+  {
+   "name": "display_2100-12-31",
+   "kind": "display",
+   "input": {
+    "date": "2100-12-31"
+   },
+   "why": "borax 上界",
+   "expect": "腊月"
+  },
+  {
+   "name": "display_2024-02-10",
+   "kind": "display",
+   "input": {
+    "date": "2024-02-10"
+   },
+   "why": "正月初一 -> 只显月名",
+   "expect": "正月"
+  },
+  {
+   "name": "display_2025-01-29",
+   "kind": "display",
+   "input": {
+    "date": "2025-01-29"
+   },
+   "why": "正月初一",
+   "expect": "正月"
+  },
+  {
+   "name": "display_2026-02-17",
+   "kind": "display",
+   "input": {
+    "date": "2026-02-17"
+   },
+   "why": "正月初一",
+   "expect": "正月"
+  },
+  {
+   "name": "display_2025-01-28",
+   "kind": "display",
+   "input": {
+    "date": "2025-01-28"
+   },
+   "why": "腊月廿九",
+   "expect": "腊月廿九"
+  },
+  {
+   "name": "display_2024-02-09",
+   "kind": "display",
+   "input": {
+    "date": "2024-02-09"
+   },
+   "why": "腊月三十",
+   "expect": "腊月三十"
+  },
+  {
+   "name": "display_2026-09-25",
+   "kind": "display",
+   "input": {
+    "date": "2026-09-25"
+   },
+   "why": "八月十五",
+   "expect": "八月十五"
+  },
+  {
+   "name": "display_2026-06-19",
+   "kind": "display",
+   "input": {
+    "date": "2026-06-19"
+   },
+   "why": "五月初五",
+   "expect": "五月初五"
+  },
+  {
+   "name": "display_2025-07-25",
+   "kind": "display",
+   "input": {
+    "date": "2025-07-25"
+   },
+   "why": "闰六月初一 -> 显「闰六月」",
+   "expect": "闰六月"
+  },
+  {
+   "name": "display_2025-08-23",
+   "kind": "display",
+   "input": {
+    "date": "2025-08-23"
+   },
+   "why": "闰六月廿九/三十",
+   "expect": "七月"
+  },
+  {
+   "name": "display_2023-03-22",
+   "kind": "display",
+   "input": {
+    "date": "2023-03-22"
+   },
+   "why": "闰二月初一",
+   "expect": "闰二月"
+  },
+  {
+   "name": "display_2026-01-19",
+   "kind": "display",
+   "input": {
+    "date": "2026-01-19"
+   },
+   "why": "当月初一",
+   "expect": "腊月"
+  },
+  {
+   "name": "display_2026-02-17",
+   "kind": "display",
+   "input": {
+    "date": "2026-02-17"
+   },
+   "why": "当月初一",
+   "expect": "正月"
+  },
+  {
+   "name": "display_2026-03-19",
+   "kind": "display",
+   "input": {
+    "date": "2026-03-19"
+   },
+   "why": "当月初一",
+   "expect": "二月"
+  },
+  {
+   "name": "display_2026-04-17",
+   "kind": "display",
+   "input": {
+    "date": "2026-04-17"
+   },
+   "why": "当月初一",
+   "expect": "三月"
+  },
+  {
+   "name": "display_2026-05-17",
+   "kind": "display",
+   "input": {
+    "date": "2026-05-17"
+   },
+   "why": "当月初一",
+   "expect": "四月"
+  },
+  {
+   "name": "display_2026-06-15",
+   "kind": "display",
+   "input": {
+    "date": "2026-06-15"
+   },
+   "why": "当月初一",
+   "expect": "五月"
+  },
+  {
+   "name": "display_2026-07-14",
+   "kind": "display",
+   "input": {
+    "date": "2026-07-14"
+   },
+   "why": "当月初一",
+   "expect": "六月"
+  },
+  {
+   "name": "display_2026-08-13",
+   "kind": "display",
+   "input": {
+    "date": "2026-08-13"
+   },
+   "why": "当月初一",
+   "expect": "七月"
+  },
+  {
+   "name": "display_2026-09-11",
+   "kind": "display",
+   "input": {
+    "date": "2026-09-11"
+   },
+   "why": "当月初一",
+   "expect": "八月"
+  },
+  {
+   "name": "display_2026-10-10",
+   "kind": "display",
+   "input": {
+    "date": "2026-10-10"
+   },
+   "why": "当月初一",
+   "expect": "九月"
+  },
+  {
+   "name": "display_2026-11-09",
+   "kind": "display",
+   "input": {
+    "date": "2026-11-09"
+   },
+   "why": "当月初一",
+   "expect": "十月"
+  },
+  {
+   "name": "display_2026-12-09",
+   "kind": "display",
+   "input": {
+    "date": "2026-12-09"
+   },
+   "why": "当月初一",
+   "expect": "冬月"
+  },
+  {
+   "name": "display_2026-01-03",
+   "kind": "display",
+   "input": {
+    "date": "2026-01-03"
+   },
+   "why": "当月十五",
+   "expect": "冬月十五"
+  },
+  {
+   "name": "display_2026-02-02",
+   "kind": "display",
+   "input": {
+    "date": "2026-02-02"
+   },
+   "why": "当月十五",
+   "expect": "腊月十五"
+  },
+  {
+   "name": "display_2026-03-03",
+   "kind": "display",
+   "input": {
+    "date": "2026-03-03"
+   },
+   "why": "当月十五",
+   "expect": "正月十五"
+  },
+  {
+   "name": "display_2026-04-02",
+   "kind": "display",
+   "input": {
+    "date": "2026-04-02"
+   },
+   "why": "当月十五",
+   "expect": "二月十五"
+  },
+  {
+   "name": "display_2026-05-01",
+   "kind": "display",
+   "input": {
+    "date": "2026-05-01"
+   },
+   "why": "当月十五",
+   "expect": "三月十五"
+  },
+  {
+   "name": "display_2026-06-29",
+   "kind": "display",
+   "input": {
+    "date": "2026-06-29"
+   },
+   "why": "当月十五",
+   "expect": "五月十五"
+  },
+  {
+   "name": "display_2026-07-28",
+   "kind": "display",
+   "input": {
+    "date": "2026-07-28"
+   },
+   "why": "当月十五",
+   "expect": "六月十五"
+  },
+  {
+   "name": "display_2026-08-27",
+   "kind": "display",
+   "input": {
+    "date": "2026-08-27"
+   },
+   "why": "当月十五",
+   "expect": "七月十五"
+  },
+  {
+   "name": "display_2026-09-25",
+   "kind": "display",
+   "input": {
+    "date": "2026-09-25"
+   },
+   "why": "当月十五",
+   "expect": "八月十五"
+  },
+  {
+   "name": "display_2026-10-24",
+   "kind": "display",
+   "input": {
+    "date": "2026-10-24"
+   },
+   "why": "当月十五",
+   "expect": "九月十五"
+  },
+  {
+   "name": "display_2026-11-23",
+   "kind": "display",
+   "input": {
+    "date": "2026-11-23"
+   },
+   "why": "当月十五",
+   "expect": "十月十五"
+  },
+  {
+   "name": "display_2026-12-23",
+   "kind": "display",
+   "input": {
+    "date": "2026-12-23"
+   },
+   "why": "当月十五",
+   "expect": "冬月十五"
+  },
+  {
+   "name": "occurrence_2026-02-17_from_2026-01-01",
+   "kind": "occurrence",
+   "input": {
+    "base": "2026-02-17",
+    "today": "2026-01-01"
+   },
+   "why": "春节基准，today 在前 -> 命中本年",
+   "expect": "2026-02-17"
+  },
+  {
+   "name": "occurrence_2026-02-17_from_2026-02-17",
+   "kind": "occurrence",
+   "input": {
+    "base": "2026-02-17",
+    "today": "2026-02-17"
+   },
+   "why": "today 恰为基准日本身",
+   "expect": "2026-02-17"
+  },
+  {
+   "name": "occurrence_2026-02-17_from_2026-03-01",
+   "kind": "occurrence",
+   "input": {
+    "base": "2026-02-17",
+    "today": "2026-03-01"
+   },
+   "why": "春节已过 -> 顺延到下个农历年",
+   "expect": "2027-02-06"
+  },
+  {
+   "name": "occurrence_2026-02-17_from_2027-01-05",
+   "kind": "occurrence",
+   "input": {
+    "base": "2026-02-17",
+    "today": "2027-01-05"
+   },
+   "why": "today 早于次年春节 -> 应为次年春节",
+   "expect": "2027-02-06"
+  },
+  {
+   "name": "occurrence_2026-02-17_from_2027-02-20",
+   "kind": "occurrence",
+   "input": {
+    "base": "2026-02-17",
+    "today": "2027-02-20"
+   },
+   "why": "today 晚于次年春节 -> 再下一年",
+   "expect": "2028-01-26"
+  },
+  {
+   "name": "occurrence_2026-09-25_from_2026-01-01",
+   "kind": "occurrence",
+   "input": {
+    "base": "2026-09-25",
+    "today": "2026-01-01"
+   },
+   "why": "中秋基准",
+   "expect": "2026-09-25"
+  },
+  {
+   "name": "occurrence_2026-09-25_from_2026-10-01",
+   "kind": "occurrence",
+   "input": {
+    "base": "2026-09-25",
+    "today": "2026-10-01"
+   },
+   "why": "中秋已过",
+   "expect": "2027-09-15"
+  },
+  {
+   "name": "occurrence_2026-06-19_from_2026-01-01",
+   "kind": "occurrence",
+   "input": {
+    "base": "2026-06-19",
+    "today": "2026-01-01"
+   },
+   "why": "端午基准",
+   "expect": "2026-06-19"
+  },
+  {
+   "name": "occurrence_2025-07-25_from_2026-01-01",
+   "kind": "occurrence",
+   "input": {
+    "base": "2025-07-25",
+    "today": "2026-01-01"
+   },
+   "why": "闰月基准退回非闰同日",
+   "expect": "2026-07-14"
+  },
+  {
+   "name": "occurrence_2025-07-25_from_2027-01-01",
+   "kind": "occurrence",
+   "input": {
+    "base": "2025-07-25",
+    "today": "2027-01-01"
+   },
+   "why": "闰月基准跨年",
+   "expect": "2027-07-04"
+  },
+  {
+   "name": "occurrence_2026-02-17_from_2026-02-10",
+   "kind": "occurrence",
+   "input": {
+    "base": "2026-02-17",
+    "today": "2026-02-10"
+   },
+   "why": "春节前一天",
+   "expect": "2026-02-17"
+  }
+ ]
+}

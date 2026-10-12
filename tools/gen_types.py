@@ -4,7 +4,6 @@
 db schema 变更后重跑；生成文件头部带 @generated 标记，禁止手改。
 """
 
-import json
 import sqlite3
 import sys
 from pathlib import Path
