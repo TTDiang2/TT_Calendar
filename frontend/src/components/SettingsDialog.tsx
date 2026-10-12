@@ -12,6 +12,7 @@ import {
 } from '../api/client'
 import { useT, useTPlural, chooseLang, activeLang, SELECTABLE_LANGS, LANG_META, type I18n, type Lang, type TxKey } from '../i18n'
 import type { Layer } from '../types'
+import { setNumberAtPath } from '../utils/configLogic'
 
 interface Props {
   layers: Layer[]
@@ -161,18 +162,7 @@ function BusyConfigSection() {
 
   const setNum = (path: (string | number)[], v: string) => {
     if (!local) return
-    const n = Number(v)
-    if (Number.isNaN(n)) return
-    setLocal((prev) => {
-      const next = structuredClone(prev)
-      const root = next as unknown as Record<string, unknown>
-      let cur: Record<string, unknown> = root
-      for (let i = 0; i < path.length - 1; i++) {
-        cur = cur[path[i]] as Record<string, unknown>
-      }
-      cur[path[path.length - 1]] = n
-      return next
-    })
+    setLocal((prev) => setNumberAtPath(prev, path, v))
   }
 
   return (

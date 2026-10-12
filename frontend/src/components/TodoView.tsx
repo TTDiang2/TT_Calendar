@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, ChevronDown, ChevronUp, Inbox, ListPlus, Pencil, Plus, Repeat, Star, Trash2, Upload } from 'lucide-react'
 import clsx from 'clsx'
 import { getTodoLists, getTodos, getTodoStats, createTodo, updateTodo, deleteTodo, createTodoList, updateTodoList, deleteTodoList, importTodosCsv, reorderTodoLists, reorderTodos } from '../api/client'
-import { todayStr, labelOf } from '../utils/todoLogic'
+import { todayStr, labelOf, collectTags, applyTagAndOrder, filterByTag, findTodoById } from '../utils/todoLogic'
 import type { Todo, TodoList, TodoSort, TodoViewMode } from '../types'
 import { useT, type TxKey } from '../i18n'
 import { layerLabel } from '../i18n/adapt/layerLabel'
@@ -130,15 +130,10 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
   })
 
   // 看板已完成：tag 筛选后用于展开列（计数直接用 stats）
-  const filteredCompleted = useMemo(() => {
-    return tagFilter ? completed.filter((t) => (t.tags ?? []).includes(tagFilter)) : completed
-  }, [completed, tagFilter])
+  const filteredCompleted = useMemo(() => filterByTag(completed, tagFilter), [completed, tagFilter])
 
   const selectedTodo = useMemo(
-    () => {
-      if (!selectedTodoId) return null
-      return [...incomplete, ...completed].find((t) => t.id === selectedTodoId) ?? null
-    },
+    () => findTodoById([incomplete, completed], selectedTodoId),
     [incomplete, completed, selectedTodoId],
   )
 
@@ -223,20 +218,12 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
     return m
   }, [incomplete])
 
-  const allTags = useMemo(() => {
-    const s = new Set<string>()
-    for (const t of [...incomplete, ...completed]) (t.tags ?? []).forEach((tag) => s.add(tag))
-    return Array.from(s).sort()
-  }, [incomplete, completed])
+  const allTags = useMemo(() => collectTags(incomplete, completed), [incomplete, completed])
 
-  const filteredIncomplete = useMemo(() => {
-    const base = tagFilter ? incomplete.filter((t) => (t.tags ?? []).includes(tagFilter)) : incomplete
-    if (manualOrder) {
-      const orderMap = new Map(manualOrder.map((id, i) => [id, i]))
-      return [...base].sort((a, b) => (orderMap.get(a.id) ?? 999) - (orderMap.get(b.id) ?? 999))
-    }
-    return base
-  }, [incomplete, tagFilter, manualOrder])
+  const filteredIncomplete = useMemo(
+    () => applyTagAndOrder(incomplete, tagFilter, manualOrder),
+    [incomplete, tagFilter, manualOrder],
+  )
 
   const jarTodos = useMemo(() => [...filteredIncomplete, ...todayDone], [filteredIncomplete, todayDone])
 

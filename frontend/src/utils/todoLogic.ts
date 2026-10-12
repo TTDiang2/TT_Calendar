@@ -92,3 +92,63 @@ export function labelOf(keys: Record<string, TxKey>, value: string, t: (k: TxKey
   const k = keys[value]
   return k ? t(k) : value
 }
+
+// ---------------------------------------------------------------- 列表筛选与排序
+// 以下四函数原先内联在 TodoView.tsx 的 useMemo 里。抽出来的原因是它们承载了
+// 真实语义（标签筛选、手动排序的兜底位置、跨状态段查找），却没有一行测试——
+// 组件要渲染才能触发，一次改错就是「待办顺序悄悄变了」这种没人报错的回归。
+
+/**
+ * 标签全集：多组待办（通常是未完成 + 已完成）里出现过的去重标签，按字典序。
+ * tags 为 null/undefined 的待办按「无标签」处理，不贡献任何标签。
+ */
+export function collectTags(...groups: Todo[][]): string[] {
+  const s = new Set<string>()
+  for (const group of groups) {
+    for (const t of group) (t.tags ?? []).forEach((tag) => s.add(tag))
+  }
+  return Array.from(s).sort()
+}
+
+/**
+ * 标签筛选。无筛选时原样返回入参（保持引用不变），否则过滤出带该标签的待办。
+ * 保留引用是有意的：下游 useMemo 的依赖比对依赖它，避免每次渲染都产出新数组。
+ */
+export function filterByTag(todos: Todo[], tagFilter: string | null | undefined): Todo[] {
+  return tagFilter ? todos.filter((t) => (t.tags ?? []).includes(tagFilter)) : todos
+}
+
+/**
+ * 手动排序：按 manualOrder 里的下标升序。
+ * 不在 manualOrder 中的待办一律排到末尾（999）——它们是筛选后才出现的新条目，
+ * 排到末尾而不是排到最前，避免每次打开筛选视图都把它们顶上来。
+ * null/undefined 时原样返回；空数组会走排序路径（此时全部取 999，稳定排序等于
+ * 原顺序，只是产出新数组），与原组件的 `if (manualOrder)` 判断保持一致。
+ */
+export function sortByManualOrder(todos: Todo[], manualOrder: string[] | null | undefined): Todo[] {
+  if (!manualOrder) return todos
+  const orderMap = new Map(manualOrder.map((id, i) => [id, i]))
+  return [...todos].sort((a, b) => (orderMap.get(a.id) ?? 999) - (orderMap.get(b.id) ?? 999))
+}
+
+/** 筛选 + 排序的组合，供视图层一次调用。 */
+export function applyTagAndOrder(
+  todos: Todo[],
+  tagFilter: string | null | undefined,
+  manualOrder: string[] | null | undefined,
+): Todo[] {
+  return sortByManualOrder(filterByTag(todos, tagFilter), manualOrder)
+}
+
+/**
+ * 跨多个状态段按 id 查找（侧栏选中项：待办可能在未完成段，也可能在已完成段）。
+ * id 为空或两段都没有时返回 null。
+ */
+export function findTodoById(groups: Todo[][], id: string | null | undefined): Todo | null {
+  if (!id) return null
+  for (const group of groups) {
+    const hit = group.find((t) => t.id === id)
+    if (hit) return hit
+  }
+  return null
+}
