@@ -2,6 +2,7 @@ import { Calendar, CheckSquare, ChevronLeft, ChevronRight, ListTodo, Rss, Search
 import clsx from 'clsx'
 import { useT, type TxKey } from '../i18n'
 import type { TopTab, TodoViewMode, ViewMode } from '../types'
+import { WindowControls } from './WindowControls'
 
 interface Props {
   title: string
@@ -43,7 +44,7 @@ export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeCh
   const prevTitle = mode === 'year' ? t('topbar.nav.prevYear') : mode === 'week' ? t('topbar.nav.prevWeek') : mode === 'day' ? t('topbar.nav.prevDay') : t('topbar.nav.prevMonth')
   const nextTitle = mode === 'year' ? t('topbar.nav.nextYear') : mode === 'week' ? t('topbar.nav.nextWeek') : mode === 'day' ? t('topbar.nav.nextDay') : t('topbar.nav.nextMonth')
   return (
-    <header className="h-14 flex items-center justify-between px-4 bg-white border-b border-gray-200">
+    <header data-tauri-drag-region="deep" className="h-14 flex items-center justify-between px-4 bg-white border-b border-gray-200 select-none">
       <div className="flex items-center gap-1">
         {/* 顶级 tab：日历 / 待办 */}
         <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-50 mr-3">
@@ -162,6 +163,7 @@ export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeCh
         <button onClick={onOpenSettings} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition" title={t('settings.title')}>
           <Settings size={18} />
         </button>
+        <WindowControls />
       </div>
     </header>
   )
