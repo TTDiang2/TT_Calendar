@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Copy, Minus, Square, X } from 'lucide-react'
 import { useT } from '../i18n'
+import { MorphingIcon } from './ui/MorphingIcon'
 
 function inTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
@@ -14,6 +15,8 @@ export function WindowControls() {
   const t = useT()
   const isTauri = inTauri()
   const [maximized, setMaximized] = useState(false)
+  // 首次读取窗口状态前不播 morph，避免“启动即最大化”时图标先方后圆地补一次动画
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     if (!isTauri) return
@@ -26,6 +29,7 @@ export function WindowControls() {
         const win = getCurrentWindow()
         if (disposed) return
         setMaximized(await win.isMaximized())
+        setReady(true)
         unlisten = await win.onResized(async () => {
           try {
             setMaximized(await win.isMaximized())
@@ -39,6 +43,7 @@ export function WindowControls() {
         }
       } catch {
         /* 非 Tauri 环境或权限缺失：保持隐藏 */
+        if (!disposed) setReady(true)
       }
     })()
 
@@ -86,7 +91,18 @@ export function WindowControls() {
         onClick={() => void run('toggleMaximize')}
         className={`${btn} hover:bg-gray-100 hover:text-gray-800`}
       >
-        {maximized ? <Copy size={14} strokeWidth={1.6} /> : <Square size={13} strokeWidth={1.6} />}
+        {ready ? (
+          <MorphingIcon
+            size={14}
+            active={maximized}
+            from={<Square size={13} strokeWidth={1.6} />}
+            to={<Copy size={14} strokeWidth={1.6} />}
+          />
+        ) : maximized ? (
+          <Copy size={14} strokeWidth={1.6} />
+        ) : (
+          <Square size={13} strokeWidth={1.6} />
+        )}
       </button>
       <button
         type="button"

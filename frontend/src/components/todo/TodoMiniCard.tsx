@@ -2,6 +2,7 @@ import clsx from 'clsx'
 import type { Todo } from '../../types'
 import { COMPLEXITY_KEYS, IMPORTANCE_KEYS, STATUS_KEYS, dueInDays, labelOf } from '../../utils/todoLogic'
 import { useT, useTPlural } from '../../i18n'
+import { AnimatedCheck } from '../ui/AnimatedCheck'
 
 // 状态点的颜色：看板/矩阵卡片元信息行用小圆点区分状态，比文字 badge 更紧凑
 const STATUS_DOT: Record<string, string> = {
@@ -55,20 +56,20 @@ export function TodoMiniCard({ todo, selected, sub, onClick, onToggle }: {
       )}
     >
       {onToggle && (
-        <button
-          aria-label={done ? t('todoboards.aria.markUndone') : t('todoboards.aria.markDone')}
+        <AnimatedCheck
+          checked={done}
           onClick={(e) => { e.stopPropagation(); onToggle(!done) }}
+          ariaLabel={done ? t('todoboards.aria.markUndone') : t('todoboards.aria.markDone')}
+          shape="circle"
+          checkSize={10}
           className={clsx(
-            'mt-0.5 w-4 h-4 rounded-full border flex-shrink-0 flex items-center justify-center cursor-pointer transition-colors duration-200',
+            'mt-0.5 cursor-pointer border',
             done
               ? 'bg-emerald-500 border-emerald-500 text-white'
-              : 'border-gray-300 text-transparent hover:border-emerald-400 hover:text-emerald-300',
+              : 'border-gray-300 hover:border-emerald-400',
           )}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" className="w-2.5 h-2.5">
-            <path d="M4 12l5 5L20 6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+          checkClassName="text-white"
+        />
       )}
       <button onClick={onClick} className="flex-1 text-left min-w-0 cursor-pointer">
         <div className="flex items-start justify-between gap-1">

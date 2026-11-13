@@ -6,6 +6,7 @@ import type { Layer } from '../types'
 import { createLayer, getSubscriptions } from '../api/client'
 import { COLOR_PRESETS, GRADED_PALETTES } from '../data'
 import { Modal, Field } from './ui/Modal'
+import { StretchSwitch } from './ui/StretchSwitch'
 import { useT, type TxKey } from '../i18n'
 import { paletteLabelKey } from '../i18n/adapt/labels'
 import { layerLabel } from '../i18n/adapt/layerLabel'
@@ -201,28 +202,19 @@ export function Sidebar({ layers, onToggle, countdown, banner }: Props) {
 
 function LayerRow({ layer, onToggle }: { layer: Layer; onToggle: (id: string) => void }) {
   const t = useT()
+  const label = layerLabel(layer, t)
   return (
     <div className="flex items-center gap-2 px-1 py-1.5 rounded-md hover:bg-gray-50">
       <span
         className="w-2.5 h-2.5 rounded-full flex-shrink-0"
         style={{ backgroundColor: layer.color ?? '#9ca3af' }}
       />
-      <span className="flex-1 text-sm text-gray-700 truncate">{layerLabel(layer, t)}</span>
-      <button
-        onClick={() => onToggle(layer.layer_id)}
-        aria-pressed={layer.enabled}
-        className={clsx(
-          'relative inline-flex items-center w-8 h-[18px] rounded-full transition-colors flex-shrink-0',
-          layer.enabled ? 'bg-blue-500' : 'bg-gray-300',
-        )}
-      >
-        <span
-          className={clsx(
-            'inline-block w-3.5 h-3.5 rounded-full bg-white shadow transition-transform duration-200',
-            layer.enabled ? 'translate-x-[16px]' : 'translate-x-[2px]',
-          )}
-        />
-      </button>
+      <span className="flex-1 text-sm text-gray-700 truncate">{label}</span>
+      <StretchSwitch
+        checked={layer.enabled}
+        onChange={() => onToggle(layer.layer_id)}
+        label={label}
+      />
     </div>
   )
 }

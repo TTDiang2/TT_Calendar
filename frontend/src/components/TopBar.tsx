@@ -1,8 +1,8 @@
 import { Calendar, CheckSquare, ChevronLeft, ChevronRight, ListTodo, Rss, Search, Settings } from 'lucide-react'
-import clsx from 'clsx'
 import { useT, type TxKey } from '../i18n'
 import type { TopTab, TodoViewMode, ViewMode } from '../types'
 import { WindowControls } from './WindowControls'
+import { SegmentedTabs } from './ui/SegmentedTabs'
 
 interface Props {
   title: string
@@ -47,26 +47,15 @@ export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeCh
     <header data-tauri-drag-region="deep" className="h-14 flex items-center justify-between px-4 bg-white border-b border-gray-200 select-none">
       <div className="flex items-center gap-1">
         {/* 顶级 tab：日历 / 待办 */}
-        <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-50 mr-3">
-          <button
-            onClick={() => onTopTabChange('calendar')}
-            className={clsx(
-              'flex items-center gap-1 px-3 py-1 text-sm rounded-md transition',
-              topTab === 'calendar' ? 'bg-white text-gray-900 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700',
-            )}
-          >
-            <Calendar size={14} /> {t('terms.calendar')}
-          </button>
-          <button
-            onClick={() => onTopTabChange('todo')}
-            className={clsx(
-              'flex items-center gap-1 px-3 py-1 text-sm rounded-md transition',
-              topTab === 'todo' ? 'bg-white text-gray-900 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700',
-            )}
-          >
-            <CheckSquare size={14} /> {t('terms.todo')}
-          </button>
-        </div>
+        <SegmentedTabs
+          className="mr-3"
+          value={topTab}
+          onChange={onTopTabChange}
+          items={[
+            { value: 'calendar' as const, label: <><Calendar size={14} /> {t('terms.calendar')}</> },
+            { value: 'todo' as const, label: <><CheckSquare size={14} /> {t('terms.todo')}</> },
+          ]}
+        />
 
         {/* 日历 tab：翻月/翻年 + 视图切换；倒数日模式隐藏翻页/今天，保留模式切换避免布局大跳 */}
         {topTab === 'calendar' && (
@@ -92,7 +81,7 @@ export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeCh
                 </button>
                 <button
                   onClick={onToday}
-                  className="ml-2 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                  className="ml-2 shrink-0 whitespace-nowrap px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition"
                 >
                   {t('topbar.today')}
                 </button>
@@ -109,40 +98,24 @@ export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeCh
                 <div className="w-[52px] ml-2 flex-shrink-0" aria-hidden />
               </>
             )}
-            <div className="ml-4 inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-50">
-              {MODES.map((m) => (
-                <button
-                  key={m.key}
-                  onClick={() => onModeChange(m.key)}
-                  className={clsx(
-                    'px-3 py-1 text-sm rounded-md transition',
-                    mode === m.key ? 'bg-white text-gray-900 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700',
-                  )}
-                >
-                  {t(m.labelKey)}
-                </button>
-              ))}
-            </div>
+            <SegmentedTabs
+              className="ml-4"
+              value={mode}
+              onChange={onModeChange}
+              items={MODES.map((m) => ({ value: m.key, label: t(m.labelKey) }))}
+            />
           </>
         )}
 
         {topTab === 'todo' && (
           <>
             <h1 className="text-lg font-semibold text-gray-800 flex items-center gap-1.5"><ListTodo size={18} /> {t('terms.todo')}</h1>
-            <div className="ml-4 inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-50">
-              {TODO_MODES.map((m) => (
-                <button
-                  key={m.key}
-                  onClick={() => onTodoViewChange(m.key)}
-                  className={clsx(
-                    'px-3 py-1 text-sm rounded-md transition',
-                    todoView === m.key ? 'bg-white text-gray-900 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700',
-                  )}
-                >
-                  {t(m.labelKey)}
-                </button>
-              ))}
-            </div>
+            <SegmentedTabs
+              className="ml-4"
+              value={todoView}
+              onChange={onTodoViewChange}
+              items={TODO_MODES.map((m) => ({ value: m.key, label: t(m.labelKey) }))}
+            />
           </>
         )}
       </div>

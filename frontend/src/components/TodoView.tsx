@@ -8,6 +8,7 @@ import type { Todo, TodoList, TodoSort, TodoViewMode } from '../types'
 import { useT, type TxKey } from '../i18n'
 import { layerLabel } from '../i18n/adapt/layerLabel'
 import { TodoDetailPanel, type TodoDetailPanelRef } from './TodoDetailPanel'
+import { AnimatedCheck } from './ui/AnimatedCheck'
 import { TodoMatrixView } from './todo/TodoMatrixView'
 import { TodoKanbanView } from './todo/TodoKanbanView'
 import { TodoGanttView } from './todo/TodoGanttView'
@@ -675,15 +676,16 @@ function TodoRow({ todo, listName, isDone, overdue, selected, leaving, onSelect,
         leaving && 'opacity-0 scale-[0.98] -translate-x-2 max-h-0 py-0 my-0 overflow-hidden',
       )}
     >
-      <button
+      <AnimatedCheck
+        checked={isDone}
         onClick={(e) => { e.stopPropagation(); onToggle() }}
+        ariaLabel={isDone ? t('todoboards.aria.markUndone') : t('todoboards.aria.markDone')}
         className={clsx(
-          'w-4 h-4 mt-0.5 rounded border flex-shrink-0 flex items-center justify-center transition-all duration-200 active:scale-75',
+          'mt-0.5 border',
           isDone ? 'bg-blue-500 border-blue-500' : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50',
         )}
-      >
-        {isDone && <Check size={11} className="text-white" />}
-      </button>
+        checkClassName="text-white"
+      />
       <div className="flex-1 min-w-0">
         <p className={clsx('text-sm leading-snug break-words whitespace-normal', isDone ? 'text-gray-400 line-through' : 'text-gray-800')}>{todo.title}</p>
         {todo.body && <p className="text-xs text-gray-400 break-words whitespace-normal mt-0.5">{todo.body}</p>}
