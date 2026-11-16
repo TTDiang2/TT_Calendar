@@ -235,7 +235,7 @@ export const ja: DeepPartialDict<Dict> = {
       vivid: 'ビビッド',
       hint: 'ソフト：彩度を抑えて濃淡を保持。ビビッド：セル全体をレイヤー色で塗りつぶします。',
       themeLabel: 'テーマ配色',
-      themeHint: '月グリッドの配色をまとめて切り替えます（予測は暖色、完了は緑）。カスタムレイヤーの色は変わりません。',
+      themeHint: '見た目をまとめて切り替えます（月グリッドの階調、パネル配色、レイヤーのパレット）。カスタムレイヤーの色は変わりません。',
       themeClassic: 'クラシック',
       themeMorandi: 'モランディ',
       themeScandinavian: '北欧',

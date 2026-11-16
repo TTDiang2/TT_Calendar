@@ -2,16 +2,19 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import clsx from 'clsx'
 import type { Day, Layer, YearData } from '../types'
-import { getBusyColors, parseDate, todayStr } from '../data'
+import { getBusyColors, parseDate, softTextColor, softTint, todayStr } from '../data'
 import { getTodoBusyConfig, type TodoBusyConfig } from '../api/client'
 import { useLang, fmtWeekday, fmtMonthName } from '../i18n'
 import { resolveBusyRamps, useCalendarTheme, withAlpha, type CalendarTheme } from '../lib/calendar-theme'
+import type { CalendarColorStyle } from '../lib/calendar-style'
 
 interface Props {
   yearData: YearData
   layers: Layer[]
   selectedDate: string | null
   onSelectDate: (date: string) => void
+  /** 柔和 / 鲜明；年视图格子只有十几像素，柔和模式只做轻微降噪，保住辨识度 */
+  colorStyle?: CalendarColorStyle
 }
 
 // 迷你格太小无法分层，按优先级取第一个启用的染色维度颜色
@@ -33,9 +36,10 @@ function miniCellColor(day: Day, layerById: Map<string, Layer>, theme: CalendarT
   return null
 }
 
-export function YearView({ yearData, layers, selectedDate, onSelectDate }: Props) {
+export function YearView({ yearData, layers, selectedDate, onSelectDate, colorStyle = 'vivid' }: Props) {
   const lang = useLang()
   const { theme } = useCalendarTheme()
+  const isSoft = colorStyle === 'soft'
   const layerById = useMemo(() => new Map(layers.map((l) => [l.layer_id, l])), [layers])
   const { data: busyConfig } = useQuery({ queryKey: ['todoBusyConfig'], queryFn: getTodoBusyConfig, staleTime: 60_000 })
 
@@ -51,9 +55,9 @@ export function YearView({ yearData, layers, selectedDate, onSelectDate }: Props
         {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
           const days = byMonth.get(m) ?? []
           return (
-            <div key={m} className="bg-white rounded-lg border border-gray-200 p-2">
+            <div key={m} className="bg-white rounded-lg border border-[color:var(--cal-border)] p-2">
               {/* 月标/星期名走 Intl（决策 #7）：zh「10月」「一…日」与旧手写串逐字一致，en 为 Oct / M…S */}
-              <p className="text-xs font-semibold text-gray-600 mb-1">{fmtMonthName(lang, new Date(yearData.year, m - 1, 1), 'short')}</p>
+              <p className="text-xs font-semibold cal-muted mb-1">{fmtMonthName(lang, new Date(yearData.year, m - 1, 1), 'short')}</p>
               <div className="grid grid-cols-7 gap-px">
                 {/* key 用列号：en 窄星期名有重复字母（T/S），按名做 key 会撞 */}
                 {Array.from({ length: 7 }, (_, wi) => fmtWeekday(lang, new Date(2023, 0, 2 + wi), 'narrow')).map((w, wi) => (
@@ -70,7 +74,8 @@ export function YearView({ yearData, layers, selectedDate, onSelectDate }: Props
                 ))}
                 {days.map((day) => {
                   const { d } = parseDate(day.date)
-                  const color = miniCellColor(day, layerById, theme, busyConfig)
+                  const raw = miniCellColor(day, layerById, theme, busyConfig)
+                  const color = raw && isSoft ? softTint(raw, { dense: true }) : raw
                   const isSel = selectedDate === day.date
                   return (
                     <button
@@ -78,6 +83,7 @@ export function YearView({ yearData, layers, selectedDate, onSelectDate }: Props
                       onClick={() => onSelectDate(day.date)}
                       style={{
                         backgroundColor: color ?? undefined,
+                        color: color && isSoft ? softTextColor(color) : undefined,
                         boxShadow: day.is_today
                           ? `0 0 0 1px ${theme.today}`
                           : isSel
@@ -86,7 +92,7 @@ export function YearView({ yearData, layers, selectedDate, onSelectDate }: Props
                       }}
                       className={clsx(
                         'aspect-square w-full text-[8px] leading-none rounded-[2px]',
-                        day.is_other_month ? 'opacity-30' : 'text-gray-600',
+                        day.is_other_month ? 'opacity-30' : 'text-[color:var(--cal-ink)]',
                       )}
                     >
                       {d}

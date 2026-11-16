@@ -60,7 +60,7 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
         <LanguageSection />
         <AppearanceSection value={colorStyle} onChange={onColorStyleChange} />
         <section>
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.import.sectionTitle')}</h3>
+          <h3 className="text-xs font-semibold cal-muted uppercase tracking-wide mb-2">{t('settings.import.sectionTitle')}</h3>
           <div className="flex gap-2 mb-2">
             <Field label={t('settings.import.fieldSource')}>
               <select
@@ -90,7 +90,7 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
               />
             </Field>
           </div>
-          <p className="text-xs text-gray-400 mb-2">
+          <p className="text-xs cal-muted mb-2">
             {t('settings.import.desc')}
           </p>
           <div className="flex items-center gap-2">
@@ -107,7 +107,7 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
 
         {sourceLayers.length > 0 && (
           <section>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.layerFilters.sectionTitle')}</h3>
+            <h3 className="text-xs font-semibold cal-muted uppercase tracking-wide mb-2">{t('settings.layerFilters.sectionTitle')}</h3>
             <div className="flex flex-col gap-1">
               {sourceLayers.map((l) => (
                 <LayerAccordion key={l.layer_id} layer={l} onToggle={onToggleLayer} />
@@ -117,9 +117,9 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
         )}
 
         <section>
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.layers.sectionTitle')}</h3>
+          <h3 className="text-xs font-semibold cal-muted uppercase tracking-wide mb-2">{t('settings.layers.sectionTitle')}</h3>
           {customLayers.length === 0 ? (
-            <p className="text-sm text-gray-400">{t('settings.layers.empty')}</p>
+            <p className="text-sm cal-muted">{t('settings.layers.empty')}</p>
           ) : (
             <div className="flex flex-col gap-1">
               {customLayers.map((l) => (
@@ -133,7 +133,7 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
         <ReminderConfigSection />
         <SyncConfigSection />
       </div>
-      <p className="mt-5 pt-3 border-t border-gray-100 text-center text-[11px] text-gray-400 select-none">
+      <p className="mt-5 pt-3 border-t border-[color:var(--cal-border)] text-center text-[11px] cal-muted select-none">
         TT Calendar <span className="font-medium">v2.2.0</span>
       </p>
     </Modal>
@@ -174,12 +174,12 @@ function BusyConfigSection() {
 
   return (
     <section>
-      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.busy.sectionTitle')}</h3>
-      <p className="text-xs text-gray-400 mb-2">
+      <h3 className="text-xs font-semibold cal-muted uppercase tracking-wide mb-2">{t('settings.busy.sectionTitle')}</h3>
+      <p className="text-xs cal-muted mb-2">
         {t('settings.busy.desc')}
       </p>
       {!local ? (
-        <p className="text-sm text-gray-400">{t('settings.loading')}</p>
+        <p className="text-sm cal-muted">{t('settings.loading')}</p>
       ) : (
         <div className="flex flex-col gap-3">
           <div className="flex gap-2">
@@ -225,7 +225,7 @@ function BusyConfigSection() {
             </div>
           </Field>
           <div className="flex items-center gap-3">
-            <span className="text-[11px] text-gray-500 flex-shrink-0">{t('settings.busy.predictLayer')}</span>
+            <span className="text-[11px] cal-muted flex-shrink-0">{t('settings.busy.predictLayer')}</span>
             <div className="flex gap-1">
               {(ramps?.predict ?? []).map((c, i) => (
                 <input key={i} type="color" value={c} title={t('settings.busy.levelTitle', { n: i + 1 })}
@@ -240,7 +240,7 @@ function BusyConfigSection() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-[11px] text-gray-500 flex-shrink-0">{t('settings.busy.actualLayer')}</span>
+            <span className="text-[11px] cal-muted flex-shrink-0">{t('settings.busy.actualLayer')}</span>
             <div className="flex gap-1">
               {(ramps?.done ?? []).map((c, i) => (
                 <input key={i} type="color" value={c} title={t('settings.busy.levelTitle', { n: i + 1 })}
@@ -254,7 +254,7 @@ function BusyConfigSection() {
               ))}
             </div>
           </div>
-          <p className="text-[11px] text-gray-400">{t('settings.busy.themeFollow')}</p>
+          <p className="text-[11px] cal-muted">{t('settings.busy.themeFollow')}</p>
           <div className="flex items-center gap-2">
             <button
               onClick={() => saveMut.mutate()}
@@ -310,16 +310,16 @@ function ReminderConfigSection() {
   if (!local) {
     return (
       <section>
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.reminder.sectionTitle')}</h3>
-        <p className="text-sm text-gray-400">{t('settings.loading')}</p>
+        <h3 className="text-xs font-semibold cal-muted uppercase tracking-wide mb-2">{t('settings.reminder.sectionTitle')}</h3>
+        <p className="text-sm cal-muted">{t('settings.loading')}</p>
       </section>
     )
   }
 
   return (
     <section>
-      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.reminder.sectionTitle')}</h3>
-      <p className="text-xs text-gray-400 mb-2">
+      <h3 className="text-xs font-semibold cal-muted uppercase tracking-wide mb-2">{t('settings.reminder.sectionTitle')}</h3>
+      <p className="text-xs cal-muted mb-2">
         {t('settings.reminder.desc')}
       </p>
       <div className="flex items-center gap-3">
@@ -331,7 +331,7 @@ function ReminderConfigSection() {
             disabled={saveMut.isPending}
             className="rounded border-gray-300 text-blue-500 focus:ring-blue-400"
           />
-          <span className="text-sm text-gray-700">{t('settings.reminder.enable')}</span>
+          <span className="text-sm cal-ink">{t('settings.reminder.enable')}</span>
         </label>
         <Field label={t('settings.reminder.fieldTime')}>
           <input
@@ -432,8 +432,8 @@ function SyncConfigSection() {
 
   return (
     <section>
-      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.sync.sectionTitle')}</h3>
-      <p className="text-xs text-gray-400 mb-2">
+      <h3 className="text-xs font-semibold cal-muted uppercase tracking-wide mb-2">{t('settings.sync.sectionTitle')}</h3>
+      <p className="text-xs cal-muted mb-2">
         {t('settings.sync.desc')}
       </p>
       {decision !== null && (
@@ -453,7 +453,7 @@ function SyncConfigSection() {
       )}
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500 w-20 flex-shrink-0">{status?.configured ? lastLine : t('settings.sync.notConfigured')}</span>
+          <span className="text-xs cal-muted w-20 flex-shrink-0">{status?.configured ? lastLine : t('settings.sync.notConfigured')}</span>
         </div>
         <div className="flex gap-2">
           <Field label={t('settings.sync.fieldRepo')}>
@@ -468,21 +468,21 @@ function SyncConfigSection() {
           <input type="password" className="tt-input w-full" placeholder={cfg?.has_token ? '••••••••' : 'github_pat_...'}
             value={token} onChange={(e) => setToken(e.target.value)} />
         </Field>
-        <label className="flex items-center gap-2 text-sm text-gray-700 select-none">
+        <label className="flex items-center gap-2 text-sm cal-ink select-none">
           <input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} />
           {t('settings.sync.autoOnStart')}
         </label>
-        <label className="flex items-center gap-2 text-sm text-gray-700 select-none">
+        <label className="flex items-center gap-2 text-sm cal-ink select-none">
           <input type="checkbox" checked={closeSync} onChange={(e) => setCloseSync(e.target.checked)} />
           {t('settings.sync.syncOnClose')}
         </label>
         <div className="flex items-center gap-2">
           <button onClick={onSave} disabled={busy !== null || !repo}
-            className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-40">
+            className="px-3 py-1.5 text-sm bg-gray-100 cal-ink rounded-lg hover:bg-gray-200 disabled:opacity-40">
             {busy === 'save' ? t('settings.saving') : t('common.save')}
           </button>
           <button onClick={onTest} disabled={busy !== null || !repo || (!token && !cfg?.has_token)}
-            className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-40">
+            className="px-3 py-1.5 text-sm bg-gray-100 cal-ink rounded-lg hover:bg-gray-200 disabled:opacity-40">
             {busy === 'test' ? t('settings.sync.testing') : t('settings.sync.test')}
           </button>
           <button onClick={onSync} disabled={busy !== null || !repo || !cfg?.has_token}
@@ -511,7 +511,7 @@ function CustomLayerRow({ layer, onToggle }: { layer: Layer; onToggle: (id: stri
   return (
     <div className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-50">
       <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: layer.color ?? '#9ca3af' }} />
-      <span className="flex-1 text-sm text-gray-700 truncate">{layer.display_name}</span>
+      <span className="flex-1 text-sm cal-ink truncate">{layer.display_name}</span>
       <button
         onClick={() => onToggle(layer.layer_id)}
         aria-pressed={layer.enabled}
@@ -552,13 +552,13 @@ function LayerAccordion({ layer, onToggle }: { layer: Layer; onToggle: (id: stri
   const [open, setOpen] = useState(false)
   const hasMinImportance = layer.config?.min_importance !== undefined
   return (
-    <div className="border border-gray-200 rounded-md">
+    <div className="border border-[color:var(--cal-border)] rounded-md">
       <div className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50">
         <span
           className="w-2.5 h-2.5 rounded-full flex-shrink-0"
           style={{ backgroundColor: layer.color ?? '#9ca3af' }}
         />
-        <span className="flex-1 text-sm text-gray-700 truncate">{layer.display_name}</span>
+        <span className="flex-1 text-sm cal-ink truncate">{layer.display_name}</span>
         <button
           onClick={() => setOpen((v) => !v)}
           className="text-[11px] text-blue-600 hover:text-blue-700 px-2"
@@ -609,9 +609,9 @@ function LayerMinImportance({ layer }: { layer: Layer }) {
     { v: 3, labelKey: 'settings.layerFilters.star3' },
   ]
   return (
-    <div className="border-t border-gray-200 bg-gray-50 px-3 py-2">
+    <div className="border-t border-[color:var(--cal-border)] bg-gray-50 px-3 py-2">
       <div className="flex items-center gap-1.5 flex-wrap">
-        <span className="text-[11px] text-gray-500">{t('settings.layerFilters.minStar')}</span>
+        <span className="text-[11px] cal-muted">{t('settings.layerFilters.minStar')}</span>
         {options.map((o) => (
           <button
             key={o.v}
@@ -623,7 +623,7 @@ function LayerMinImportance({ layer }: { layer: Layer }) {
               'px-2 py-0.5 text-xs rounded border transition',
               o.v === current
                 ? 'bg-blue-50 border-blue-300 text-blue-700'
-                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300',
+                : 'bg-white border-[color:var(--cal-border)] cal-muted hover:border-gray-300',
             )}
           >
             {t(o.labelKey)}
@@ -683,15 +683,15 @@ function LayerSubActions({ layer }: { layer: Layer }) {
   }
 
   return (
-    <div className="border-t border-gray-200 bg-gray-50 px-3 py-2">
-      {isLoading && <p className="text-xs text-gray-400">{t('settings.layerFilters.subLoading')}</p>}
+    <div className="border-t border-[color:var(--cal-border)] bg-gray-50 px-3 py-2">
+      {isLoading && <p className="text-xs cal-muted">{t('settings.layerFilters.subLoading')}</p>}
       {!isLoading && pairs.length === 0 && (
-        <p className="text-xs text-gray-400">{t('settings.layerFilters.subEmpty')}</p>
+        <p className="text-xs cal-muted">{t('settings.layerFilters.subEmpty')}</p>
       )}
       {!isLoading && pairs.length > 0 && (
         <>
           <div className="flex items-center justify-between mb-1.5">
-            <p className="text-[11px] text-gray-500">{isAllOn ? t('settings.layerFilters.subAllOn') : t('settings.layerFilters.subFiltered', { n: current.length, total: pairs.length })}</p>
+            <p className="text-[11px] cal-muted">{isAllOn ? t('settings.layerFilters.subAllOn') : t('settings.layerFilters.subFiltered', { n: current.length, total: pairs.length })}</p>
             {!isAllOn && (
               <button onClick={resetAll} className="text-[11px] text-blue-600 hover:text-blue-700">{t('settings.layerFilters.subReset')}</button>
             )}
@@ -705,7 +705,7 @@ function LayerSubActions({ layer }: { layer: Layer }) {
                   onClick={() => toggle(p.qtype, p.sub_action)}
                   className={clsx(
                     'px-2 py-0.5 text-xs rounded border transition',
-                    checked ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300',
+                    checked ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-[color:var(--cal-border)] cal-muted hover:border-gray-300',
                   )}
                 >
                   {p.sub_action}
@@ -729,9 +729,9 @@ function AppearanceSection({ value, onChange }: { value: CalendarColorStyle; onC
   ]
   return (
     <section>
-      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.appearance.sectionTitle')}</h3>
+      <h3 className="text-xs font-semibold cal-muted uppercase tracking-wide mb-2">{t('settings.appearance.sectionTitle')}</h3>
       <div className="flex items-center gap-3">
-        <span className="flex-1 text-sm text-gray-700">{t('settings.appearance.colorStyle')}</span>
+        <span className="flex-1 text-sm cal-ink">{t('settings.appearance.colorStyle')}</span>
         <div className="inline-flex rounded-lg bg-gray-100 p-0.5">
           {options.map((o) => (
             <button
@@ -741,7 +741,7 @@ function AppearanceSection({ value, onChange }: { value: CalendarColorStyle; onC
               aria-pressed={value === o.v}
               className={clsx(
                 'px-3 py-1 text-sm rounded-md transition-colors',
-                value === o.v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700',
+                value === o.v ? 'bg-white cal-ink shadow-sm' : 'cal-muted hover:cal-ink',
               )}
             >
               {t(o.labelKey)}
@@ -749,10 +749,10 @@ function AppearanceSection({ value, onChange }: { value: CalendarColorStyle; onC
           ))}
         </div>
       </div>
-      <p className="text-xs text-gray-400 mt-1.5">{t('settings.appearance.hint')}</p>
+      <p className="text-xs cal-muted mt-1.5">{t('settings.appearance.hint')}</p>
 
       <div className="mt-3">
-        <span className="text-sm text-gray-700">{t('settings.appearance.themeLabel')}</span>
+        <span className="text-sm cal-ink">{t('settings.appearance.themeLabel')}</span>
         <div className="mt-2 grid grid-cols-5 gap-2">
           {CALENDAR_THEME_IDS.map((id) => {
             const th = CALENDAR_THEMES[id]
@@ -766,7 +766,7 @@ function AppearanceSection({ value, onChange }: { value: CalendarColorStyle; onC
                 title={t(th.labelKey)}
                 className={clsx(
                   'rounded-lg border p-1 text-left transition',
-                  active ? 'border-gray-900 shadow-sm' : 'border-gray-200 hover:border-gray-300',
+                  active ? 'border-gray-900 shadow-sm' : 'border-[color:var(--cal-border)] hover:border-gray-300',
                 )}
               >
                 <span className="block overflow-hidden rounded">
@@ -781,14 +781,14 @@ function AppearanceSection({ value, onChange }: { value: CalendarColorStyle; onC
                     ))}
                   </span>
                 </span>
-                <span className={clsx('mt-1 block truncate text-[11px]', active ? 'font-semibold text-gray-900' : 'text-gray-500')}>
+                <span className={clsx('mt-1 block truncate text-[11px]', active ? 'font-semibold cal-ink' : 'cal-muted')}>
                   {t(th.labelKey)}
                 </span>
               </button>
             )
           })}
         </div>
-        <p className="text-xs text-gray-400 mt-1.5">{t('settings.appearance.themeHint')}</p>
+        <p className="text-xs cal-muted mt-1.5">{t('settings.appearance.themeHint')}</p>
       </div>
     </section>
   )
@@ -798,7 +798,7 @@ function LanguageSection() {
   const t = useT()
   return (
     <section>
-      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('language.settingsLabel')}</h3>
+      <h3 className="text-xs font-semibold cal-muted uppercase tracking-wide mb-2">{t('language.settingsLabel')}</h3>
       <select
         className="tt-input"
         value={activeLang()}

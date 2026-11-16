@@ -12,6 +12,41 @@ html, body, #root {
   -webkit-font-smoothing: antialiased;
 }
 
+/* 主题变量默认值（classic）。CalendarThemeProvider 挂载后会用当前主题覆盖。 */
+:root {
+  --cal-ink: #111827;
+  --cal-muted: #6b7280;
+  --cal-surface: #f9fafb;
+  --cal-panel: #ffffff;
+  --cal-shell: #f6f7f9;
+  --cal-subtle: #f3f4f6;
+  --cal-border: #e5e7eb;
+  --cal-today: #2563eb;
+  --cal-weekend: #ef4444;
+  --cal-accent: #2563eb;
+}
+
+body {
+  background: var(--cal-shell);
+  color: var(--cal-ink);
+}
+
+/* 外壳语义色：顶栏 / 侧栏 / 右栏跟着主题走，
+   整个窗口不再是「暖色日历 + 纯白面板」的割裂感。 */
+@layer utilities {
+  .cal-panel-bg { background-color: var(--cal-panel); }
+  .cal-shell-bg { background-color: var(--cal-shell); }
+  .cal-subtle-bg { background-color: var(--cal-subtle); }
+  .cal-hover-bg:hover { background-color: var(--cal-subtle); }
+  .cal-ink { color: var(--cal-ink); }
+  .cal-muted { color: var(--cal-muted); }
+  .cal-line { border-color: var(--cal-border); }
+  .cal-line-b { border-bottom-color: var(--cal-border); }
+  .cal-line-r { border-right-color: var(--cal-border); }
+  .cal-line-l { border-left-color: var(--cal-border); }
+  .cal-line-t { border-top-color: var(--cal-border); }
+}
+
 /* 滚动条美化 */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }

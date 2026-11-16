@@ -223,7 +223,7 @@ export const fr: DeepPartialDict<Dict> = {
       vivid: 'Vif',
       hint: 'Doux : saturation réduite, intensité conservée. Vif : couleurs du calque à pleine intensité.',
       themeLabel: 'Thème de couleurs',
-      themeHint: 'Bascule toute la palette de la grille mensuelle : prévisions chaudes et réalisations en vert. Les couleurs personnalisées des calques restent inchangées.',
+      themeHint: 'Change toute l\'apparence : dégradés de la grille mensuelle, couleurs du châssis et palettes de calques. Les couleurs personnalisées des calques restent inchangées.',
       themeClassic: 'Classique',
       themeMorandi: 'Morandi',
       themeScandinavian: 'Scandinave',

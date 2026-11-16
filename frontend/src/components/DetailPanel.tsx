@@ -62,8 +62,8 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
 
   if (!day) {
     return (
-      <aside className="w-72 bg-white border-l border-gray-200 p-4 overflow-y-auto">
-        <p className="text-sm text-gray-400">{t('detail.panelEmpty')}</p>
+      <aside className="w-72 cal-panel-bg border-l cal-line-l p-4 overflow-y-auto">
+        <p className="text-sm cal-muted">{t('detail.panelEmpty')}</p>
       </aside>
     )
   }
@@ -86,16 +86,16 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
   }
 
   return (
-    <aside className="w-72 bg-white border-l border-gray-200 p-4 overflow-y-auto">
+    <aside className="w-72 cal-panel-bg border-l cal-line-l p-4 overflow-y-auto">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <p className="text-[11px] text-gray-400">{t('detail.selectedDate')}</p>
-          <p className="text-2xl font-semibold text-gray-800">
+          <p className="text-[11px] cal-muted">{t('detail.selectedDate')}</p>
+          <p className="text-2xl font-semibold cal-ink">
             {t('detail.dateMD', { m, d })}
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm cal-muted">
             {t('detail.yearWeekday', { y, weekday: fmtWeekday(lang, dt, 'short') })}
-            {lunarText && <span className="ml-2 text-gray-400">{lunarText}</span>}
+            {lunarText && <span className="ml-2 cal-muted">{lunarText}</span>}
             {day.is_today && <span className="ml-2 text-blue-500 text-xs">{t('topbar.today')}</span>}
           </p>
         </div>
@@ -104,13 +104,13 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
       <div className="flex gap-1 mb-4">
         <button
           onClick={() => onAddEntry(day.date, 'dot')}
-          className="flex-1 flex items-center justify-center gap-1 text-xs text-gray-600 py-1.5 rounded-md bg-gray-50 hover:bg-gray-100"
+          className="flex-1 flex items-center justify-center gap-1 text-xs cal-muted py-1.5 rounded-md cal-subtle-bg cal-hover-bg"
         >
           <Clock size={12} /> {t('detail.dot')}
         </button>
         <button
           onClick={() => onAddEntry(day.date, 'color')}
-          className="flex-1 flex items-center justify-center gap-1 text-xs text-gray-600 py-1.5 rounded-md bg-gray-50 hover:bg-gray-100"
+          className="flex-1 flex items-center justify-center gap-1 text-xs cal-muted py-1.5 rounded-md cal-subtle-bg cal-hover-bg"
         >
           <Palette size={12} /> {t('detail.coloring')}
         </button>
@@ -130,20 +130,20 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
         <div className="mb-3 space-y-1">
           {day.coloring_level != null && (
             <div className="flex items-center gap-2 group">
-              <span className="text-[11px] text-gray-500 w-16 flex-shrink-0 truncate">{t('detail.fullness')}</span>
+              <span className="text-[11px] cal-muted w-16 flex-shrink-0 truncate">{t('detail.fullness')}</span>
               <div className="flex-1 flex gap-px h-2 rounded overflow-hidden">
                 {theme.coloring.map((c, i) => (
                   <div key={i} className="flex-1" style={{ backgroundColor: c, opacity: i <= day.coloring_level! ? 1 : 0.3 }} />
                 ))}
               </div>
-              <span className="text-xs text-gray-500">{day.coloring_level + 1}/5</span>
+              <span className="text-xs cal-muted">{day.coloring_level + 1}/5</span>
             </div>
           )}
           {(day.marks ?? [])
             .filter((mk) => mk.mode === 'graded')
             .map((mk) => (
               <div key={mk.layer_id} className="flex items-center gap-2 group">
-                <span className="text-[11px] text-gray-500 w-16 flex-shrink-0 truncate">{mk.display_name}</span>
+                <span className="text-[11px] cal-muted w-16 flex-shrink-0 truncate">{mk.display_name}</span>
                 {mk.level != null ? (
                   <>
                     <div className="flex-1 flex gap-px h-2 rounded overflow-hidden">
@@ -155,7 +155,7 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
                         />
                       ))}
                     </div>
-                    <span className="text-xs text-gray-500">{(mk.level ?? 0) + 1}/5</span>
+                    <span className="text-xs cal-muted">{(mk.level ?? 0) + 1}/5</span>
                   </>
                 ) : (
                   <span className="flex-1 text-[11px] text-gray-300">{t('detail.noLevel')}</span>
@@ -171,24 +171,24 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
             ))}
           {day.predict_level != null && (
             <div className="flex items-center gap-2">
-              <span className="text-[11px] text-gray-500 w-16 flex-shrink-0 truncate">{t('detail.todoPredict')}</span>
+              <span className="text-[11px] cal-muted w-16 flex-shrink-0 truncate">{t('detail.todoPredict')}</span>
               <div className="flex-1 flex gap-px h-2 rounded overflow-hidden">
                 {busyRamps.predict.map((c, i) => (
                   <div key={i} className="flex-1" style={{ backgroundColor: c, opacity: i <= day.predict_level! ? 1 : 0.3 }} />
                 ))}
               </div>
-              <span className="text-xs text-gray-500">{day.predict_level! + 1}/5</span>
+              <span className="text-xs cal-muted">{day.predict_level! + 1}/5</span>
             </div>
           )}
           {day.done_level != null && (
             <div className="flex items-center gap-2">
-              <span className="text-[11px] text-gray-500 w-16 flex-shrink-0 truncate">{t('detail.todoDone')}</span>
+              <span className="text-[11px] cal-muted w-16 flex-shrink-0 truncate">{t('detail.todoDone')}</span>
               <div className="flex-1 flex gap-px h-2 rounded overflow-hidden">
                 {busyRamps.done.map((c, i) => (
                   <div key={i} className="flex-1" style={{ backgroundColor: c, opacity: i <= day.done_level! ? 1 : 0.3 }} />
                 ))}
               </div>
-              <span className="text-xs text-gray-500">{day.done_level! + 1}/5</span>
+              <span className="text-xs cal-muted">{day.done_level! + 1}/5</span>
             </div>
           )}
         </div>
@@ -201,10 +201,10 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
             .filter((mk) => mk.mode !== 'graded')
             .map((mk) => (
               <div key={mk.layer_id} className="flex items-center gap-2 group">
-                <span className="text-[11px] text-gray-500 w-16 flex-shrink-0 truncate">{mk.display_name}</span>
+                <span className="text-[11px] cal-muted w-16 flex-shrink-0 truncate">{mk.display_name}</span>
                 <div className="flex-1 flex items-center gap-1">
                   <span className="w-3 h-3 rounded flex-shrink-0" style={{ backgroundColor: mk.color ?? '#9ca3af' }} />
-                  <span className="text-[11px] text-gray-400">{t('detail.marked')}</span>
+                  <span className="text-[11px] cal-muted">{t('detail.marked')}</span>
                 </div>
                 <button
                   onClick={() => delMarkMut.mutate({ layerId: mk.layer_id, date: day.date })}
@@ -221,12 +221,12 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
       {(day.schedule_items?.length ?? 0) > 0 && (
         <div className="mb-4">
           <div className="flex items-center justify-between mb-1.5">
-            <div className="flex items-center gap-1 text-xs text-gray-400">
+            <div className="flex items-center gap-1 text-xs cal-muted">
               <Clock size={12} /> {t('detail.schedule')}
             </div>
             <button
               onClick={() => onEditSchedule(day.date)}
-              className="text-[11px] text-gray-400 hover:text-blue-500"
+              className="text-[11px] cal-muted hover:text-blue-500"
               title={t('detail.editAllSchedule')}
             >
               {t('detail.edit')}
@@ -238,12 +238,12 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
               .map((it) => (
                 <div
                   key={it.id ?? `${it.title}-${it.start_time}`}
-                  className="flex items-center gap-1.5 group rounded -mx-1 px-1 py-0.5 hover:bg-gray-50"
+                  className="flex items-center gap-1.5 group rounded -mx-1 px-1 py-0.5 cal-hover-bg"
                 >
-                  <span className="text-gray-400 flex-shrink-0 tabular-nums whitespace-nowrap text-sm">
+                  <span className="cal-muted flex-shrink-0 tabular-nums whitespace-nowrap text-sm">
                     {it.start_time ? (it.end_time ? `${it.start_time}-${it.end_time}` : it.start_time) : t('detail.allDay')}
                   </span>
-                  <span className="text-sm text-gray-700 flex-1 min-w-0 truncate">
+                  <span className="text-sm cal-ink flex-1 min-w-0 truncate">
                     {it.title}
                     {it.span_total && it.span_total > 1 && (
                       <span className="ml-1 text-[10px] text-blue-600">
@@ -254,7 +254,7 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
                   <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition flex-shrink-0">
                     <button
                       onClick={() => onEditSchedule(day.date)}
-                      className="p-1 text-gray-400 hover:text-blue-500"
+                      className="p-1 cal-muted hover:text-blue-500"
                       title={t('dialogs.menu.editSchedule')}
                     >
                       <Pencil size={12} />
@@ -262,7 +262,7 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
                     {it.id && (
                       <button
                         onClick={() => delScheduleMut.mutate(it.id!)}
-                        className="p-1 text-gray-400 hover:text-red-500"
+                        className="p-1 cal-muted hover:text-red-500"
                         title={t('dialogs.deleteScheduleItem')}
                       >
                         <Trash2 size={12} />
@@ -276,7 +276,7 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
       )}
 
       <div>
-        <div className="flex items-center gap-1 mb-1.5 text-xs text-gray-400">
+        <div className="flex items-center gap-1 mb-1.5 text-xs cal-muted">
           <CalendarDays size={12} /> {t('detail.eventsCount', { n: events.length })}
         </div>
         {events.length === 0 ? (
@@ -286,16 +286,16 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
         ) : (
           <div className="space-y-2">
             {events.map((ev, i) => (
-              <div key={ev.id ?? i} className="p-2 rounded-lg bg-gray-50 border border-gray-100 group">
+              <div key={ev.id ?? i} className="p-2 rounded-lg cal-subtle-bg border border-[color:var(--cal-border)] group">
                 <div className="flex items-start gap-1.5">
                   <span
                     className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5"
                     style={{ backgroundColor: ev.color ?? layerColor(ev.layer_id) }}
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-700 leading-tight">{ev.title}</p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">{layerName(ev.layer_id)}</p>
-                    {ev.description && <p className="text-xs text-gray-400 mt-1">{ev.description}</p>}
+                    <p className="text-sm cal-ink leading-tight">{ev.title}</p>
+                    <p className="text-[11px] cal-muted mt-0.5">{layerName(ev.layer_id)}</p>
+                    {ev.description && <p className="text-xs cal-muted mt-1">{ev.description}</p>}
                     {fieldSpecBySource[ev.source] && ev.source !== 'manual' && (
                       <SourceFields spec={fieldSpecBySource[ev.source]} extra={ev.extra} />
                     )}
@@ -304,14 +304,14 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
                     <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition">
                       <button
                         onClick={() => onEditEvent(day.date, ev)}
-                        className="p-1 text-gray-400 hover:text-blue-500"
+                        className="p-1 cal-muted hover:text-blue-500"
                         title={t('detail.edit')}
                       >
                         <Pencil size={12} />
                       </button>
                       <button
                         onClick={() => ev.id && delMut.mutate(ev.id)}
-                        className="p-1 text-gray-400 hover:text-red-500"
+                        className="p-1 cal-muted hover:text-red-500"
                         title={t('common.delete')}
                       >
                         <Trash2 size={12} />
@@ -327,7 +327,7 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
 
       {day.todos && day.todos.length > 0 && (
         <div className="mt-4">
-          <div className="flex items-center gap-1 mb-1.5 text-xs text-gray-400">
+          <div className="flex items-center gap-1 mb-1.5 text-xs cal-muted">
             <CheckCircle2 size={12} /> {t('detail.todosCount', { n: day.todos.length })}
           </div>
           <div className="space-y-1">
@@ -348,7 +348,7 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
                     {isDone && <span className="text-white text-[8px]">✓</span>}
                   </button>
                   <div className="flex-1 min-w-0">
-                    <p className={clsx('text-sm leading-tight', isDone ? 'text-gray-400 line-through' : 'text-gray-700')}>{td.title}</p>
+                    <p className={clsx('text-sm leading-tight', isDone ? 'cal-muted line-through' : 'cal-ink')}>{td.title}</p>
                     {td.importance === 'high' && !isDone && <span className="text-[10px] text-red-500">{t('detail.highImportance')}</span>}
                     {td.due_date === day.date && !isDone && (
                       <span className="text-[10px] text-red-500 ml-1">{t('detail.dueTag')}</span>

@@ -37,7 +37,7 @@ export function SegmentedTabs<T extends string>({
       role="group"
       aria-label={ariaLabel}
       className={clsx(
-        'relative inline-flex shrink-0 rounded-lg border border-gray-200 bg-gray-50 p-0.5',
+        'relative inline-flex shrink-0 rounded-lg border border-[color:var(--cal-border)] cal-subtle-bg p-0.5',
         className,
       )}
     >
@@ -52,14 +52,14 @@ export function SegmentedTabs<T extends string>({
             className={clsx(
               'relative flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500',
-              active ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700',
+              active ? 'cal-ink' : 'cal-muted hover:text-[color:var(--cal-ink)]',
             )}
           >
             {active && (
               <motion.span
                 data-segment-indicator
                 layoutId={indicatorId}
-                className="absolute inset-0 rounded-md bg-white shadow-sm"
+                className="absolute inset-0 rounded-md cal-panel-bg shadow-sm"
                 transition={springMorph}
               />
             )}

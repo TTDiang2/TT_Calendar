@@ -77,7 +77,7 @@ export function DayView({ monthData, layers, selectedDate, onSelect, onDoubleCli
         <div className="flex-1 p-4 overflow-y-auto">
           {day.custom_bg && (
             <div className="mb-4 flex items-center gap-1">
-              <span className="text-xs text-gray-500 mr-1">{t('calendar.markLabel')}</span>
+              <span className="text-xs cal-muted mr-1">{t('calendar.markLabel')}</span>
               <span
                 className="px-2 py-0.5 rounded text-[11px] text-white"
                 style={{ backgroundColor: day.custom_bg.color }}
@@ -88,7 +88,7 @@ export function DayView({ monthData, layers, selectedDate, onSelect, onDoubleCli
           )}
           {day.coloring_level != null && (
             <div className="mb-4 flex items-center gap-1">
-              <span className="text-xs text-gray-500 mr-1">{t('calendar.fullnessLabel')}</span>
+              <span className="text-xs cal-muted mr-1">{t('calendar.fullnessLabel')}</span>
               {theme.coloring.map((c, i) => (
                 <span
                   key={i}
@@ -115,11 +115,11 @@ export function DayView({ monthData, layers, selectedDate, onSelect, onDoubleCli
                       style={{ backgroundColor: it.color ?? '#3D6BFB' }}
                     />
                     {it.start_time && (
-                      <span className="text-xs text-gray-500 tabular-nums flex-shrink-0">
+                      <span className="text-xs cal-muted tabular-nums flex-shrink-0">
                         {it.start_time}{it.end_time ? `-${it.end_time}` : ''}
                       </span>
                     )}
-                    <span className="text-gray-800">{it.title}</span>
+                    <span className="cal-ink">{it.title}</span>
                     {it.span_total && it.span_total > 1 && (
                       <span className="text-[11px] text-blue-600 flex-shrink-0">
                         {t('calendar.spanRange', { i: it.span_index ?? '', total: it.span_total, start: it.span_start ?? '', end: it.span_end ?? '' })}
@@ -141,7 +141,7 @@ export function DayView({ monthData, layers, selectedDate, onSelect, onDoubleCli
                     <div>
                       <p className="text-sm font-medium">{ev.title}</p>
                       {l && <p className="text-[11px] text-gray-400">{layerLabel(l, t)}</p>}
-                      {ev.description && <p className="text-xs text-gray-500 mt-0.5">{ev.description}</p>}
+                      {ev.description && <p className="text-xs cal-muted mt-0.5">{ev.description}</p>}
                     </div>
                   </li>
                 )

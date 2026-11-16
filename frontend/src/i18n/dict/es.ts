@@ -223,7 +223,7 @@ export const es: DeepPartialDict<Dict> = {
       vivid: 'Vívido',
       hint: 'Suave: saturación reducida, intensidad conservada. Vívido: colores de la capa a plena intensidad.',
       themeLabel: 'Tema de color',
-      themeHint: 'Cambia toda la paleta de la cuadrícula mensual: previsión cálida y completados en verde. Los colores personalizados de las capas no cambian.',
+      themeHint: 'Cambia todo el aspecto: escalas de la cuadrícula mensual, colores del armazón y paletas de capas. Los colores personalizados de las capas no cambian.',
       themeClassic: 'Clásico',
       themeMorandi: 'Morandi',
       themeScandinavian: 'Escandinavo',

@@ -11,7 +11,20 @@
  * 鲜明模式（vivid）与柔和模式（soft）共用同一组色阶，只有填充强度不同。
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { COLORING_COLORS, TODO_BUSY_DONE_COLORS, TODO_BUSY_PREDICT_COLORS } from '../data'
+import {
+  buildPalettes,
+  COLORING_COLORS,
+  GRADED_PALETTES,
+  rebalanceRamp,
+  TODO_BUSY_DONE_COLORS,
+  TODO_BUSY_PREDICT_COLORS,
+  type PaletteKey,
+} from '../data'
+
+// 5 档的明度分布：暖色（忙度）稍微压深一档，绿色（完成）保持统一。
+// 手写色阶常常前两档撞色、后两档断崖，重排成等距后混白也看得出谁更忙。
+const PREDICT_L = [0.95, 0.87, 0.78, 0.67, 0.54]
+const DONE_L = [0.95, 0.87, 0.77, 0.66, 0.53]
 import type { TxKey } from '../i18n'
 
 export type CalendarThemeId = 'classic' | 'morandi' | 'scandinavian' | 'midcentury' | 'artdeco'
@@ -25,6 +38,14 @@ export interface CalendarTheme {
   done: string[]
   /** 充实度涂色：与 done 同一组绿色阶 */
   coloring: string[]
+  /** 8 套分级涂色可选的 5 档调色板，跟随主题成套生成 */
+  palettes: Record<PaletteKey, string[]>
+  /** 外壳：三栏面板（顶栏 / 侧栏 / 右栏）底色 */
+  panel: string
+  /** 外壳：窗口底色，露在面板之间的缝隙里 */
+  shell: string
+  /** 外壳：浅填充（hover、输入框、分段控件底） */
+  subtle: string
   ink: string
   muted: string
   surface: string
@@ -38,12 +59,16 @@ export const CALENDAR_THEMES: Record<CalendarThemeId, CalendarTheme> = {
   classic: {
     id: 'classic',
     labelKey: 'settings.appearance.themeClassic',
-    predict: [...TODO_BUSY_PREDICT_COLORS],
-    done: [...COLORING_COLORS],
-    coloring: [...COLORING_COLORS],
+    predict: rebalanceRamp([...TODO_BUSY_PREDICT_COLORS], PREDICT_L),
+    done: rebalanceRamp([...COLORING_COLORS], DONE_L),
+    coloring: rebalanceRamp([...COLORING_COLORS], DONE_L),
+    palettes: GRADED_PALETTES,
+    panel: '#FFFFFF',
+    shell: '#EDEFF3',
+    subtle: '#F3F4F6',
     ink: '#111827',
     muted: '#6B7280',
-    surface: '#F9FAFB',
+    surface: '#FCFCFD',
     border: '#E5E7EB',
     today: '#2563EB',
     weekend: '#EF4444',
@@ -52,12 +77,16 @@ export const CALENDAR_THEMES: Record<CalendarThemeId, CalendarTheme> = {
   morandi: {
     id: 'morandi',
     labelKey: 'settings.appearance.themeMorandi',
-    predict: ['#F3E8E2', '#E4CDC2', '#CFA99A', '#A97968', '#6F4B3F'],
-    done: ['#EDF1E7', '#D6DEC7', '#B0C09A', '#83986A', '#556B44'],
-    coloring: ['#EDF1E7', '#D6DEC7', '#B0C09A', '#83986A', '#556B44'],
+    predict: rebalanceRamp(['#F3E8E2', '#E4CDC2', '#CFA99A', '#A97968', '#6F4B3F'], PREDICT_L),
+    done: rebalanceRamp(['#EDF1E7', '#D6DEC7', '#B0C09A', '#83986A', '#556B44'], DONE_L),
+    coloring: rebalanceRamp(['#EDF1E7', '#D6DEC7', '#B0C09A', '#83986A', '#556B44'], DONE_L),
+    palettes: buildPalettes({ sat: 0.24, lightness: [0.95, 0.87, 0.77, 0.64, 0.48] }),
+    panel: '#F2E8DD',
+    shell: '#E9DED4',
+    subtle: '#F0E7DF',
     ink: '#3F3A37',
     muted: '#7A736D',
-    surface: '#FAF7F4',
+    surface: '#FDFBF8',
     border: '#E7E0DA',
     today: '#7D96A0',
     weekend: '#B06A5E',
@@ -66,12 +95,16 @@ export const CALENDAR_THEMES: Record<CalendarThemeId, CalendarTheme> = {
   scandinavian: {
     id: 'scandinavian',
     labelKey: 'settings.appearance.themeScandinavian',
-    predict: ['#FBF3E3', '#F2DFBC', '#E2C287', '#C79A58', '#8C6533'],
-    done: ['#ECF4EE', '#D0E4D4', '#A4C9AE', '#6D9F7C', '#3E6A4D'],
-    coloring: ['#ECF4EE', '#D0E4D4', '#A4C9AE', '#6D9F7C', '#3E6A4D'],
+    predict: rebalanceRamp(['#FBF3E3', '#F2DFBC', '#E2C287', '#C79A58', '#8C6533'], PREDICT_L),
+    done: rebalanceRamp(['#ECF4EE', '#D0E4D4', '#A4C9AE', '#6D9F7C', '#3E6A4D'], DONE_L),
+    coloring: rebalanceRamp(['#ECF4EE', '#D0E4D4', '#A4C9AE', '#6D9F7C', '#3E6A4D'], DONE_L),
+    palettes: buildPalettes({ sat: 0.3, lightness: [0.955, 0.885, 0.79, 0.65, 0.47] }),
+    panel: '#E9F0F3',
+    shell: '#E2EBEF',
+    subtle: '#E9EFF2',
     ink: '#24313A',
     muted: '#66757F',
-    surface: '#F8FAFB',
+    surface: '#FBFDFD',
     border: '#E1E8EC',
     today: '#4F7F9B',
     weekend: '#B56B52',
@@ -80,12 +113,16 @@ export const CALENDAR_THEMES: Record<CalendarThemeId, CalendarTheme> = {
   midcentury: {
     id: 'midcentury',
     labelKey: 'settings.appearance.themeMidcentury',
-    predict: ['#FBF0D2', '#F1D98C', '#DFB84D', '#B8872E', '#7A551A'],
-    done: ['#EFF2DB', '#DAE2B2', '#B5C577', '#859A45', '#546428'],
-    coloring: ['#EFF2DB', '#DAE2B2', '#B5C577', '#859A45', '#546428'],
+    predict: rebalanceRamp(['#FBF0D2', '#F1D98C', '#DFB84D', '#B8872E', '#7A551A'], PREDICT_L),
+    done: rebalanceRamp(['#EFF2DB', '#DAE2B2', '#B5C577', '#859A45', '#546428'], DONE_L),
+    coloring: rebalanceRamp(['#EFF2DB', '#DAE2B2', '#B5C577', '#859A45', '#546428'], DONE_L),
+    palettes: buildPalettes({ sat: 0.42, lightness: [0.945, 0.855, 0.725, 0.56, 0.38], hueShift: -2 }),
+    panel: '#F6EBD1',
+    shell: '#EDE1C6',
+    subtle: '#F2E8D4',
     ink: '#2E2A24',
     muted: '#6F665B',
-    surface: '#FCF8EF',
+    surface: '#FFFDF7',
     border: '#E8DFC9',
     today: '#2F7E78',
     weekend: '#B65C3A',
@@ -94,12 +131,16 @@ export const CALENDAR_THEMES: Record<CalendarThemeId, CalendarTheme> = {
   artdeco: {
     id: 'artdeco',
     labelKey: 'settings.appearance.themeArtdeco',
-    predict: ['#FBF2D9', '#F0DDA3', '#D9B85E', '#B0862C', '#745516'],
-    done: ['#E5F3EC', '#BFE1CE', '#7BBE9B', '#3C8964', '#1C593D'],
-    coloring: ['#E5F3EC', '#BFE1CE', '#7BBE9B', '#3C8964', '#1C593D'],
+    predict: rebalanceRamp(['#FBF2D9', '#F0DDA3', '#D9B85E', '#B0862C', '#745516'], PREDICT_L),
+    done: rebalanceRamp(['#E5F3EC', '#BFE1CE', '#7BBE9B', '#3C8964', '#1C593D'], DONE_L),
+    coloring: rebalanceRamp(['#E5F3EC', '#BFE1CE', '#7BBE9B', '#3C8964', '#1C593D'], DONE_L),
+    palettes: buildPalettes({ sat: 0.44, lightness: [0.935, 0.845, 0.705, 0.53, 0.33] }),
+    panel: '#F5EBD5',
+    shell: '#EBE0C6',
+    subtle: '#EFE7D5',
     ink: '#1C2430',
     muted: '#6B6F7A',
-    surface: '#FBF8F0',
+    surface: '#FFFBEF',
     border: '#E5DCC8',
     today: '#2E5E8C',
     weekend: '#A3483F',
@@ -198,6 +239,9 @@ export function CalendarThemeProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--cal-ink', theme.ink)
     root.style.setProperty('--cal-muted', theme.muted)
     root.style.setProperty('--cal-surface', theme.surface)
+    root.style.setProperty('--cal-panel', theme.panel)
+    root.style.setProperty('--cal-shell', theme.shell)
+    root.style.setProperty('--cal-subtle', theme.subtle)
     root.style.setProperty('--cal-border', theme.border)
     root.style.setProperty('--cal-today', theme.today)
     root.style.setProperty('--cal-weekend', theme.weekend)

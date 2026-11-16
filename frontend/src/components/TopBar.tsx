@@ -47,7 +47,7 @@ export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeCh
   const prevTitle = mode === 'year' ? t('topbar.nav.prevYear') : mode === 'week' ? t('topbar.nav.prevWeek') : mode === 'day' ? t('topbar.nav.prevDay') : t('topbar.nav.prevMonth')
   const nextTitle = mode === 'year' ? t('topbar.nav.nextYear') : mode === 'week' ? t('topbar.nav.nextWeek') : mode === 'day' ? t('topbar.nav.nextDay') : t('topbar.nav.nextMonth')
   return (
-    <header data-tauri-drag-region="deep" className="h-14 flex items-center gap-3 px-4 bg-white border-b border-gray-200 select-none">
+    <header data-tauri-drag-region="deep" className="h-14 flex items-center gap-3 px-4 cal-panel-bg border-b cal-line-b select-none">
       <div className="flex items-center gap-1 min-w-0">
         {/* 顶级 tab：日历 / 待办 —— 应用级的两个世界，权重最高 */}
         <SegmentedTabs
@@ -69,23 +69,23 @@ export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeCh
                 <button
                   onClick={onPrev}
                   disabled={!canPrev}
-                  className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  className="p-1.5 rounded-lg cal-muted cal-hover-bg hover:text-[color:var(--cal-ink)] disabled:opacity-30 disabled:cursor-not-allowed transition"
                   title={prevTitle}
                 >
                   <ChevronLeft size={18} />
                 </button>
-                <h1 className="max-w-[190px] truncate px-1 text-[15px] font-semibold text-gray-800 text-center">{title}</h1>
+                <h1 className="max-w-[190px] truncate px-1 text-[15px] font-semibold cal-ink text-center">{title}</h1>
                 <button
                   onClick={onNext}
                   disabled={!canNext}
-                  className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  className="p-1.5 rounded-lg cal-muted cal-hover-bg hover:text-[color:var(--cal-ink)] disabled:opacity-30 disabled:cursor-not-allowed transition"
                   title={nextTitle}
                 >
                   <ChevronRight size={18} />
                 </button>
                 <button
                   onClick={onToday}
-                  className="ml-1 shrink-0 whitespace-nowrap rounded-md border border-gray-200 px-2 py-1 text-[13px] font-medium text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 transition"
+                  className="ml-1 shrink-0 whitespace-nowrap rounded-md border border-[color:var(--cal-border)] px-2 py-1 text-[13px] font-medium cal-ink cal-hover-bg transition"
                 >
                   {t('topbar.today')}
                 </button>
@@ -95,7 +95,7 @@ export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeCh
               <div className="flex shrink-0 items-center gap-0.5">
                 {/* 与月/周/日/年模式同构的占位（上一月/下一月/今天同宽），保持模式按钮组位置一致 */}
                 <div className="w-[30px] flex-shrink-0" aria-hidden />
-                <h1 className="px-1 text-[15px] font-semibold text-gray-800 flex items-center gap-1.5 max-w-[190px]">
+                <h1 className="px-1 text-[15px] font-semibold cal-ink flex items-center gap-1.5 max-w-[190px]">
                   <ListTodo size={18} /> {t('terms.countdown')}
                 </h1>
                 <div className="w-[30px] flex-shrink-0" aria-hidden />
@@ -103,7 +103,7 @@ export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeCh
               </div>
             )}
             {/* 分隔线：左边是「时间轴」，右边是「看的方式」 */}
-            <span className="mx-1.5 h-5 w-px shrink-0 bg-gray-200" aria-hidden="true" />
+            <span className="mx-1.5 h-5 w-px shrink-0 bg-[var(--cal-border)]" aria-hidden="true" />
             <SegmentedTabs
               className="shrink-0"
               value={mode}
@@ -115,8 +115,8 @@ export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeCh
 
         {topTab === 'todo' && (
           <>
-            <h1 className="flex shrink-0 items-center gap-1.5 text-[15px] font-semibold text-gray-800"><ListTodo size={18} /> {t('terms.todo')}</h1>
-            <span className="mx-1.5 h-5 w-px shrink-0 bg-gray-200" aria-hidden="true" />
+            <h1 className="flex shrink-0 items-center gap-1.5 text-[15px] font-semibold cal-ink"><ListTodo size={18} /> {t('terms.todo')}</h1>
+            <span className="mx-1.5 h-5 w-px shrink-0 bg-[var(--cal-border)]" aria-hidden="true" />
             <SegmentedTabs
               className="shrink-0"
               value={todoView}
@@ -132,7 +132,7 @@ export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeCh
           compact ? (
             <button
               onClick={onOpenSearch}
-              className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition"
+              className="p-2 rounded-lg cal-muted cal-hover-bg transition"
               title={t('topbar.searchPlaceholder')}
               aria-label={t('topbar.searchPlaceholder')}
             >
@@ -141,17 +141,17 @@ export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeCh
           ) : (
             <button
               onClick={onOpenSearch}
-              className="relative flex w-44 items-center rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-2.5 pr-3 text-sm text-gray-400 transition hover:bg-white hover:text-gray-600"
+              className="relative flex w-44 items-center rounded-lg border border-[color:var(--cal-border)] cal-subtle-bg py-1.5 pl-2.5 pr-3 text-sm cal-muted transition hover:text-[color:var(--cal-ink)]"
             >
               <Search size={14} className="mr-2" />
               <span className="truncate">{t('topbar.searchPlaceholder')}</span>
             </button>
           )
         )}
-        <button onClick={onOpenSubscription} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition" title={t('terms.subscription')}>
+        <button onClick={onOpenSubscription} className="p-2 rounded-lg cal-muted cal-hover-bg transition" title={t('terms.subscription')}>
           <Rss size={18} />
         </button>
-        <button onClick={onOpenSettings} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition" title={t('settings.title')}>
+        <button onClick={onOpenSettings} className="p-2 rounded-lg cal-muted cal-hover-bg transition" title={t('settings.title')}>
           <Settings size={18} />
         </button>
         <WindowControls />

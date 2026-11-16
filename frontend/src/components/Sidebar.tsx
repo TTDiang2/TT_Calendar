@@ -4,7 +4,7 @@ import clsx from 'clsx'
 import { ChevronDown, ChevronRight, Plus } from 'lucide-react'
 import type { Layer } from '../types'
 import { createLayer, getSubscriptions, getTodoBusyConfig } from '../api/client'
-import { COLOR_PRESETS, GRADED_PALETTES } from '../data'
+import { COLOR_PRESETS, PALETTE_KEYS, type PaletteKey } from '../data'
 import { Modal, Field } from './ui/Modal'
 import { StretchSwitch } from './ui/StretchSwitch'
 import { useT, type TxKey } from '../i18n'
@@ -81,8 +81,8 @@ export function Sidebar({ layers, onToggle, countdown, banner }: Props) {
   }
 
   return (
-    <aside className="w-60 bg-white border-r border-gray-200 p-4 overflow-y-auto flex flex-col">
-      <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('shell.navHeading')}</h2>
+    <aside className="w-60 cal-panel-bg border-r cal-line-r p-4 overflow-y-auto flex flex-col">
+      <h2 className="text-xs font-semibold cal-muted uppercase tracking-wide mb-2">{t('shell.navHeading')}</h2>
 
       <div className="flex flex-col gap-2 mb-4">
         {(['color', 'dot'] as const).map((kind) => {
@@ -94,7 +94,7 @@ export function Sidebar({ layers, onToggle, countdown, banner }: Props) {
             <div key={kind}>
               <button
                 onClick={() => toggleGroup(kindId)}
-                className="w-full flex items-center gap-1 px-1 py-1 text-[11px] font-semibold text-gray-500 hover:text-gray-700"
+                className="w-full flex items-center gap-1 px-1 py-1 text-[11px] font-semibold cal-muted hover:text-[color:var(--cal-ink)]"
               >
                 {collapsed[kindId] ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
                 {t(kindMeta[kind].titleKey)}
@@ -117,7 +117,7 @@ export function Sidebar({ layers, onToggle, countdown, banner }: Props) {
                 {hasGroup && (
                   <button
                     onClick={() => toggleGroup(grpId)}
-                    className="w-full flex items-center gap-1 px-1 py-0.5 text-[11px] text-gray-400 hover:text-gray-600"
+                    className="w-full flex items-center gap-1 px-1 py-0.5 text-[11px] cal-muted hover:text-[color:var(--cal-ink)]"
                   >
                     {collapsed[grpId] ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
                     {grpTitle}
@@ -138,7 +138,7 @@ export function Sidebar({ layers, onToggle, countdown, banner }: Props) {
             <div>
               <button
                 onClick={() => toggleGroup(`subs:${kind}`)}
-                className="w-full flex items-center gap-1 px-1 py-0.5 text-[11px] text-gray-400 hover:text-gray-600"
+                className="w-full flex items-center gap-1 px-1 py-0.5 text-[11px] cal-muted hover:text-[color:var(--cal-ink)]"
               >
                 {collapsed[`subs:${kind}`] ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
                 {t('terms.subscription')}
@@ -153,7 +153,7 @@ export function Sidebar({ layers, onToggle, countdown, banner }: Props) {
                       <div key={grp} className="mb-0.5">
                         <button
                           onClick={() => toggleGroup(grpId)}
-                          className="w-full flex items-center gap-1 py-0.5 text-[11px] text-gray-400 hover:text-gray-600 ml-1"
+                          className="w-full flex items-center gap-1 py-0.5 text-[11px] cal-muted hover:text-[color:var(--cal-ink)] ml-1"
                         >
                           {collapsed[grpId] ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
                           {grp}
@@ -183,16 +183,16 @@ export function Sidebar({ layers, onToggle, countdown, banner }: Props) {
         })}
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-1 px-2 py-1.5 text-sm text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md mt-0.5"
+          className="flex items-center gap-1 px-2 py-1.5 text-sm cal-muted hover:text-blue-600 hover:bg-blue-50 rounded-md mt-0.5"
         >
           <Plus size={14} /> {t('shell.createLayer')}
         </button>
       </div>
 
       <div className="mt-auto">
-        <div className="rounded-lg bg-gray-100 p-3">
-          <p className="text-[11px] text-gray-400 mb-1">{t('shell.countdownLabel')}</p>
-          <p className="text-sm text-gray-600 font-medium select-text">{bannerText}</p>
+        <div className="rounded-lg cal-subtle-bg p-3">
+          <p className="text-[11px] cal-muted mb-1">{t('shell.countdownLabel')}</p>
+          <p className="text-sm cal-muted font-medium select-text">{bannerText}</p>
         </div>
       </div>
 
@@ -227,14 +227,14 @@ function LayerRow({ layer, onToggle }: { layer: Layer; onToggle: (id: string) =>
       className={clsx(
         'flex items-center gap-2 px-1 py-1.5 rounded-md transition-colors',
         // 关闭的图层整行退到背景里，开着的那几行才有「在场」的底色
-        layer.enabled ? 'bg-gray-50/80' : 'bg-transparent hover:bg-gray-50',
+        layer.enabled ? 'cal-subtle-bg' : 'bg-transparent cal-hover-bg',
       )}
     >
       <span
         className="w-2.5 h-2.5 rounded-full flex-shrink-0 transition-opacity"
         style={{ backgroundColor: displayColor, opacity: layer.enabled ? 1 : 0.3 }}
       />
-      <span className={clsx('flex-1 truncate text-sm transition-colors', layer.enabled ? 'text-gray-800' : 'text-gray-400')}>
+      <span className={clsx('flex-1 truncate text-sm transition-colors', layer.enabled ? 'cal-ink' : 'cal-muted')}>
         {label}
       </span>
       <StretchSwitch
@@ -248,13 +248,14 @@ function LayerRow({ layer, onToggle }: { layer: Layer; onToggle: (id: string) =>
 
 function CreateLayerDialog({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const t = useT()
+  const { theme } = useCalendarTheme()
   const qc = useQueryClient()
   const [kind, setKind] = useState<'color' | 'dot'>('color')
   const [mode, setMode] = useState<'solid' | 'graded' | 'tag'>('solid')
   const [name, setName] = useState('')
   const [color, setColor] = useState<string | null>(COLOR_PRESETS[0])
   // paletteName 是 GRADED_PALETTES 的 ASCII key（data.ts 逻辑键，非文案；显示名走 palette.* 字典，台账 C2）
-  const [paletteName, setPaletteName] = useState<keyof typeof GRADED_PALETTES>('green')
+  const [paletteName, setPaletteName] = useState<PaletteKey>('green')
   const [tag, setTag] = useState('')
   const [group, setGroup] = useState('')
 
@@ -264,7 +265,7 @@ function CreateLayerDialog({ onClose, onCreated }: { onClose: () => void; onCrea
       if (kind === 'color') {
         config.mode = mode
         if (mode === 'solid') config.color = color
-        if (mode === 'graded') config.palette = GRADED_PALETTES[paletteName]
+        if (mode === 'graded') config.palette = theme.palettes[paletteName]
         if (mode === 'tag') {
           config.color = color
           const tagValue = tag.trim()
@@ -303,11 +304,11 @@ function CreateLayerDialog({ onClose, onCreated }: { onClose: () => void; onCrea
                 onClick={() => setKind(card.k)}
                 className={clsx(
                   'flex flex-col items-center gap-0.5 px-2 py-2 rounded-lg border text-sm transition',
-                  kind === card.k ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                  kind === card.k ? 'border-[color:var(--cal-accent)] cal-subtle-bg text-[color:var(--cal-accent)]' : 'border-[color:var(--cal-border)] cal-muted cal-hover-bg',
                 )}
               >
                 <span className="font-medium">{t(card.labelKey)}</span>
-                <span className="text-[10px] text-gray-400">{t(card.descKey)}</span>
+                <span className="text-[10px] cal-muted">{t(card.descKey)}</span>
               </button>
             ))}
           </div>
@@ -329,7 +330,7 @@ function CreateLayerDialog({ onClose, onCreated }: { onClose: () => void; onCrea
             onChange={(e) => setGroup(e.target.value)}
             placeholder={kind === 'dot' ? t('shell.groupPlaceholder.dot') : t('shell.groupPlaceholder.color')}
           />
-          <p className="text-[11px] text-gray-400 mt-1">{t('shell.groupHint')}</p>
+          <p className="text-[11px] cal-muted mt-1">{t('shell.groupHint')}</p>
         </Field>
 
         {kind === 'color' && (
@@ -346,11 +347,11 @@ function CreateLayerDialog({ onClose, onCreated }: { onClose: () => void; onCrea
                     onClick={() => setMode(card.k)}
                     className={clsx(
                       'flex flex-col items-center gap-0.5 px-2 py-2 rounded-lg border text-sm transition',
-                      mode === card.k ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                      mode === card.k ? 'border-[color:var(--cal-accent)] cal-subtle-bg text-[color:var(--cal-accent)]' : 'border-[color:var(--cal-border)] cal-muted cal-hover-bg',
                     )}
                   >
                     <span className="font-medium">{t(card.labelKey)}</span>
-                    <span className="text-[10px] text-gray-400">{t(card.descKey)}</span>
+                    <span className="text-[10px] cal-muted">{t(card.descKey)}</span>
                   </button>
                 ))}
               </div>
@@ -359,13 +360,13 @@ function CreateLayerDialog({ onClose, onCreated }: { onClose: () => void; onCrea
             {mode === 'graded' ? (
               <Field label={t('shell.field.palette')}>
                 <div className="flex gap-2">
-                  {(Object.keys(GRADED_PALETTES) as (keyof typeof GRADED_PALETTES)[]).map((pk) => (
+                  {PALETTE_KEYS.map((pk) => (
                     <button
                       key={pk}
                       onClick={() => setPaletteName(pk)}
                       className={clsx(
                         'flex items-center gap-1 px-2 py-1.5 rounded-lg border text-sm',
-                        paletteName === pk ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600',
+                        paletteName === pk ? 'border-[color:var(--cal-accent)] cal-subtle-bg text-[color:var(--cal-accent)]' : 'border-[color:var(--cal-border)] cal-muted',
                       )}
                     >
                       {t(paletteLabelKey(pk))}
@@ -373,7 +374,7 @@ function CreateLayerDialog({ onClose, onCreated }: { onClose: () => void; onCrea
                   ))}
                 </div>
                 <div className="flex gap-1 mt-2">
-                  {GRADED_PALETTES[paletteName].map((c, i) => (
+                  {theme.palettes[paletteName].map((c, i) => (
                     <span key={i} className="flex-1 h-6 rounded" style={{ backgroundColor: c }} />
                   ))}
                 </div>
@@ -404,7 +405,7 @@ function CreateLayerDialog({ onClose, onCreated }: { onClose: () => void; onCrea
                   onChange={(e) => setTag(e.target.value)}
                   placeholder={t('shell.tagPlaceholder')}
                 />
-                <p className="text-[11px] text-gray-400 mt-1">
+                <p className="text-[11px] cal-muted mt-1">
                   {t('shell.tagHint')}
                 </p>
               </Field>
@@ -412,12 +413,12 @@ function CreateLayerDialog({ onClose, onCreated }: { onClose: () => void; onCrea
           </>
         )}
 
-        <p className="text-[11px] text-gray-400">
+        <p className="text-[11px] cal-muted">
           {t('shell.deleteHint')}
         </p>
 
         <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg">{t('common.cancel')}</button>
+          <button onClick={onClose} className="px-3 py-1.5 text-sm cal-muted cal-hover-bg rounded-lg">{t('common.cancel')}</button>
           <button
             onClick={() => mut.mutate()}
             disabled={mut.isPending}

@@ -58,7 +58,7 @@ const STATUS_TONE: Record<string, string> = {
 
 // 计划日期色阶：同一蓝色系，今天最深、越远越浅——一扫就知道近期压力在哪
 function plannedTone(key: string, today: string): { tone: string; headCls: string } {
-  if (key === '__none__') return { tone: 'bg-gray-50', headCls: 'text-gray-500' }
+  if (key === '__none__') return { tone: 'bg-gray-50', headCls: 'cal-muted' }
   const days = Math.round((new Date(key).getTime() - new Date(today).getTime()) / 86400000)
   if (days <= 0) return { tone: 'bg-blue-200/60', headCls: 'text-blue-800' }
   if (days <= 2) return { tone: 'bg-blue-100/80', headCls: 'text-blue-700' }
@@ -200,7 +200,7 @@ export function TodoKanbanView({ openTodos, completedTodos, completedCount, list
               onClick={() => setDim(d.key)}
               className={clsx(
                 'px-2.5 py-1 text-xs rounded-md transition cursor-pointer',
-                dim === d.key ? 'bg-white text-gray-900 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700',
+                dim === d.key ? 'bg-white cal-ink shadow-sm font-medium' : 'cal-muted hover:cal-ink',
               )}
             >
               {t(d.labelKey)}
@@ -230,7 +230,7 @@ export function TodoKanbanView({ openTodos, completedTodos, completedCount, list
               )}
             >
               <div className="px-3 py-2 flex items-center justify-between border-b border-black/5 flex-shrink-0">
-                <span className={clsx('text-sm font-medium truncate', c.headCls ?? 'text-gray-700')}>{c.title}</span>
+                <span className={clsx('text-sm font-medium truncate', c.headCls ?? 'cal-ink')}>{c.title}</span>
                 <span className="text-xs text-gray-400">{c.items.length}</span>
               </div>
               <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1.5 min-h-0">
@@ -277,7 +277,7 @@ export function TodoKanbanView({ openTodos, completedTodos, completedCount, list
                     onClick={() => setShowCompletedCol(false)}
                     className="px-3 py-2 flex items-center justify-between border-b border-black/5 flex-shrink-0 cursor-pointer hover:bg-emerald-100/60 rounded-t-xl transition-colors"
                   >
-                    <span className="text-sm font-medium text-gray-600 truncate">
+                    <span className="text-sm font-medium cal-muted truncate">
                       {t('todoboards.kanban.completed')} <span className="text-emerald-600 font-semibold">{completedCount}</span>
                     </span>
                     <ChevronRight size={14} className="text-gray-400" />
@@ -312,7 +312,7 @@ export function TodoKanbanView({ openTodos, completedTodos, completedCount, list
                 >
                   <CheckCircle2 size={15} className="text-emerald-500" />
                   <span className="text-xs font-semibold text-emerald-700">{completedCount}</span>
-                  <span className="text-[10px] text-gray-500 [writing-mode:vertical-rl] tracking-widest">{t('todoboards.kanban.completed')}</span>
+                  <span className="text-[10px] cal-muted [writing-mode:vertical-rl] tracking-widest">{t('todoboards.kanban.completed')}</span>
                   <ChevronLeft size={12} className="text-gray-400 mt-auto" />
                 </button>
               )}

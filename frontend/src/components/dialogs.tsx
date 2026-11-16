@@ -158,7 +158,7 @@ export function EventEditor({
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg"
+              className="px-3 py-1.5 text-sm cal-muted hover:bg-gray-100 rounded-lg"
             >
               {t('common.cancel')}
             </button>
@@ -245,13 +245,13 @@ export function ScheduleEditor({
     <Modal title={t('dialogs.schedule.titleWithDate', { date })} onClose={onClose} width={560}>
       <div className="flex flex-col gap-2">
         {effective.length === 0 && (
-          <p className="text-sm text-gray-400 text-center py-4">{t('dialogs.schedule.empty')}</p>
+          <p className="text-sm cal-muted text-center py-4">{t('dialogs.schedule.empty')}</p>
         )}
         {effective.map((r, i) => {
           const spanBad = !!r.end_date && r.end_date < r.date
           const spanDays = r.end_date && !spanBad ? dateRange(r.date, r.end_date).length : 1
           return (
-            <div key={r.id ?? `new-${i}`} className="flex flex-col gap-1.5 border border-gray-200 rounded-lg px-2 py-2">
+            <div key={r.id ?? `new-${i}`} className="flex flex-col gap-1.5 border border-[color:var(--cal-border)] rounded-lg px-2 py-2">
               <div className="flex items-center gap-2">
                 <input
                   type="time"
@@ -259,7 +259,7 @@ export function ScheduleEditor({
                   value={r.start_time ?? ''}
                   onChange={(e) => setRow(i, { start_time: e.target.value || null })}
                 />
-                <span className="text-gray-400 text-xs">{t('dialogs.toTime')}</span>
+                <span className="cal-muted text-xs">{t('dialogs.toTime')}</span>
                 <input
                   type="time"
                   className="tt-input w-[90px] text-sm"
@@ -285,21 +285,21 @@ export function ScheduleEditor({
                 />
                 <button
                   onClick={() => removeRow(i)}
-                  className="text-gray-400 hover:text-red-500 p-1"
+                  className="cal-muted hover:text-red-500 p-1"
                   title={t('dialogs.deleteScheduleItem')}
                 >
                   <Trash2 size={14} />
                 </button>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] text-gray-400 flex-shrink-0">{t('dialogs.schedule.dateLabel')}</span>
+                <span className="text-[11px] cal-muted flex-shrink-0">{t('dialogs.schedule.dateLabel')}</span>
                 <input
                   type="date"
                   className="tt-input w-[132px] text-sm"
                   value={r.date}
                   onChange={(e) => setRow(i, { date: e.target.value })}
                 />
-                <span className="text-gray-400 text-xs">{t('dialogs.toTime')}</span>
+                <span className="cal-muted text-xs">{t('dialogs.toTime')}</span>
                 <input
                   type="date"
                   className="tt-input w-[132px] text-sm"
@@ -308,7 +308,7 @@ export function ScheduleEditor({
                   onChange={(e) => setRow(i, { end_date: e.target.value || null })}
                   title={t('dialogs.schedule.endDateHint')}
                 />
-                <span className={clsx('text-[11px]', spanBad ? 'text-red-500' : 'text-gray-400')}>
+                <span className={clsx('text-[11px]', spanBad ? 'text-red-500' : 'cal-muted')}>
                   {spanBad ? t('dialogs.schedule.spanBad') : spanDays > 1 ? t('dialogs.schedule.multiDay', { n: spanDays }) : t('dialogs.schedule.singleDay')}
                 </span>
               </div>
@@ -323,7 +323,7 @@ export function ScheduleEditor({
             <Plus size={14} /> {t('dialogs.schedule.add')}
           </button>
           <div className="flex gap-2">
-            <button onClick={onClose} className="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg">
+            <button onClick={onClose} className="px-3 py-1.5 text-sm cal-muted hover:bg-gray-100 rounded-lg">
               {t('common.cancel')}
             </button>
             <button
@@ -373,7 +373,7 @@ export function ColoringPicker({
 
   return (
     <Modal title={t('dialogs.coloring.titleWithDate', { date })} onClose={onClose} width={380}>
-      <p className="text-xs text-gray-500 mb-2">
+      <p className="text-xs cal-muted mb-2">
         {t('dialogs.coloring.current', { level: current != null ? t(COLORING_LABELS[current].labelKey) : t('dialogs.coloring.notSet') })}
       </p>
       <div className="grid grid-cols-5 gap-2">
@@ -383,7 +383,7 @@ export function ColoringPicker({
             onClick={() => setMut.mutate(i)}
             style={{ backgroundColor: c }}
             className={`h-14 rounded-lg text-xs font-medium transition hover:scale-105 ${
-              i >= 3 ? 'text-white' : 'text-gray-700'
+              i >= 3 ? 'text-white' : 'cal-ink'
             } ${current === i ? 'ring-2 ring-blue-400' : ''}`}
           >
             {t(COLORING_LABELS[i].labelKey)}
@@ -394,11 +394,11 @@ export function ColoringPicker({
         <button
           onClick={() => clearMut.mutate()}
           disabled={current == null}
-          className="text-sm text-gray-500 hover:underline disabled:opacity-40"
+          className="text-sm cal-muted hover:underline disabled:opacity-40"
         >
           {t('dialogs.coloring.clear')}
         </button>
-        <button onClick={onClose} className="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg">
+        <button onClick={onClose} className="px-3 py-1.5 text-sm cal-muted hover:bg-gray-100 rounded-lg">
           {t('common.close')}
         </button>
       </div>
@@ -436,7 +436,7 @@ export function SearchDialog({
       />
       <div className="max-h-72 overflow-y-auto -mx-1">
         {q.trim() && !isFetching && data && data.length === 0 && (
-          <p className="text-sm text-gray-400 px-1 py-2">{t('dialogs.search.nothing', { q })}</p>
+          <p className="text-sm cal-muted px-1 py-2">{t('dialogs.search.nothing', { q })}</p>
         )}
         {data?.map((ev, i) => (
           <button
@@ -448,8 +448,8 @@ export function SearchDialog({
               className="w-2 h-2 rounded-full flex-shrink-0"
               style={{ backgroundColor: ev.color ?? '#9ca3af' }}
             />
-            <span className="flex-1 text-sm text-gray-700 truncate">{ev.title}</span>
-            <span className="text-xs text-gray-400">{ev.date}</span>
+            <span className="flex-1 text-sm cal-ink truncate">{ev.title}</span>
+            <span className="text-xs cal-muted">{ev.date}</span>
           </button>
         ))}
       </div>
@@ -517,7 +517,7 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
   return (
     <Modal title={t('dialogs.subscription.title')} onClose={onClose} width={560}>
       <div className="flex flex-col gap-3">
-        <p className="text-xs text-gray-400">
+        <p className="text-xs cal-muted">
           {t('dialogs.subscription.intro')}
         </p>
 
@@ -531,11 +531,11 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
         )}
 
         {isLoading ? (
-          <p className="text-sm text-gray-400 py-4 text-center">{t('common.loading')}</p>
+          <p className="text-sm cal-muted py-4 text-center">{t('common.loading')}</p>
         ) : (
           <div className="flex flex-col gap-2">
             {subs.map((s) => (
-              <div key={s.id} className={`p-3 rounded-lg border ${s.status === 'pending' ? 'border-amber-200 bg-amber-50/40' : 'border-gray-200'}`}>
+              <div key={s.id} className={`p-3 rounded-lg border ${s.status === 'pending' ? 'border-amber-200 bg-amber-50/40' : 'border-[color:var(--cal-border)]'}`}>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => toggleMut.mutate({ id: s.id, data: { enabled: !s.enabled } })}
@@ -551,24 +551,24 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
                       s.enabled ? 'translate-x-[16px]' : 'translate-x-[2px]',
                     )} />
                   </button>
-                  <span className="text-sm text-gray-800 font-medium flex-1 truncate">{s.display_name}</span>
+                  <span className="text-sm cal-ink font-medium flex-1 truncate">{s.display_name}</span>
                   {s.status === 'pending' && <Badge className="bg-amber-100 text-amber-700">{t('dialogs.subscription.pendingBadge')}</Badge>}
                   {s.status === 'error' && <Badge className="bg-red-100 text-red-600">{t('dialogs.subscription.errorBadge')}</Badge>}
                   {s.status === 'active' && s.last_synced_at && (
-                    <span className="text-[11px] text-gray-400">{t('dialogs.subscription.updatedAt', { time: s.last_synced_at.slice(5, 16) })}</span>
+                    <span className="text-[11px] cal-muted">{t('dialogs.subscription.updatedAt', { time: s.last_synced_at.slice(5, 16) })}</span>
                   )}
                 </div>
                 {s.status === 'error' && s.last_error && (
                   <p className="mt-1 text-[11px] text-red-400 truncate" title={s.last_error}>{s.last_error}</p>
                 )}
                 {s.status === 'pending' && (
-                  <div className="mt-2 text-[11px] text-gray-500 bg-white/60 rounded p-2 space-y-0.5">
-                    <p><span className="text-gray-400">{t('dialogs.subscription.urlLabel')}</span>{s.url ?? t('dialogs.subscription.emptyValue')}</p>
-                    <p className="whitespace-pre-wrap"><span className="text-gray-400">{t('dialogs.subscription.rulesLabel')}</span>{s.rules_text ?? t('dialogs.subscription.emptyValue')}</p>
+                  <div className="mt-2 text-[11px] cal-muted bg-white/60 rounded p-2 space-y-0.5">
+                    <p><span className="cal-muted">{t('dialogs.subscription.urlLabel')}</span>{s.url ?? t('dialogs.subscription.emptyValue')}</p>
+                    <p className="whitespace-pre-wrap"><span className="cal-muted">{t('dialogs.subscription.rulesLabel')}</span>{s.rules_text ?? t('dialogs.subscription.emptyValue')}</p>
                   </div>
                 )}
 <div className="mt-2 flex items-center gap-3">
-                  <label className="flex items-center gap-1 text-[11px] text-gray-500 cursor-pointer select-none">
+                  <label className="flex items-center gap-1 text-[11px] cal-muted cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={s.auto_update}
@@ -587,7 +587,7 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
                   )}
                   <button
                     onClick={() => { if (confirm(t('dialogs.subscription.deleteConfirm', { name: s.display_name }))) delMut.mutate(s.id) }}
-                    className="text-[11px] text-gray-400 hover:text-red-500 ml-auto"
+                    className="text-[11px] cal-muted hover:text-red-500 ml-auto"
                   >
                     {t('common.delete')}
                   </button>
@@ -597,7 +597,7 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
-        {msg && <p className="text-xs text-gray-600 bg-gray-50 rounded-md px-3 py-2">{msg}</p>}
+        {msg && <p className="text-xs cal-muted bg-gray-50 rounded-md px-3 py-2">{msg}</p>}
 
         {adding ? (
           <div className="p-3 rounded-lg border border-blue-100 bg-blue-50/40 space-y-2">
@@ -616,7 +616,7 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
               />
             </Field>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setAdding(false)} className="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg">{t('common.cancel')}</button>
+              <button onClick={() => setAdding(false)} className="px-3 py-1.5 text-sm cal-muted hover:bg-gray-100 rounded-lg">{t('common.cancel')}</button>
               <button
                 onClick={() => createMut.mutate()}
                 disabled={!name.trim() || createMut.isPending}
@@ -629,7 +629,7 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
         ) : (
           <button
             onClick={() => setAdding(true)}
-            className="flex items-center justify-center gap-1 px-3 py-2 text-sm text-gray-500 border border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:text-blue-600"
+            className="flex items-center justify-center gap-1 px-3 py-2 text-sm cal-muted border border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:text-blue-600"
           >
             <Plus size={14} /> {t('dialogs.subscription.addNew')}
           </button>
@@ -640,7 +640,7 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
 }
 
 function Badge({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${className ?? 'bg-gray-100 text-gray-500'}`}>{children}</span>
+  return <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${className ?? 'bg-gray-100 cal-muted'}`}>{children}</span>
 }
 
 // ===========================================================================
@@ -674,15 +674,15 @@ export function ContextMenu({
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} onContextMenu={(e) => { e.preventDefault(); onClose() }} />
       <div
-        className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[180px]"
+        className="fixed z-50 bg-white rounded-lg shadow-xl border border-[color:var(--cal-border)] py-1 min-w-[180px]"
         style={{ left: Math.min(x, window.innerWidth - 200), top: Math.min(y, window.innerHeight - 140) }}
       >
-        <div className="px-3 py-1 text-[11px] text-gray-400 border-b border-gray-100 mb-1">{date}</div>
+        <div className="px-3 py-1 text-[11px] cal-muted border-b border-[color:var(--cal-border)] mb-1">{date}</div>
         {items.map((it) => (
           <button
             key={it.labelKey}
             onClick={it.action}
-            className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+            className="w-full text-left px-3 py-1.5 text-sm cal-ink hover:bg-blue-50 hover:text-blue-600"
           >
             {t(it.labelKey)}
           </button>
@@ -882,7 +882,7 @@ export function DayEntryDialog({
               onClick={() => setKind(k)}
               className={clsx(
                 'flex-1 py-1.5 text-sm rounded-md transition',
-                kind === k ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700',
+                kind === k ? 'bg-white text-blue-600 shadow-sm font-medium' : 'cal-muted hover:cal-ink',
               )}
             >
               {t(labelKey)}
@@ -943,14 +943,14 @@ export function DayEntryDialog({
             </Field>
 
             <div className="flex items-center gap-2">
-              <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none">
+              <label className="flex items-center gap-1.5 text-sm cal-muted cursor-pointer select-none">
                 <input type="checkbox" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} />
                 {t('dialogs.dayEntry.allDay')}
               </label>
               {!allDay && (
                 <>
                   <input type="time" className="tt-input w-[104px]" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
-                  <span className="text-gray-400 text-xs">{t('dialogs.toTime')}</span>
+                  <span className="cal-muted text-xs">{t('dialogs.toTime')}</span>
                   <input type="time" className="tt-input w-[104px]" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
                 </>
               )}
@@ -989,7 +989,7 @@ export function DayEntryDialog({
                       key={i}
                       onClick={() => setLevel(i)}
                       style={{ backgroundColor: c }}
-                      className={clsx('h-12 rounded-lg text-xs font-medium', i >= 3 ? 'text-white' : 'text-gray-700', level === i && 'ring-2 ring-blue-400')}
+                      className={clsx('h-12 rounded-lg text-xs font-medium', i >= 3 ? 'text-white' : 'cal-ink', level === i && 'ring-2 ring-blue-400')}
                     >
                       {t(COLORING_LABELS[i].labelKey)}
                     </button>
@@ -1013,7 +1013,7 @@ export function DayEntryDialog({
               <Field label={t('dialogs.dayEntry.fixedColor')}>
                 <div className="flex items-center gap-2">
                   <span className="w-8 h-8 rounded-lg flex-shrink-0" style={{ backgroundColor: colorValue }} />
-                  <p className="text-[11px] text-gray-400">{t('dialogs.dayEntry.fixedColorHint')}</p>
+                  <p className="text-[11px] cal-muted">{t('dialogs.dayEntry.fixedColorHint')}</p>
                 </div>
               </Field>
             )}
@@ -1027,9 +1027,9 @@ export function DayEntryDialog({
             checked={autoTodo}
             onChange={(e) => setAutoTodoPersist(e.target.checked)}
           />
-          <span className="text-sm text-gray-700">
+          <span className="text-sm cal-ink">
             {t('dialogs.dayEntry.autoTodo')}
-            <span className="block text-[11px] text-gray-500 mt-0.5">
+            <span className="block text-[11px] cal-muted mt-0.5">
               {t('dialogs.dayEntry.autoTodoDetail', { list: t('layers.scheduleTodoList'), start: startDate, end: isMulti ? lastDate : startDate })}
               {autoTodo && !todoTitle && t('dialogs.dayEntry.autoTodoTitleHint', { title: t('dialogs.dayEntry.scheduleWord') })}
             </span>
@@ -1037,7 +1037,7 @@ export function DayEntryDialog({
         </label>
 
         <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 rounded-lg">{t('common.cancel')}</button>
+          <button onClick={onClose} className="px-3 py-1.5 text-sm cal-muted hover:bg-gray-100 rounded-lg">{t('common.cancel')}</button>
           <button
             onClick={() => saveMut.mutate()}
             disabled={kind === 'dot' ? dotSaveDisabled : colorSaveDisabled}

@@ -35,7 +35,7 @@ const IMPORTANCE_KEYS: Record<string, TxKey> = {
 }
 const IMPORTANCE_TAG_CLS: Record<string, string> = {
   high: 'bg-red-50 text-red-600',
-  normal: 'bg-gray-100 text-gray-500',
+  normal: 'bg-gray-100 cal-muted',
   low: 'bg-green-50 text-green-600',
 }
 
@@ -47,9 +47,9 @@ const STATUS_KEYS: Record<string, TxKey> = {
   deferred: 'todoview.status.deferred',
 }
 const STATUS_TAG_CLS: Record<string, string> = {
-  notStarted: 'bg-gray-100 text-gray-500',
+  notStarted: 'bg-gray-100 cal-muted',
   inProgress: 'bg-blue-50 text-blue-600',
-  completed: 'bg-gray-100 text-gray-400',
+  completed: 'bg-gray-100 cal-muted',
   waitingOnOthers: 'bg-amber-50 text-amber-600',
   deferred: 'bg-purple-50 text-purple-600',
 }
@@ -61,7 +61,7 @@ const COMPLEXITY_KEYS: Record<string, TxKey> = {
 }
 const COMPLEXITY_TAG_CLS: Record<string, string> = {
   simple: 'bg-green-50 text-green-600',
-  medium: 'bg-gray-100 text-gray-500',
+  medium: 'bg-gray-100 cal-muted',
   hard: 'bg-purple-50 text-purple-600',
 }
 
@@ -355,16 +355,16 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
   return (
     <div className="flex-1 flex overflow-hidden">
       {/* 左列表栏 — w-60 对齐日历 Sidebar */}
-      <div className="w-60 bg-white border-r border-gray-200 p-3 overflow-y-auto flex flex-col">
+      <div className="w-60 cal-panel-bg border-r cal-line-r p-3 overflow-y-auto flex flex-col">
         <button
           onClick={() => { setSelectedList(null); setSelectedTodoId(null); setManualOrder(null) }}
           className={clsx(
             'flex items-center justify-between px-2 py-1.5 rounded-md text-sm mb-1',
-            selectedList === null ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50',
+            selectedList === null ? 'cal-subtle-bg text-[color:var(--cal-accent)] font-medium' : 'cal-muted cal-hover-bg',
           )}
         >
           <span className="flex items-center gap-1.5"><Inbox size={14} /> {t('todoview.lists.all')}</span>
-          {stats && <span className="text-xs text-gray-400">{stats.incomplete}</span>}
+          {stats && <span className="text-xs cal-muted">{stats.incomplete}</span>}
         </button>
         {lists.map((l) => {
           const isDefault = localStorage.getItem(DEFAULT_LIST_KEY) === l.id
@@ -391,7 +391,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
               }}
               className={clsx(
                 'group flex items-center justify-between px-2 py-1.5 rounded-md text-sm cursor-pointer mb-0.5 transition-colors select-none',
-                selectedList === l.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-100',
+                selectedList === l.id ? 'cal-subtle-bg text-[color:var(--cal-accent)] font-medium' : 'cal-muted cal-hover-bg',
               )}
               onClick={() => { setSelectedList(l.id); setSelectedTodoId(null); setManualOrder(null) }}
             >
@@ -416,7 +416,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
                 )}
               </span>
               <span className="flex items-center gap-1">
-                {counts.get(l.id) ? <span className="text-xs text-gray-400">{counts.get(l.id)}</span> : null}
+                {counts.get(l.id) ? <span className="text-xs cal-muted">{counts.get(l.id)}</span> : null}
                 <button
                   onClick={(e) => { e.stopPropagation(); setDefaultList(isDefault ? null : l.id) }}
                   className={isDefault ? 'text-amber-400' : 'opacity-0 group-hover:opacity-100 text-gray-300 hover:text-amber-400'}
@@ -426,14 +426,14 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); setRenamingListId(l.id); setRenameDraft(l.display_name) }}
-                  className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-blue-500"
+                  className="opacity-0 group-hover:opacity-100 cal-muted hover:text-blue-500"
                   title={t('todoview.lists.rename')}
                 >
                   <Pencil size={12} />
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); if (confirm(t('todoview.lists.deleteConfirm', { name: layerLabel(l, t) }))) deleteListMut.mutate(l.id) }}
-                  className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"
+                  className="opacity-0 group-hover:opacity-100 cal-muted hover:text-red-500"
                 >
                   <Trash2 size={12} />
                 </button>
@@ -457,14 +457,14 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
             />
           </div>
         ) : (
-          <button onClick={() => setCreatingList(true)} className="flex items-center gap-1 px-2 py-1.5 text-sm text-gray-400 hover:text-gray-600 mt-1">
+          <button onClick={() => setCreatingList(true)} className="flex items-center gap-1 px-2 py-1.5 text-sm cal-muted hover:cal-muted mt-1">
             <ListPlus size={14} /> {t('todoview.lists.create')}
           </button>
         )}
       </div>
 
       {/* 中任务区 */}
-      <div className="flex-1 flex flex-col p-4 overflow-hidden min-w-0">
+      <div className="flex-1 flex flex-col p-4 overflow-hidden min-w-0" style={{ backgroundColor: 'var(--cal-surface, #f9fafb)' }}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <FilterSelect
@@ -483,7 +483,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <label className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg cursor-pointer">
+            <label className="flex items-center gap-1 px-3 py-1.5 text-sm cal-muted bg-gray-50 cal-hover-bg rounded-lg cursor-pointer">
               <Upload size={14} /> {t('todoview.toolbar.importCsv')}
               <input type="file" accept=".csv,text/csv" className="hidden" onChange={handleFile} />
             </label>
@@ -515,7 +515,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
           </div>
         </div>
 
-        {csvResult && <div className="mb-2 text-sm text-gray-500 bg-gray-50 px-3 py-1.5 rounded">{csvResult}</div>}
+        {csvResult && <div className="mb-2 text-sm cal-muted cal-subtle-bg px-3 py-1.5 rounded">{csvResult}</div>}
 
         <div className={viewMode === 'list' ? 'flex-1 overflow-y-auto' : 'flex-1 min-h-0'}>
           {viewMode === 'matrix' ? (
@@ -554,7 +554,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
           ) : (
             <div className="flex flex-col gap-1">
               {filteredIncomplete.length === 0 && completedCount === 0 && (
-                <p className="text-sm text-gray-400 text-center py-4">{t('todoview.empty.noneOpen')}</p>
+                <p className="text-sm cal-muted text-center py-4">{t('todoview.empty.noneOpen')}</p>
               )}
               {filteredIncomplete.map((t) => {
                 const listName = listLabelOf(t)
@@ -612,14 +612,14 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
                 <div className="mt-3 border-t border-gray-100 pt-2">
                   <button
                     onClick={() => setShowCompleted((v) => !v)}
-                    className="w-full flex items-center justify-between px-3 py-2 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-md"
+                    className="w-full flex items-center justify-between px-3 py-2 text-xs cal-muted hover:text-[color:var(--cal-ink)] cal-hover-bg rounded-md"
                   >
                     <span>{t('todoview.row.completedWithCount', { n: completedCount ?? 0 })}</span>
                     {showCompleted ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                   </button>
                   {showCompleted && (
                     <div className="mt-1 flex flex-col gap-1">
-                      {loadingCompleted && <p className="text-xs text-gray-400 px-3 py-1">{t('common.loading')}</p>}
+                      {loadingCompleted && <p className="text-xs cal-muted px-3 py-1">{t('common.loading')}</p>}
                       {completed.map((t) => {
                         const listName = listLabelOf(t)
                         return (
@@ -689,13 +689,13 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             onMouseEnter={pauseUndoToast}
             onMouseLeave={resumeUndoToast}
-            className="fixed bottom-6 left-1/2 z-[60] flex items-center gap-2.5 rounded-full border border-gray-200/80 bg-white/95 py-2 pl-2 text-sm text-gray-700 shadow-lg shadow-gray-900/10 backdrop-blur"
+            className="fixed bottom-6 left-1/2 z-[60] flex items-center gap-2.5 rounded-full border border-[color:var(--cal-border)] cal-panel-bg py-2 pl-2 text-sm cal-ink shadow-lg shadow-gray-900/10 backdrop-blur"
           >
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white" aria-hidden="true">
               <Check size={12} strokeWidth={3} />
             </span>
-            <span className="font-medium text-gray-500">{t('todoview.toast.completed')}</span>
-            <span className="max-w-[240px] truncate font-medium text-gray-700">{undoToast.title}</span>
+            <span className="font-medium cal-muted">{t('todoview.toast.completed')}</span>
+            <span className="max-w-[240px] truncate font-medium cal-ink">{undoToast.title}</span>
             <span className="mx-1 h-4 w-px bg-gray-200" aria-hidden="true" />
             <button
               type="button"
@@ -747,12 +747,12 @@ function FilterSelect({ label, value, options, onChange }: {
           'flex items-center gap-1.5 pl-2.5 pr-2 py-1.5 text-sm rounded-lg border transition',
           open
             ? 'border-blue-300 bg-blue-50 text-blue-700 shadow-sm'
-            : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300',
+            : 'border-gray-200 bg-white cal-ink cal-hover-bg hover:border-gray-300',
         )}
       >
-        <span className="text-gray-400">{label}</span>
+        <span className="cal-muted">{label}</span>
         <span className="font-medium">{current?.label}</span>
-        <ChevronDown size={14} className={clsx('text-gray-400 transition-transform', open && 'rotate-180')} />
+        <ChevronDown size={14} className={clsx('cal-muted transition-transform', open && 'rotate-180')} />
       </button>
       {open && (
         <div className="absolute top-full left-0 mt-1 min-w-[170px] bg-white rounded-lg border border-gray-200 shadow-lg py-1 z-30">
@@ -768,7 +768,7 @@ function FilterSelect({ label, value, options, onChange }: {
                 'w-full flex items-center justify-between gap-2 px-3 py-1.5 text-sm text-left transition',
                 o.value === value
                   ? 'text-blue-600 font-medium'
-                  : 'text-gray-700 hover:bg-gray-50',
+                  : 'cal-ink cal-hover-bg',
               )}
             >
               <span>{o.label}</span>
@@ -816,7 +816,7 @@ function TodoRow({ todo, listName, isDone, overdue, selected, finishing, leaving
       onDoubleClick={onOpenNotes}
       className={clsx(
         'group grid cursor-pointer border rounded-lg transition-all duration-200 tt-row-enter',
-        selected ? 'bg-blue-50 border-blue-200' : 'border-transparent hover:bg-gray-100 hover:border-gray-200 active:scale-[0.99]',
+        selected ? 'bg-blue-50 border-blue-200' : 'border-transparent cal-hover-bg hover:border-gray-200 active:scale-[0.99]',
         leaving && 'opacity-0 scale-[0.98] -translate-x-2 border-transparent',
       )}
       style={{ gridTemplateRows: leaving ? '0fr' : '1fr' }}
@@ -839,7 +839,7 @@ function TodoRow({ todo, listName, isDone, overdue, selected, finishing, leaving
       />
       <div className="flex-1 min-w-0">
         <p
-          className={clsx('text-sm leading-snug break-words whitespace-normal', isDone || finishing ? 'text-gray-400' : 'text-gray-800')}
+          className={clsx('text-sm leading-snug break-words whitespace-normal', isDone || finishing ? 'cal-muted' : 'text-gray-800')}
           style={{
             textDecoration: 'line-through',
             textDecorationColor: isDone || finishing ? 'currentColor' : 'transparent',
@@ -850,7 +850,7 @@ function TodoRow({ todo, listName, isDone, overdue, selected, finishing, leaving
         >
           {todo.title}
         </p>
-        {todo.body && <p className="text-xs text-gray-400 break-words whitespace-normal mt-0.5">{todo.body}</p>}
+        {todo.body && <p className="text-xs cal-muted break-words whitespace-normal mt-0.5">{todo.body}</p>}
         <div className="flex flex-wrap gap-1 mt-1">
           {todo.complexity && (
             <span className={clsx('text-[10px] px-1.5 py-0.5 rounded', COMPLEXITY_TAG_CLS[todo.complexity] ?? COMPLEXITY_TAG_CLS.medium)}>
@@ -877,9 +877,9 @@ function TodoRow({ todo, listName, isDone, overdue, selected, finishing, leaving
         </div>
       </div>
       <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5 flex-wrap justify-end">
-        {listName && !isDone && <span className="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">{listName}</span>}
+        {listName && !isDone && <span className="text-[10px] cal-muted bg-gray-50 px-1.5 py-0.5 rounded">{listName}</span>}
         {todo.due_date && !isDone && (
-          <span className={clsx('text-[10px] px-1.5 py-0.5 rounded', dueState ? dueState.cls : 'bg-gray-100 text-gray-500')}>
+          <span className={clsx('text-[10px] px-1.5 py-0.5 rounded', dueState ? dueState.cls : 'bg-gray-100 cal-muted')}>
             {dueState
               ? t('todoview.due.badge', { label: t(dueState.labelKey), date: todo.due_date.slice(5) })
               : todo.due_date.slice(5)}

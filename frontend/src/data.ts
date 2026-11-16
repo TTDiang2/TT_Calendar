@@ -29,6 +29,53 @@ export const GRADED_PALETTES = {
 export const TODO_BUSY_PREDICT_COLORS = ['#fef3c7', '#fde68a', '#fbbf24', '#f59e0b', '#b45309']
 export const TODO_BUSY_DONE_COLORS    = ['#e0e7ff', '#c7d2fe', '#818cf8', '#4f46e5', '#3730a3']
 
+export type PaletteKey = keyof typeof GRADED_PALETTES
+export const PALETTE_KEYS = Object.keys(GRADED_PALETTES) as PaletteKey[]
+
+// 8 套分级调色板的基色相。灰阶单独走低饱和，其余按色相环等距分布。
+const PALETTE_HUES: Record<PaletteKey, number> = {
+  green: 148, blue: 213, orange: 26, purple: 279,
+  red: 0, cyan: 186, indigo: 238, gray: 215,
+}
+
+// 主题化的调色板参数：一套配色只描述「饱和度 + 5 档明度」，8 个色相共用，
+// 于是任意主题都能长出成套的 8 套渐变，而不是各主题抄一份 Material 色卡。
+export interface PaletteTone {
+  /** 0–1，颜色饱和度上限（莫兰迪低、装饰艺术高） */
+  sat: number
+  /** L1 → L5 的明度，0–1 */
+  lightness: [number, number, number, number, number]
+  /** 色相整体偏移（度），用于让某套配色整体偏暖或偏冷 */
+  hueShift?: number
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  const hue = ((h % 360) + 360) % 360
+  const c = (1 - Math.abs(2 * l - 1)) * s
+  const x = c * (1 - Math.abs(((hue / 60) % 2) - 1))
+  const m = l - c / 2
+  const [r, g, b] =
+    hue < 60 ? [c, x, 0] :
+    hue < 120 ? [x, c, 0] :
+    hue < 180 ? [0, c, x] :
+    hue < 240 ? [0, x, c] :
+    hue < 300 ? [x, 0, c] : [c, 0, x]
+  const to = (v: number) => Math.round((v + m) * 255).toString(16).padStart(2, '0')
+  return `#${to(r)}${to(g)}${to(b)}`
+}
+
+/** 按主题的色调参数生成 8 套 5 档调色板。 */
+export function buildPalettes(tone: PaletteTone): Record<PaletteKey, string[]> {
+  const out = {} as Record<PaletteKey, string[]>
+  for (const key of PALETTE_KEYS) {
+    const hue = PALETTE_HUES[key] + (tone.hueShift ?? 0)
+    // 灰阶不能有彩度，否则会变脏
+    const sat = key === 'gray' ? Math.min(0.1, tone.sat * 0.16) : tone.sat
+    out[key] = tone.lightness.map((l) => hslToHex(hue, sat, l))
+  }
+  return out
+}
+
 // 解析 'YYYY-MM-DD' 为本地 date（避开 toISOString 的 UTC 偏移问题）
 export function parseDateStr(s: string): Date {
   const { y, m, d } = parseDate(s)
@@ -154,15 +201,41 @@ export function pickContrastColor(bg: string): '#ffffff' | '#1f2937' {
   return relativeLuminance(rgb) > 0.45 ? '#1f2937' : '#ffffff'
 }
 
-// 柔和涂色：把原色与 60% 白混合。浅到「纸的底色」级别，格子的强弱不再靠大面积
-// 饱和色块传达，而由 DayCell 左侧的满色细条承担（同一组色阶，信息不丢）。
-// 返回不透明 rgb()，避免多层叠色时相互透底。
-export function softTint(color: string): string {
+// 柔和涂色：把原色与固定比例的白混合，整格退成浅色纸底。
+// 梯度的可辨识度不靠「混多少白」来调（混多了整片糊、混少了又压文字），
+// 而是靠色阶自身的明度分布——见 rebalanceRamp()。两者配合后：
+// 底色足够浅、5 档之间有等距明度差、深色字全程可读。
+//   dense = true 用于年视图那类十几像素的小格子：色块要更实才看得见。
+export function softTint(color: string, opts?: { dense?: boolean }): string {
   const rgb = parseColor(color)
   if (!rgb) return 'rgb(241, 245, 249)'
-  const white = 0.62
+  const white = opts?.dense ? 0.2 : 0.45
   const mix = rgb.map((v) => Math.round(v * (1 - white) + 255 * white))
   return `rgb(${mix[0]}, ${mix[1]}, ${mix[2]})`
+}
+
+// 把一条手调色阶重新按目标明度分布排列：取末档的色相与饱和度，
+// 只重排 5 档的明度。手写色阶常见问题是前两档几乎同色、后两档又断崖，
+// 混白之后就彻底看不出梯度；重排后每一档都等距可辨，且整体色系不变。
+export function rebalanceRamp(colors: string[], targets: number[]): string[] {
+  const last = parseColor(colors[colors.length - 1] ?? '')
+  if (!last) return colors
+  const [h, sat] = rgbToHsl(last)
+  return targets.map((l) => hslToHex(h, sat, l))
+}
+
+function rgbToHsl([r, g, b]: [number, number, number]): [number, number] {
+  const rn = r / 255, gn = g / 255, bn = b / 255
+  const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn)
+  const l = (max + min) / 2
+  const d = max - min
+  if (d === 0) return [0, 0]
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+  let h: number
+  if (max === rn) h = ((gn - bn) / d + (gn < bn ? 6 : 0)) * 60
+  else if (max === gn) h = ((bn - rn) / d + 2) * 60
+  else h = ((rn - gn) / d + 4) * 60
+  return [h, Math.min(0.92, s)]
 }
 
 // 柔和底色上的文字颜色：选对比度更高的一侧。60% 白混合后所有档位都足够浅，

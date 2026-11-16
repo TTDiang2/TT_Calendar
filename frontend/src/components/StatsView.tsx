@@ -57,7 +57,7 @@ export function StatsView() {
 
   return (
     <main className="flex-1 flex flex-col p-4 overflow-y-auto min-w-0">
-      <h2 className="text-base font-semibold text-gray-800 flex items-center gap-1.5 mb-4">
+      <h2 className="text-base font-semibold cal-ink flex items-center gap-1.5 mb-4">
         <BarChart3 size={16} /> {t('stats.title')}
       </h2>
 
@@ -158,7 +158,7 @@ export function StatsView() {
             const pct = (count / Math.max(data.quadrant.length, 1)) * 100
             return (
               <div key={id} className="flex items-center gap-2">
-                <span className="text-xs text-gray-600 w-28 truncate">{name}</span>
+                <span className="text-xs cal-muted w-28 truncate">{name}</span>
                 <div className="flex-1 h-3 bg-gray-100 rounded overflow-hidden">
                   <div className="h-full bg-blue-400 rounded" style={{ width: `${pct}%` }} />
                 </div>

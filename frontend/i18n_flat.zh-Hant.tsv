@@ -570,7 +570,7 @@ settings.appearance.soft	柔和
 settings.appearance.vivid	鮮明
 settings.appearance.hint	柔和：降低飽和度，保留顏色深淺；鮮明：原色整格填滿。
 settings.appearance.themeLabel	主題配色
-settings.appearance.themeHint	整套切換月網格：暖色預測 + 綠色已完成；自訂圖層色保持不變。
+settings.appearance.themeHint	整套切換：月網格色階、三欄外殼底色、塗色圖層調色板；自訂圖層色保持不變。
 settings.appearance.themeClassic	經典
 settings.appearance.themeMorandi	莫蘭迪
 settings.appearance.themeScandinavian	北歐

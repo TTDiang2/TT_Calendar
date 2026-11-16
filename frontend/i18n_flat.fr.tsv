@@ -570,7 +570,7 @@ settings.appearance.soft	Doux
 settings.appearance.vivid	Vif
 settings.appearance.hint	Doux : saturation réduite, intensité conservée. Vif : couleurs du calque à pleine intensité.
 settings.appearance.themeLabel	Thème de couleurs
-settings.appearance.themeHint	Bascule toute la palette de la grille mensuelle : prévisions chaudes et réalisations en vert. Les couleurs personnalisées des calques restent inchangées.
+settings.appearance.themeHint	Change toute l'apparence : dégradés de la grille mensuelle, couleurs du châssis et palettes de calques. Les couleurs personnalisées des calques restent inchangées.
 settings.appearance.themeClassic	Classique
 settings.appearance.themeMorandi	Morandi
 settings.appearance.themeScandinavian	Scandinave

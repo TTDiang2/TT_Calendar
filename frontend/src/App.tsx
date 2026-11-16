@@ -297,7 +297,7 @@ export default function App() {
   const importEnd = monthData2?.days[36]?.date ?? '2026-08-31'
 
   return (
-    <div className="h-full flex flex-col" style={{ backgroundColor: 'var(--cal-surface, #f9fafb)' }}>
+    <div className="h-full flex flex-col" style={{ backgroundColor: 'var(--cal-shell, #f6f7f9)' }}>
       {exitSync && (
         <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center">
           <div className="bg-white rounded-2xl shadow-xl px-8 py-6 w-[360px] text-center">
@@ -378,7 +378,7 @@ export default function App() {
               countdown={countdownData?.text ?? '…'}
               banner={countdownData?.banner}
             />
-            <main className="flex-1 flex flex-col p-4 min-w-0">
+            <main className="flex-1 flex flex-col p-4 min-w-0" style={{ backgroundColor: 'var(--cal-surface, #f9fafb)' }}>
               {isLoading || !monthData ? (
                 <div className="flex-1 flex items-center justify-center text-gray-400">{t('common.loading')}</div>
               ) : mode === 'year' ? (
@@ -386,6 +386,7 @@ export default function App() {
                   yearData={monthData as YearData}
                   layers={layers}
                   selectedDate={selectedDate}
+                  colorStyle={calendarStyle}
                   onSelectDate={(date) => {
                     const [y, m] = date.split('-').map(Number)
                     setMonthKey(`${y}-${m}`)

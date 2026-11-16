@@ -219,7 +219,7 @@ export const zhHant: DeepPartialDict<Dict> = {
       vivid: '鮮明',
       hint: '柔和：降低飽和度，保留顏色深淺；鮮明：原色整格填滿。',
       themeLabel: '主題配色',
-      themeHint: '整套切換月網格：暖色預測 + 綠色已完成；自訂圖層色保持不變。',
+      themeHint: '整套切換：月網格色階、三欄外殼底色、塗色圖層調色板；自訂圖層色保持不變。',
       themeClassic: '經典',
       themeMorandi: '莫蘭迪',
       themeScandinavian: '北歐',

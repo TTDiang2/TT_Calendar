@@ -21,11 +21,11 @@ export function Modal({
         style={{ width }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-800">{title}</h2>
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-[color:var(--cal-border)]">
+          <h2 className="text-base font-semibold cal-ink">{title}</h2>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md text-lg"
+            className="w-7 h-7 flex items-center justify-center cal-muted hover:cal-ink hover:bg-gray-100 rounded-md text-lg"
           >
             ×
           </button>
@@ -39,7 +39,7 @@ export function Modal({
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-xs text-gray-500">{label}</span>
+      <span className="text-xs cal-muted">{label}</span>
       {children}
     </label>
   )

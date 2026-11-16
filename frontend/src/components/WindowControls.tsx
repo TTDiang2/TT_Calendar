@@ -73,15 +73,15 @@ export function WindowControls() {
   }
 
   const btn =
-    'flex w-[46px] items-center justify-center text-gray-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500'
+    'flex w-[46px] items-center justify-center cal-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500'
 
   return (
-    <div className="-mr-4 flex items-stretch self-stretch border-l border-gray-200">
+    <div className="-mr-4 flex items-stretch self-stretch border-l border-[color:var(--cal-border)]">
       <button
         type="button"
         aria-label="Minimize"
         onClick={() => void run('minimize')}
-        className={`${btn} hover:bg-gray-100 hover:text-gray-800`}
+        className={`${btn} cal-hover-bg hover:text-[color:var(--cal-ink)]`}
       >
         <Minus size={15} strokeWidth={1.6} />
       </button>
@@ -89,7 +89,7 @@ export function WindowControls() {
         type="button"
         aria-label={maximized ? 'Restore' : 'Maximize'}
         onClick={() => void run('toggleMaximize')}
-        className={`${btn} hover:bg-gray-100 hover:text-gray-800`}
+        className={`${btn} cal-hover-bg hover:text-[color:var(--cal-ink)]`}
       >
         {ready ? (
           <MorphingIcon

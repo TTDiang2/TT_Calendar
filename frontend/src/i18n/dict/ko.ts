@@ -228,7 +228,7 @@ export const ko: DeepPartialDict<Dict> = {
       vivid: '선명하게',
       hint: '부드럽게: 채도를 낮추고 농도를 유지합니다. 선명하게: 셀 전체를 레이어 색으로 채웁니다.',
       themeLabel: '테마 색상',
-      themeHint: '월 그리드 팔레트를 통째로 바꿉니다(예측은 난색, 완료는 녹색). 사용자 지정 레이어 색은 그대로 유지됩니다.',
+      themeHint: '보기 전체를 바꿉니다(월 그리드 색조, 패널 배경색, 레이어 팔레트). 사용자 지정 레이어 색은 그대로 유지됩니다.',
       themeClassic: '클래식',
       themeMorandi: '모란디',
       themeScandinavian: '북유럽',

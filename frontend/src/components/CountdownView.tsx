@@ -75,16 +75,16 @@ export function CountdownView() {
   return (
     <div className="flex-1 flex overflow-hidden">
       {/* 左分类栏 — w-60 */}
-      <div className="w-60 bg-white border-r border-gray-200 p-3 overflow-y-auto flex flex-col">
+      <div className="w-60 cal-panel-bg border-r cal-line-r p-3 overflow-y-auto flex flex-col">
         <button
           onClick={() => { setSelectedCategory(null); setSelectedId(null) }}
           className={clsx(
             'flex items-center justify-between px-2 py-1.5 rounded-md text-sm mb-1',
-            selectedCategory === null ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50',
+            selectedCategory === null ? 'cal-subtle-bg text-[color:var(--cal-accent)] font-medium' : 'cal-muted cal-hover-bg',
           )}
         >
           <span className="flex items-center gap-1.5"><AlarmClock size={14} /> {t('countdown.all')}</span>
-          <span className="text-xs text-gray-400">{items.length}</span>
+          <span className="text-xs cal-muted">{items.length}</span>
         </button>
         {categories.map((c) => (
           <button
@@ -92,28 +92,28 @@ export function CountdownView() {
             onClick={() => { setSelectedCategory(c); setSelectedId(null) }}
             className={clsx(
               'flex items-center justify-between px-2 py-1.5 rounded-md text-sm mb-0.5',
-              selectedCategory === c ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50',
+              selectedCategory === c ? 'cal-subtle-bg text-[color:var(--cal-accent)] font-medium' : 'cal-muted cal-hover-bg',
             )}
           >
             <span className="flex items-center gap-1.5 truncate">
               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: CATEGORY_COLORS[c] ?? '#9ca3af' }} />
               {categoryLabel(t, c)}
             </span>
-            <span className="text-xs text-gray-400">{items.filter((i) => i.category === c).length}</span>
+            <span className="text-xs cal-muted">{items.filter((i) => i.category === c).length}</span>
           </button>
         ))}
         <button
           onClick={() => { setSelectedCategory(null); setSelectedId('NEW') }}
-          className="flex items-center gap-1 px-2 py-1.5 text-sm text-gray-400 hover:text-gray-600 mt-1"
+          className="flex items-center gap-1 px-2 py-1.5 text-sm cal-muted hover:cal-muted mt-1"
         >
           <Plus size={14} /> {t('countdown.createNew')}
         </button>
       </div>
 
       {/* 中卡片区 */}
-      <div className="flex-1 flex flex-col p-4 overflow-hidden min-w-0">
+      <div className="flex-1 flex flex-col p-4 overflow-hidden min-w-0" style={{ backgroundColor: 'var(--cal-surface, #f9fafb)' }}>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-semibold text-gray-800 flex items-center gap-1.5">
+          <h2 className="text-base font-semibold cal-ink flex items-center gap-1.5">
             <CalendarClock size={16} /> {selectedCategory ? t('countdown.titleWithCat', { cat: categoryLabel(t, selectedCategory) }) : t('terms.countdown')}
           </h2>
           <button
@@ -126,7 +126,7 @@ export function CountdownView() {
 
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
-            <p className="text-sm text-gray-400">{t('common.loading')}</p>
+            <p className="text-sm cal-muted">{t('common.loading')}</p>
           ) : filtered.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-gray-300 gap-2">
               <AlarmClock size={40} />
@@ -184,33 +184,33 @@ function CountdownCard({ item, selected, onSelect }: { item: CountdownItem; sele
       onClick={onSelect}
       className={clsx(
         'rounded-xl border p-3 cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 flex flex-col gap-1.5',
-        selected ? 'border-blue-400 ring-2 ring-blue-200 bg-blue-50/30' : 'border-gray-200 bg-white',
+        selected ? 'border-[color:var(--cal-accent)] ring-2 ring-[color:var(--cal-accent)]/20 bg-white' : 'border-[color:var(--cal-border)] bg-white',
         item.passed && !item.never_expire && 'opacity-55',
       )}
     >
       <div className="flex items-center gap-1.5">
         <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: catColor }} />
-        <span className="text-[10px] text-gray-400 px-1.5 py-0.5 rounded bg-gray-50">{categoryLabel(t, item.category)}</span>
+        <span className="text-[10px] cal-muted px-1.5 py-0.5 rounded cal-subtle-bg">{categoryLabel(t, item.category)}</span>
         <div className="ml-auto flex gap-1">
             {item.repeat_yearly && (
               <span title={item.repeat_type === 'lunar' ? t('countdown.repeatYearlyLunar') : t('countdown.repeatYearlySolar')}>
-                <Repeat size={12} className={item.repeat_type === 'lunar' ? 'text-red-400' : 'text-gray-400'} />
+                <Repeat size={12} className={item.repeat_type === 'lunar' ? 'text-red-400' : 'cal-muted'} />
               </span>
             )}
             {item.repeat_type === 'lunar' && <span title={t('countdown.lunarBadgeTitle')} className="text-[10px] text-red-400">{t('countdown.lunarBadge')}</span>}
           {item.milestone_rule && <span title={t('countdown.milestoneTitle')}><Sparkles size={12} className="text-amber-400" /></span>}
-          {item.never_expire && <span title={t('countdown.neverTitle')}><InfinityIcon size={12} className="text-gray-400" /></span>}
+          {item.never_expire && <span title={t('countdown.neverTitle')}><InfinityIcon size={12} className="cal-muted" /></span>}
         </div>
       </div>
-      <p className="text-sm font-medium text-gray-800 break-words leading-snug">{item.name}{labelSuffix(item.label_kind, t)}</p>
-      <p className="text-xs text-gray-400">{item.next_date}</p>
+      <p className="text-sm font-medium cal-ink break-words leading-snug">{item.name}{labelSuffix(item.label_kind, t)}</p>
+      <p className="text-xs cal-muted">{item.next_date}</p>
       <p className={clsx(
-        'text-lg font-bold leading-none mt-1 text-gray-700',
+        'text-lg font-bold leading-none mt-1 cal-ink',
         item.is_today && '!text-orange-500',
       )}>
         {text}
       </p>
-      {item.notes && <p className="text-[11px] text-gray-400 break-words leading-snug line-clamp-2">{item.notes}</p>}
+      {item.notes && <p className="text-[11px] cal-muted break-words leading-snug line-clamp-2">{item.notes}</p>}
     </div>
   )
 }
@@ -268,14 +268,14 @@ function CountdownDetailPanel({ item, onClose, onSave, onDelete }: {
   const isNew = !item
 
   return (
-    <aside className="w-72 bg-white border-l border-gray-200 flex flex-col overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <p className="text-xs text-gray-400 uppercase tracking-wide">{isNew ? t('countdown.createNew') : t('countdown.editTitle')}</p>
-        <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 text-sm">×</button>
+    <aside className="w-72 cal-panel-bg border-l cal-line-l flex flex-col overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[color:var(--cal-border)]">
+        <p className="text-xs cal-muted uppercase tracking-wide">{isNew ? t('countdown.createNew') : t('countdown.editTitle')}</p>
+        <button onClick={onClose} className="p-1 cal-muted hover:cal-muted text-sm">×</button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        <label className="text-xs text-gray-500 block">
+        <label className="text-xs cal-muted block">
           <span className="block mb-1">{t('countdown.fieldName')}</span>
           <input
             className="tt-input"
@@ -285,7 +285,7 @@ function CountdownDetailPanel({ item, onClose, onSave, onDelete }: {
           />
         </label>
 
-        <label className="text-xs text-gray-500 block">
+        <label className="text-xs cal-muted block">
           <span className="block mb-1">{t('countdown.fieldCategory')}</span>
           {customCategory ? (
             <div className="flex gap-1">
@@ -299,7 +299,7 @@ function CountdownDetailPanel({ item, onClose, onSave, onDelete }: {
               <button
                 type="button"
                 onClick={() => { setCustomCategory(false); setCategory(BUILTIN_CATEGORIES[0]) }}
-                className="px-2 text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded-md"
+                className="px-2 text-xs cal-muted hover:cal-muted border border-[color:var(--cal-border)] rounded-md"
               >
                 {t('countdown.back')}
               </button>
@@ -326,18 +326,18 @@ function CountdownDetailPanel({ item, onClose, onSave, onDelete }: {
           )}
         </label>
 
-        <label className="text-xs text-gray-500 block">
+        <label className="text-xs cal-muted block">
           <span className="block mb-1">{repeatYearly || milestoneRule ? t('countdown.fieldBaseDate') : t('countdown.fieldDate')}</span>
           <input type="date" className="tt-input" value={baseDate} onChange={(e) => setBaseDate(e.target.value)} />
         </label>
 
-        <label className="flex items-center justify-between text-xs text-gray-600 cursor-pointer">
+        <label className="flex items-center justify-between text-xs cal-muted cursor-pointer">
           <span className="flex items-center gap-1.5"><Repeat size={13} /> {t('countdown.repeatYearlyLabel')}</span>
           <input type="checkbox" className="accent-blue-500" checked={repeatYearly} onChange={(e) => setRepeatYearly(e.target.checked)} />
         </label>
 
         {repeatYearly && (
-          <label className="text-xs text-gray-500 block ml-1">
+          <label className="text-xs cal-muted block ml-1">
             <span className="block mb-1">{t('countdown.repeatRule')}</span>
             <div className="flex gap-3">
               <label className="flex items-center gap-1 cursor-pointer">
@@ -352,7 +352,7 @@ function CountdownDetailPanel({ item, onClose, onSave, onDelete }: {
           </label>
         )}
 
-        <label className="text-xs text-gray-500 block">
+        <label className="text-xs cal-muted block">
           <span className="block mb-1">{t('countdown.fieldMilestone')}</span>
           <input
             className="tt-input"
@@ -360,15 +360,15 @@ function CountdownDetailPanel({ item, onClose, onSave, onDelete }: {
             onChange={(e) => setMilestoneRule(e.target.value)}
             placeholder="100,365,520,1000,3650"
           />
-          <span className="block mt-1 text-[10px] text-gray-400">{t('countdown.milestoneHint')}</span>
+          <span className="block mt-1 text-[10px] cal-muted">{t('countdown.milestoneHint')}</span>
         </label>
 
-        <label className="flex items-center justify-between text-xs text-gray-600 cursor-pointer">
+        <label className="flex items-center justify-between text-xs cal-muted cursor-pointer">
           <span className="flex items-center gap-1.5"><InfinityIcon size={13} /> {t('countdown.neverExpireLabel')}</span>
           <input type="checkbox" className="accent-blue-500" checked={neverExpire} onChange={(e) => setNeverExpire(e.target.checked)} />
         </label>
 
-        <label className="text-xs text-gray-500 block">
+        <label className="text-xs cal-muted block">
           <span className="block mb-1">{t('countdown.fieldNotes')}</span>
           <textarea
             className="tt-input resize-y min-h-[60px]"
@@ -379,7 +379,7 @@ function CountdownDetailPanel({ item, onClose, onSave, onDelete }: {
         </label>
       </div>
 
-      <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+      <div className="flex items-center justify-between px-4 py-3 border-t border-[color:var(--cal-border)]">
         {item ? (
           <button
             onClick={() => onDelete(item.id)}
@@ -404,7 +404,7 @@ function CountdownDetailPanel({ item, onClose, onSave, onDelete }: {
           }, item?.id)}
           className={clsx(
             'px-3 py-1.5 text-sm rounded-lg',
-            (!name.trim() || !baseDate) ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600',
+            (!name.trim() || !baseDate) ? 'bg-gray-200 cal-muted cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600',
           )}
         >
           {item ? t('common.save') : t('countdown.createBtn')}
