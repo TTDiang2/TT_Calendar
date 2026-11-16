@@ -54,6 +54,8 @@ fn main() {
     };
 
     // 启动前清理 8765 残留：上次 backend 若未被 Job Object 完全回收，TCP 轮询会误判 ready
+    kill_existing_app();
+
     ensure_port_free(PORT);
 
     let job = create_job();
@@ -106,6 +108,36 @@ fn main() {
 }
 
 // 尝试用系统 Python 启动 backend；失败（找不到 python 或依赖不全）则回退 PyInstaller exe
+// 结束上一次残留的 app。WebView2 的 profile 同一时间只能由一个 browser process
+// 打开；第二个实例会以 0x8007139F 失败并留下全黑窗口。taskkill /T 会带上
+// msedgewebview2 子进程，等待 2 秒让 user-data-dir 的锁释放。
+fn kill_existing_app() {
+    let listed = Command::new("tasklist")
+        .args(["/FI", "IMAGENAME eq TT Calendar.exe", "/FO", "CSV", "/NH"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .output();
+    let running = listed
+        .map(|o| String::from_utf8_lossy(&o.stdout).contains("TT Calendar.exe"))
+        .unwrap_or(false);
+    if !running {
+        log("no existing app process");
+        return;
+    }
+
+    log("existing app process found, terminating process tree...");
+    let status = Command::new("taskkill")
+        .args(["/T", "/F", "/IM", "TT Calendar.exe"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status();
+    log(format!(
+        "taskkill TT Calendar.exe status={:?}",
+        status.map(|s| s.code())
+    ));
+    thread::sleep(Duration::from_millis(2000));
+}
+
 fn spawn_backend(exe_dir: &PathBuf, job: HANDLE) -> std::io::Result<(Child, &'static str)> {
     let err_path = exe_dir.join("backend.stderr.log");
     let out_path = exe_dir.join("backend.stdout.log");
