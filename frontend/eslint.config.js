@@ -39,6 +39,20 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    // scripts/ 下的探针脚本是 Node ESM，但 page.evaluate 里的回调在浏览器上下文执行，
+    // 用 document/Image/localStorage 是正常的。只声明全局变量，不关闭该目录的 lint。
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        document: 'readonly',
+        getComputedStyle: 'readonly',
+        Image: 'readonly',
+        localStorage: 'readonly',
+        window: 'readonly',
+      },
+    },
+  },
+  {
     files: ['**/*.{ts,tsx}'],
     plugins: { 'react-hooks': reactHooks },
     languageOptions: {
