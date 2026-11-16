@@ -2,11 +2,14 @@ import { useState } from 'react'
 import type { Day, Layer, MonthData } from '../types'
 import { useLang, fmtWeekday } from '../i18n'
 import { DayCell } from './DayCell'
+import type { CalendarColorStyle } from '../lib/calendar-style'
+import { useCalendarTheme } from '../lib/calendar-theme'
 
 interface Props {
   monthData: MonthData
   layers: Layer[]
   selectedDate: string | null
+  colorStyle: CalendarColorStyle
   onSelect: (date: string) => void
   onDoubleClick: (date: string) => void
   onContextMenu: (e: { clientX: number; clientY: number }, date: string) => void
@@ -14,9 +17,10 @@ interface Props {
   onDrop: (date: string) => void
 }
 
-export function WeekView({ monthData, layers, selectedDate, onSelect, onDoubleClick, onContextMenu, onDragStart, onDrop }: Props) {
+export function WeekView({ monthData, layers, selectedDate, colorStyle, onSelect, onDoubleClick, onContextMenu, onDragStart, onDrop }: Props) {
   const [dragOver, setDragOver] = useState<string | null>(null)
   const lang = useLang()
+  const { theme } = useCalendarTheme()
   return (
     <div className="flex-1 flex flex-col min-h-0">
       <div className="grid grid-cols-7 gap-1 mb-1">
@@ -24,7 +28,8 @@ export function WeekView({ monthData, layers, selectedDate, onSelect, onDoubleCl
         {Array.from({ length: 7 }, (_, i) => fmtWeekday(lang, new Date(2023, 0, 2 + i), 'short')).map((w, i) => (
           <div
             key={w}
-            className={`text-center text-xs font-medium py-1 ${i >= 5 ? 'text-red-400' : 'text-gray-400'}`}
+            className={`text-center text-xs font-medium py-1 ${i >= 5 && colorStyle === 'vivid' ? '' : 'text-gray-400'}`}
+            style={i >= 5 && colorStyle === 'vivid' ? { color: theme.weekend } : undefined}
           >
             {w}
           </div>
@@ -38,6 +43,7 @@ export function WeekView({ monthData, layers, selectedDate, onSelect, onDoubleCl
             layers={layers}
             selected={selectedDate === day.date}
             dragOver={dragOver === day.date}
+            colorStyle={colorStyle}
             onClick={onSelect}
             onDoubleClick={onDoubleClick}
             onContextMenu={onContextMenu}

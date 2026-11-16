@@ -14,6 +14,22 @@ export const settings = {
     /** 加载中提示（忙度/提醒两处共用） */
     loading: '加载中…',
 
+    /** ── 外观分区（Taste Pass 01） ─────────────────────── */
+    appearance: {
+      sectionTitle: '外观',
+      colorStyle: '日历涂色',
+      soft: '柔和',
+      vivid: '鲜明',
+      hint: '柔和：降低饱和度，保留颜色深浅；鲜明：原色整格填充。',
+      themeLabel: '主题配色',
+      themeHint: '整套切换月网格：暖色预测 + 绿色已完成；自定义图层色保持不变。',
+      themeClassic: '经典',
+      themeMorandi: '莫兰迪',
+      themeScandinavian: '北欧',
+      themeMidcentury: '中世纪现代',
+      themeArtdeco: '装饰艺术',
+    },
+
     /** ── 事件导入分区（老端独有） ───────────────────────── */
     import: {
       sectionTitle: '事件导入',
@@ -80,6 +96,7 @@ export const settings = {
       save: '保存并重算',
       /** 保存成功提示（复数条目：en day/days） */
       savedDays: { other: '已保存并重算 {n} 天的忙度快照' },
+      themeFollow: '默认跟随主题配色；在这里改色后会固定为自定义色。',
     },
 
     /** ── 每日提醒分区 ───────────────────────────────────── */
@@ -130,6 +147,21 @@ export const settings = {
     title: 'Settings',
     saving: 'Saving…',
     loading: 'Loading…',
+
+    appearance: {
+      sectionTitle: 'Appearance',
+      colorStyle: 'Calendar coloring',
+      soft: 'Soft',
+      vivid: 'Vivid',
+      hint: 'Soft: desaturated heat fills, depth preserved. Vivid: full-strength layer colors.',
+      themeLabel: 'Theme palette',
+      themeHint: 'Switches the month-grid palette: warm forecast ramp and green completed ramp. Custom layer colors stay unchanged.',
+      themeClassic: 'Classic',
+      themeMorandi: 'Morandi',
+      themeScandinavian: 'Scandinavian',
+      themeMidcentury: 'Mid-century',
+      themeArtdeco: 'Art Deco',
+    },
 
     import: {
       sectionTitle: 'Event import',
@@ -183,6 +215,7 @@ export const settings = {
         one: 'Saved and recomputed the busyness snapshot for {n} day',
         other: 'Saved and recomputed the busyness snapshot for {n} days',
       },
+      themeFollow: 'Colors follow the theme by default; editing a swatch pins a custom color.',
     },
 
     reminder: {

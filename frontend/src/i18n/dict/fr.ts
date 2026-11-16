@@ -1,5 +1,5 @@
 /**
- * fr 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 561 条）。
+ * fr 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 576 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.fr.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -216,6 +216,20 @@ export const fr: DeepPartialDict<Dict> = {
     title: 'Paramètres',
     saving: 'Enregistrement…',
     loading: 'Chargement…',
+    appearance: {
+      sectionTitle: 'Apparence',
+      colorStyle: 'Couleur du calendrier',
+      soft: 'Doux',
+      vivid: 'Vif',
+      hint: 'Doux : saturation réduite, intensité conservée. Vif : couleurs du calque à pleine intensité.',
+      themeLabel: 'Thème de couleurs',
+      themeHint: 'Bascule toute la palette de la grille mensuelle : prévisions chaudes et réalisations en vert. Les couleurs personnalisées des calques restent inchangées.',
+      themeClassic: 'Classique',
+      themeMorandi: 'Morandi',
+      themeScandinavian: 'Scandinave',
+      themeMidcentury: 'Mi-century',
+      themeArtdeco: 'Art déco',
+    },
     import: {
       sectionTitle: 'Import d\'événements',
       fieldSource: 'Source de données',
@@ -266,6 +280,7 @@ export const fr: DeepPartialDict<Dict> = {
         one: 'Instantané de charge recalculé pour {n} jour',
         many: 'Instantané de charge recalculé pour {n} jours',
       },
+      themeFollow: 'Les couleurs suivent le thème par défaut ; modifier une pastille fixe une couleur personnalisée.',
     },
     reminder: {
       sectionTitle: 'Rappel quotidien',
@@ -689,6 +704,10 @@ export const fr: DeepPartialDict<Dict> = {
     },
     row: {
       completedWithCount: 'Terminées ({n})',
+    },
+    toast: {
+      completed: 'Terminé',
+      undo: 'Annuler',
     },
     csv: {
       done: 'Import de {inserted} élément(s), création de {lists} liste(s)',

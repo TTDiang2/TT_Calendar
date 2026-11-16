@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Check, ChevronDown, ChevronUp, Inbox, ListPlus, Pencil, Plus, Repeat, Star, Trash2, Upload } from 'lucide-react'
 import clsx from 'clsx'
 import { getTodoLists, getTodos, getTodoStats, createTodo, updateTodo, deleteTodo, createTodoList, updateTodoList, deleteTodoList, importTodosCsv, reorderTodoLists, reorderTodos } from '../api/client'
@@ -73,6 +74,9 @@ const REPEAT_KEYS: Record<string, TxKey> = {
 
 const DEFAULT_LIST_KEY = 'tt_default_todo_list'
 
+/** 完成编排阶段：check = 勾画/划掉，collapse = 收行。 */
+type ExitPhase = 'check' | 'collapse'
+
 export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
   const t = useT()
   const qc = useQueryClient()
@@ -85,11 +89,13 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
   const [autoList, setAutoList] = useState(false)
   const [csvResult, setCsvResult] = useState<string | null>(null)
   const [showCompleted, setShowCompleted] = useState(false)
-  const [leavingIds, setLeavingIds] = useState<Set<string>>(new Set())
+  const [exits, setExits] = useState<Map<string, { done: boolean; phase: ExitPhase }>>(new Map())
+  const [undoToast, setUndoToast] = useState<Todo | null>(null)
   const [manualOrder, setManualOrder] = useState<string[] | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [dragOverId, setDragOverId] = useState<string | null>(null)
-  const leavingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const exitTimers = useRef<Map<string, ReturnType<typeof setTimeout>[]>>(new Map())
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dragListId = useRef<string | null>(null)
   const [renamingListId, setRenamingListId] = useState<string | null>(null)
   const [renameDraft, setRenameDraft] = useState('')
@@ -121,6 +127,32 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
     queryFn: () => getTodos({ list_id: selectedList ?? undefined, status: 'completed', sort, limit: 500 }),
     enabled: showCompleted || viewMode === 'kanban',
   })
+
+  // 后端数据追上后清掉已完成编排的临时行：完成→等它离开未完列表；取消完成→等它离开已完成列表。
+  useEffect(() => {
+    if (exits.size === 0) return
+    const incompleteIds = new Set(incomplete.map((t) => t.id))
+    const completedIds = new Set(completed.map((t) => t.id))
+    setExits((prev) => {
+      let changed = false
+      const next = new Map(prev)
+      for (const [id, entry] of prev) {
+        const stillVisible = entry.done ? incompleteIds.has(id) : completedIds.has(id)
+        if (!stillVisible) {
+          next.delete(id)
+          changed = true
+        }
+      }
+      return changed ? next : prev
+    })
+  }, [incomplete, completed, exits])
+
+  // 卸载时清掉所有编排计时器，避免在已卸载组件上 setState。
+  useEffect(() => () => {
+    for (const timers of exitTimers.current.values()) timers.forEach(clearTimeout)
+    exitTimers.current.clear()
+    if (toastTimer.current) clearTimeout(toastTimer.current)
+  }, [])
 
   // 量筒：今日完成（completed_on 精确过滤，避免全量 completed 截断丢今日）
   const today = todayStr()
@@ -200,17 +232,95 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
     onError: (e: unknown) => setCsvResult(t('todoview.csv.failed', { msg: e instanceof Error ? e.message : 'unknown' })),
   })
 
-  const handleToggle = (t: Todo, done: boolean) => {
-    setLeavingIds((prev) => new Set(prev).add(t.id))
-    if (leavingTimer.current) clearTimeout(leavingTimer.current)
-    leavingTimer.current = setTimeout(() => {
-      updateMut.mutate({ id: t.id, data: { ...t, id: t.id, status: done ? 'completed' : 'notStarted' } })
-      setLeavingIds((prev) => {
-        const next = new Set(prev)
-        next.delete(t.id)
-        return next
+  const dismissUndoToast = () => {
+    if (toastTimer.current) {
+      clearTimeout(toastTimer.current)
+      toastTimer.current = null
+    }
+    setUndoToast(null)
+  }
+
+  const showUndoToast = (todo: Todo) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current)
+    setUndoToast(todo)
+    toastTimer.current = setTimeout(() => {
+      setUndoToast(null)
+      toastTimer.current = null
+    }, 2500)
+  }
+
+  // 悬停时暂停倒计时，移开后重新给 2.5 秒，方便慢慢点撤销。
+  const pauseUndoToast = () => {
+    if (toastTimer.current) {
+      clearTimeout(toastTimer.current)
+      toastTimer.current = null
+    }
+  }
+  const resumeUndoToast = () => {
+    if (!undoToast) return
+    if (toastTimer.current) clearTimeout(toastTimer.current)
+    toastTimer.current = setTimeout(() => {
+      setUndoToast(null)
+      toastTimer.current = null
+    }, 2500)
+  }
+
+  const handleUndoCompletion = () => {
+    const todo = undoToast
+    dismissUndoToast()
+    if (!todo) return
+    // 恢复完成前的状态（可能是进行中等），而不是一律退回未开始。
+    updateMut.mutate({ id: todo.id, data: { ...todo, id: todo.id } })
+  }
+
+  const scheduleExit = (id: string, fn: () => void, delay: number) => {
+    const timer = setTimeout(fn, delay)
+    const timers = exitTimers.current.get(id) ?? []
+    timers.push(timer)
+    exitTimers.current.set(id, timers)
+  }
+
+  const handleToggle = (todo: Todo, done: boolean) => {
+    if (exits.has(todo.id) || exitTimers.current.has(todo.id)) return
+    const vars = {
+      id: todo.id,
+      data: { ...todo, id: todo.id, status: done ? 'completed' : 'notStarted' },
+    }
+
+    // 矩阵/看板由数据驱动卡片位置，立即提交；列表视图走下面的 勾画→划掉→收行 编排。
+    if (viewMode !== 'list') {
+      updateMut.mutate(vars, { onSuccess: () => { if (done) showUndoToast(todo) } })
+      return
+    }
+
+    exitTimers.current.set(todo.id, [])
+    setExits((prev) => new Map(prev).set(todo.id, { done, phase: done ? 'check' : 'collapse' }))
+
+    // 先让勾号画完、标题划掉，再收行；约 200ms 后行高归零。
+    if (done) {
+      scheduleExit(todo.id, () => {
+        setExits((prev) => {
+          const entry = prev.get(todo.id)
+          if (!entry) return prev
+          return new Map(prev).set(todo.id, { ...entry, phase: 'collapse' })
+        })
+      }, 220)
+    }
+
+    scheduleExit(todo.id, () => {
+      exitTimers.current.delete(todo.id)
+      updateMut.mutate(vars, {
+        onSuccess: () => { if (done) showUndoToast(todo) },
+        onError: () => {
+          setExits((prev) => {
+            if (!prev.has(todo.id)) return prev
+            const next = new Map(prev)
+            next.delete(todo.id)
+            return next
+          })
+        },
       })
-    }, 280)
+    }, done ? 420 : 200)
   }
 
   const counts = useMemo(() => {
@@ -488,7 +598,8 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
                       isDone={false}
                       overdue={!!overdue}
                       selected={selectedTodoId === t.id}
-                      leaving={leavingIds.has(t.id)}
+                      finishing={exits.get(t.id)?.done === true}
+                      leaving={exits.get(t.id)?.phase === 'collapse'}
                       onSelect={() => setSelectedTodoId(t.id)}
                       onToggle={() => handleToggle(t, true)}
                       onOpenNotes={() => { setSelectedTodoId(t.id); detailRef.current?.openNotes() }}
@@ -519,7 +630,8 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
                             isDone={true}
                             overdue={false}
                             selected={selectedTodoId === t.id}
-                            leaving={leavingIds.has(t.id)}
+                            finishing={exits.get(t.id)?.done === true}
+                            leaving={exits.get(t.id)?.phase === 'collapse'}
                             onSelect={() => setSelectedTodoId(t.id)}
                             onToggle={() => handleToggle(t, false)}
                             onOpenNotes={() => { setSelectedTodoId(t.id); detailRef.current?.openNotes() }}
@@ -564,6 +676,37 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
         }}
         onDelete={(id) => { deleteMut.mutate(id); setSelectedTodoId(null) }}
       />
+
+      <AnimatePresence>
+        {undoToast && (
+          <motion.div
+            key="todo-undo-toast"
+            role="status"
+            aria-live="polite"
+            initial={{ opacity: 0, y: 14, x: '-50%', scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, x: '-50%', scale: 1 }}
+            exit={{ opacity: 0, y: 8, x: '-50%', scale: 0.98 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            onMouseEnter={pauseUndoToast}
+            onMouseLeave={resumeUndoToast}
+            className="fixed bottom-6 left-1/2 z-[60] flex items-center gap-2.5 rounded-full border border-gray-200/80 bg-white/95 py-2 pl-2 text-sm text-gray-700 shadow-lg shadow-gray-900/10 backdrop-blur"
+          >
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white" aria-hidden="true">
+              <Check size={12} strokeWidth={3} />
+            </span>
+            <span className="font-medium text-gray-500">{t('todoview.toast.completed')}</span>
+            <span className="max-w-[240px] truncate font-medium text-gray-700">{undoToast.title}</span>
+            <span className="mx-1 h-4 w-px bg-gray-200" aria-hidden="true" />
+            <button
+              type="button"
+              onClick={handleUndoCompletion}
+              className="rounded-full px-2 py-0.5 font-medium text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              {t('todoview.toast.undo')}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -638,12 +781,13 @@ function FilterSelect({ label, value, options, onChange }: {
   )
 }
 
-function TodoRow({ todo, listName, isDone, overdue, selected, leaving, onSelect, onToggle, onOpenNotes }: {
+function TodoRow({ todo, listName, isDone, overdue, selected, finishing, leaving, onSelect, onToggle, onOpenNotes }: {
   todo: Todo
   listName?: string
   isDone: boolean
   overdue: boolean
   selected: boolean
+  finishing?: boolean
   leaving?: boolean
   onSelect: () => void
   onToggle: () => void
@@ -671,23 +815,41 @@ function TodoRow({ todo, listName, isDone, overdue, selected, leaving, onSelect,
       onClick={onSelect}
       onDoubleClick={onOpenNotes}
       className={clsx(
-        'group flex items-start gap-2 px-3 py-2 rounded-lg cursor-pointer border transition-all duration-200 tt-row-enter',
+        'group grid cursor-pointer border rounded-lg transition-all duration-200 tt-row-enter',
         selected ? 'bg-blue-50 border-blue-200' : 'border-transparent hover:bg-gray-100 hover:border-gray-200 active:scale-[0.99]',
-        leaving && 'opacity-0 scale-[0.98] -translate-x-2 max-h-0 py-0 my-0 overflow-hidden',
+        leaving && 'opacity-0 scale-[0.98] -translate-x-2 border-transparent',
       )}
+      style={{ gridTemplateRows: leaving ? '0fr' : '1fr' }}
     >
-      <AnimatedCheck
-        checked={isDone}
+      <div className="min-h-0 overflow-hidden">
+        <div className="flex items-start gap-2 px-3 py-2">
+          <AnimatedCheck
+        checked={isDone || !!finishing}
         onClick={(e) => { e.stopPropagation(); onToggle() }}
-        ariaLabel={isDone ? t('todoboards.aria.markUndone') : t('todoboards.aria.markDone')}
+        ariaLabel={isDone || finishing ? t('todoboards.aria.markUndone') : t('todoboards.aria.markDone')}
+        size={18}
+        checkSize={12}
         className={clsx(
           'mt-0.5 border',
-          isDone ? 'bg-blue-500 border-blue-500' : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50',
+          isDone || finishing
+            ? 'bg-[var(--cal-accent,#3b82f6)] border-[var(--cal-accent,#3b82f6)]'
+            : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50 hover:ring-2 hover:ring-blue-100',
         )}
         checkClassName="text-white"
       />
       <div className="flex-1 min-w-0">
-        <p className={clsx('text-sm leading-snug break-words whitespace-normal', isDone ? 'text-gray-400 line-through' : 'text-gray-800')}>{todo.title}</p>
+        <p
+          className={clsx('text-sm leading-snug break-words whitespace-normal', isDone || finishing ? 'text-gray-400' : 'text-gray-800')}
+          style={{
+            textDecoration: 'line-through',
+            textDecorationColor: isDone || finishing ? 'currentColor' : 'transparent',
+            textDecorationThickness: '1px',
+            // 勾号先画，划掉晚 120ms 出现；两者都完成后再收行。
+            transition: 'text-decoration-color 140ms ease 120ms, color 180ms ease',
+          }}
+        >
+          {todo.title}
+        </p>
         {todo.body && <p className="text-xs text-gray-400 break-words whitespace-normal mt-0.5">{todo.body}</p>}
         <div className="flex flex-wrap gap-1 mt-1">
           {todo.complexity && (
@@ -704,7 +866,7 @@ function TodoRow({ todo, listName, isDone, overdue, selected, leaving, onSelect,
               {labelOf(REPEAT_KEYS, todo.repeat, t)}
             </span>
           )}
-          {!isDone && todo.status && todo.status !== 'notStarted' && (
+          {!isDone && !finishing && todo.status && todo.status !== 'notStarted' && (
             <span className={clsx('text-[10px] px-1.5 py-0.5 rounded', STATUS_TAG_CLS[todo.status] ?? STATUS_TAG_CLS.notStarted)}>
               {labelOf(STATUS_KEYS, todo.status, t)}
             </span>
@@ -729,6 +891,8 @@ function TodoRow({ todo, listName, isDone, overdue, selected, leaving, onSelect,
         {plannedTomorrow && !isDone && (
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-600">{t('todoview.plan.tomorrow')}</span>
         )}
+        </div>
+        </div>
       </div>
     </div>
   )

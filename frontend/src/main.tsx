@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { QueryClient, QueryClientProvider, QueryErrorResetBoundary } from '@tanstack/react-query'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { I18nProvider } from './i18n'
+import { CalendarThemeProvider } from './lib/calendar-theme'
 import { AppGate } from './AppGate'
 import './index.css'
 
@@ -20,13 +21,15 @@ const queryClient = new QueryClient({
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <I18nProvider>
-      <QueryClientProvider client={queryClient}>
-        <QueryErrorResetBoundary>
-          <ErrorBoundary>
-            <AppGate />
-          </ErrorBoundary>
-        </QueryErrorResetBoundary>
-      </QueryClientProvider>
+      <CalendarThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <QueryErrorResetBoundary>
+            <ErrorBoundary>
+              <AppGate />
+            </ErrorBoundary>
+          </QueryErrorResetBoundary>
+        </QueryClientProvider>
+      </CalendarThemeProvider>
     </I18nProvider>
   </React.StrictMode>,
 )

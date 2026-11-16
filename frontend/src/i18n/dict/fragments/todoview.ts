@@ -81,6 +81,8 @@ export const todoview = {
     },
     /** 列表行尾的已完成折叠条 */
     row: { completedWithCount: '已完成（{n}）' },
+    /** 完成后的撤销提示 */
+    toast: { completed: '已完成', undo: '撤销' },
     /** CSV 导入结果条（inserted/lists 为服务端计数；整句两 key 变体，不做 t()+ 拼接） */
     csv: {
       done: '导入 {inserted} 条，新建 {lists} 个列表',
@@ -134,6 +136,7 @@ export const todoview = {
       noneOpen: 'No open to-dos',
     },
     row: { completedWithCount: 'Completed ({n})' },
+    toast: { completed: 'Completed', undo: 'Undo' },
     csv: {
       done: 'Imported {inserted}, created {lists} lists',
       doneWithErrors: 'Imported {inserted}, created {lists} lists, {n} rows failed',

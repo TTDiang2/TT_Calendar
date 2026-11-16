@@ -221,6 +221,20 @@ export const ko: DeepPartialDict<Dict> = {
     title: '설정',
     saving: '저장 중…',
     loading: '불러오는 중…',
+    appearance: {
+      sectionTitle: '모양',
+      colorStyle: '달력 색상',
+      soft: '부드럽게',
+      vivid: '선명하게',
+      hint: '부드럽게: 채도를 낮추고 농도를 유지합니다. 선명하게: 셀 전체를 레이어 색으로 채웁니다.',
+      themeLabel: '테마 색상',
+      themeHint: '월 그리드 팔레트를 통째로 바꿉니다(예측은 난색, 완료는 녹색). 사용자 지정 레이어 색은 그대로 유지됩니다.',
+      themeClassic: '클래식',
+      themeMorandi: '모란디',
+      themeScandinavian: '북유럽',
+      themeMidcentury: '미드센추리',
+      themeArtdeco: '아르데코',
+    },
     import: {
       sectionTitle: '이벤트 가져오기',
     fieldSource: '데이터 소스',
@@ -267,6 +281,7 @@ export const ko: DeepPartialDict<Dict> = {
       levelTitle: '단계 {n}',
       save: '저장 후 재계산',
       savedDays: { other: '{n}일치 바쁨 스냅숏을 저장하고 재계산했습니다' },
+      themeFollow: '색상은 기본적으로 테마를 따릅니다. 스와치를 수정하면 사용자 지정 색으로 고정됩니다.',
     },
     reminder: {
       sectionTitle: '매일 알림',
@@ -659,6 +674,7 @@ export const ko: DeepPartialDict<Dict> = {
     row: {
       completedWithCount: '완료 ({n})',
     },
+    toast: { completed: '완료됨', undo: '실행 취소' },
     csv: {
       done: '{inserted}개를 가져왔습니다. 목록 {lists}개를 새로 만들었습니다',
       doneWithErrors: '{inserted}개를 가져왔습니다. 목록 {lists}개를 새로 만들었습니다. {n}행 오류',

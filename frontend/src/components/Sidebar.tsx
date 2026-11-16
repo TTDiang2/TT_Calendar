@@ -3,13 +3,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import clsx from 'clsx'
 import { ChevronDown, ChevronRight, Plus } from 'lucide-react'
 import type { Layer } from '../types'
-import { createLayer, getSubscriptions } from '../api/client'
+import { createLayer, getSubscriptions, getTodoBusyConfig } from '../api/client'
 import { COLOR_PRESETS, GRADED_PALETTES } from '../data'
 import { Modal, Field } from './ui/Modal'
 import { StretchSwitch } from './ui/StretchSwitch'
 import { useT, type TxKey } from '../i18n'
 import { paletteLabelKey } from '../i18n/adapt/labels'
 import { layerLabel } from '../i18n/adapt/layerLabel'
+import { resolveBusyRamps, useCalendarTheme } from '../lib/calendar-theme'
 
 interface Props {
   layers: Layer[]
@@ -202,14 +203,40 @@ export function Sidebar({ layers, onToggle, countdown, banner }: Props) {
 
 function LayerRow({ layer, onToggle }: { layer: Layer; onToggle: (id: string) => void }) {
   const t = useT()
+  const { theme } = useCalendarTheme()
+  const isBusy = layer.layer_id === 'todo' || layer.layer_id === 'todo_done'
+  // 图例跟日历显示保持一致：忙度/已完成/充实度用主题解析后的 L4，其他图层仍用用户色
+  const { data: busyConfig } = useQuery({
+    queryKey: ['todoBusyConfig'],
+    queryFn: getTodoBusyConfig,
+    staleTime: 60_000,
+    enabled: isBusy,
+  })
+  const ramps = resolveBusyRamps(theme, busyConfig)
+  const displayColor =
+    layer.layer_id === 'todo_done'
+      ? ramps.done[3]
+      : layer.layer_id === 'todo'
+        ? ramps.predict[3]
+        : layer.layer_id === 'coloring'
+          ? theme.coloring[3]
+          : layer.color ?? '#9ca3af'
   const label = layerLabel(layer, t)
   return (
-    <div className="flex items-center gap-2 px-1 py-1.5 rounded-md hover:bg-gray-50">
+    <div
+      className={clsx(
+        'flex items-center gap-2 px-1 py-1.5 rounded-md transition-colors',
+        // 关闭的图层整行退到背景里，开着的那几行才有「在场」的底色
+        layer.enabled ? 'bg-gray-50/80' : 'bg-transparent hover:bg-gray-50',
+      )}
+    >
       <span
-        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-        style={{ backgroundColor: layer.color ?? '#9ca3af' }}
+        className="w-2.5 h-2.5 rounded-full flex-shrink-0 transition-opacity"
+        style={{ backgroundColor: displayColor, opacity: layer.enabled ? 1 : 0.3 }}
       />
-      <span className="flex-1 text-sm text-gray-700 truncate">{label}</span>
+      <span className={clsx('flex-1 truncate text-sm transition-colors', layer.enabled ? 'text-gray-800' : 'text-gray-400')}>
+        {label}
+      </span>
       <StretchSwitch
         checked={layer.enabled}
         onChange={() => onToggle(layer.layer_id)}

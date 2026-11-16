@@ -228,6 +228,20 @@ export const ja: DeepPartialDict<Dict> = {
     title: '設定',
     saving: '保存中…',
     loading: '読み込み中…',
+    appearance: {
+      sectionTitle: '外観',
+      colorStyle: 'カレンダーの塗り',
+      soft: 'ソフト',
+      vivid: 'ビビッド',
+      hint: 'ソフト：彩度を抑えて濃淡を保持。ビビッド：セル全体をレイヤー色で塗りつぶします。',
+      themeLabel: 'テーマ配色',
+      themeHint: '月グリッドの配色をまとめて切り替えます（予測は暖色、完了は緑）。カスタムレイヤーの色は変わりません。',
+      themeClassic: 'クラシック',
+      themeMorandi: 'モランディ',
+      themeScandinavian: '北欧',
+      themeMidcentury: 'ミッドセンチュリー',
+      themeArtdeco: 'アールデコ',
+    },
     import: {
       sectionTitle: 'イベント取り込み',
     fieldSource: 'データソース',
@@ -274,6 +288,7 @@ export const ja: DeepPartialDict<Dict> = {
       levelTitle: 'レベル {n}',
       save: '保存して再計算',
       savedDays: { other: '{n}日分の忙しさスナップショットを保存して再計算しました' },
+      themeFollow: '色は既定でテーマに従います。スウォッチを編集するとカスタム色に固定されます。',
     },
     reminder: {
       sectionTitle: '毎日のリマインダー',
@@ -666,6 +681,7 @@ export const ja: DeepPartialDict<Dict> = {
     row: {
       completedWithCount: '完了（{n}）',
     },
+    toast: { completed: '完了しました', undo: '元に戻す' },
     csv: {
       done: '{inserted}件を取り込み、リストを{lists}件作成しました',
       doneWithErrors: '{inserted}件を取り込み、リストを{lists}件作成しました（{n}行エラー）',

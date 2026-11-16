@@ -37,7 +37,7 @@ export function AnimatedCheck({
       initial={false}
       animate={{ scale: checked ? [1, 1.08, 1] : 1 }}
       whileTap={{ scale: 0.86 }}
-      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
       className={clsx(
         'flex shrink-0 items-center justify-center transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1',
@@ -60,15 +60,15 @@ export function AnimatedCheck({
           initial={{ scale: 0.6, opacity: 0 }}
           animate={{ scale: [0.6, 1.18, 1], opacity: 1 }}
           transition={{
-            scale: { duration: 0.36, ease: [0.16, 1, 0.3, 1] },
-            opacity: { duration: 0.12 },
+            scale: { duration: 0.24, ease: [0.16, 1, 0.3, 1] },
+            opacity: { duration: 0.1 },
           }}
         >
           <motion.path
             d="M4 12l5 5L20 6"
             initial={{ pathLength: 0 }}
             animate={{ pathLength: 1 }}
-            transition={{ duration: 0.28, ease: [0.65, 0, 0.35, 1] }}
+            transition={{ duration: 0.2, ease: [0.65, 0, 0.35, 1] }}
           />
         </motion.svg>
       )}

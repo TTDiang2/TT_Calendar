@@ -2,11 +2,14 @@ import { useState } from 'react'
 import type { Day, Layer, MonthData } from '../types'
 import { useLang, fmtWeekday } from '../i18n'
 import { DayCell } from './DayCell'
+import type { CalendarColorStyle } from '../lib/calendar-style'
+import { useCalendarTheme } from '../lib/calendar-theme'
 
 interface Props {
   monthData: MonthData
   layers: Layer[]
   selectedDate: string | null
+  colorStyle: CalendarColorStyle
   onSelect: (date: string) => void
   onDoubleClick: (date: string) => void
   onContextMenu: (e: { clientX: number; clientY: number }, date: string) => void
@@ -17,16 +20,18 @@ interface Props {
 // 周表头：以 2023-01-02（周一）为锚点，列 i 依次为周一…周日（决策 #7：星期名走 Intl，
 // zh 输出「周一…周日」与旧手写数组逐字一致，en 为 Mon…Sun）
 
-export function MonthGrid({ monthData, layers, selectedDate, onSelect, onDoubleClick, onContextMenu, onDragStart, onDrop }: Props) {
+export function MonthGrid({ monthData, layers, selectedDate, colorStyle, onSelect, onDoubleClick, onContextMenu, onDragStart, onDrop }: Props) {
   const [dragOver, setDragOver] = useState<string | null>(null)
   const lang = useLang()
+  const { theme } = useCalendarTheme()
   return (
     <div className="flex-1 flex flex-col min-h-0">
       <div className="grid grid-cols-7 gap-1 mb-1">
         {Array.from({ length: 7 }, (_, i) => fmtWeekday(lang, new Date(2023, 0, 2 + i), 'short')).map((w, i) => (
           <div
             key={w}
-            className={`text-center text-xs font-medium py-1 ${i >= 5 ? 'text-red-400' : 'text-gray-400'}`}
+            className={`text-center text-xs font-medium py-1 ${i >= 5 && colorStyle === 'vivid' ? '' : 'text-gray-400'}`}
+            style={i >= 5 && colorStyle === 'vivid' ? { color: theme.weekend } : undefined}
           >
             {w}
           </div>
@@ -43,6 +48,7 @@ export function MonthGrid({ monthData, layers, selectedDate, onSelect, onDoubleC
             layers={layers}
             selected={selectedDate === day.date}
             dragOver={dragOver === day.date}
+            colorStyle={colorStyle}
             onClick={onSelect}
             onDoubleClick={onDoubleClick}
             onContextMenu={onContextMenu}

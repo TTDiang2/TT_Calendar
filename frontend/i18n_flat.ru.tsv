@@ -201,6 +201,7 @@ settings.busy.actualLayer	Фактический слой
 settings.busy.levelTitle	Уровень {n}
 settings.busy.save	Сохранить и пересчитать
 settings.busy.savedDays	Снимок загрузки пересчитан за {n} дня|Снимок загрузки пересчитан за {n} день||Снимок загрузки пересчитан за {n} дня|Снимок загрузки пересчитан за {n} дней
+settings.busy.themeFollow	По умолчанию цвета следуют теме; изменение образца закрепляет пользовательский цвет.
 settings.reminder.sectionTitle	Ежедневное напоминание
 settings.reminder.desc	В заданное время, если на сегодня остались невыполненные задачи по плану, сверху появится ненавязчивая плашка. По умолчанию выключено.
 settings.reminder.enable	Включить ежедневное напоминание
@@ -482,6 +483,8 @@ todoview.empty.tagFiltered	Задач с меткой «{tag}» нет
 todoview.empty.desktop	Задач пока нет — нажмите «Новая задача», чтобы начать
 todoview.empty.noneOpen	Незакрытых задач нет
 todoview.row.completedWithCount	Выполненные ({n})
+todoview.toast.completed	Выполнено
+todoview.toast.undo	Отменить
 todoview.csv.done	Импортировано {inserted}, создано списков: {lists}
 todoview.csv.doneWithErrors	Импортировано {inserted}, создано списков: {lists}, строк с ошибкой: {n}
 todoview.csv.failed	Сбой импорта: {msg}
@@ -562,3 +565,15 @@ layers.play	Досуг
 layers.misc	Прочее
 layers.scheduleTodoList	Задачи по записям
 layers.defaultTaskList	Задачи
+settings.appearance.sectionTitle	Оформление
+settings.appearance.colorStyle	Цвет календаря
+settings.appearance.soft	Мягкий
+settings.appearance.vivid	Яркий
+settings.appearance.hint	Мягкий: пониженная насыщенность, глубина сохранена. Яркий: полная заливка цветом слоя.
+settings.appearance.themeLabel	Цветовая тема
+settings.appearance.themeHint	Переключает всю палитру месячной сетки: тёплые прогнозы и зелёные выполнения. Пользовательские цвета слоёв не меняются.
+settings.appearance.themeClassic	Классика
+settings.appearance.themeMorandi	Моранди
+settings.appearance.themeScandinavian	Скандинавский
+settings.appearance.themeMidcentury	Мид-сенчури
+settings.appearance.themeArtdeco	Ар-деко

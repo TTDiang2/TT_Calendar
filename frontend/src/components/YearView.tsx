@@ -2,9 +2,10 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import clsx from 'clsx'
 import type { Day, Layer, YearData } from '../types'
-import { COLORING_COLORS, getBusyColors, parseDate, todayStr } from '../data'
+import { getBusyColors, parseDate, todayStr } from '../data'
 import { getTodoBusyConfig, type TodoBusyConfig } from '../api/client'
 import { useLang, fmtWeekday, fmtMonthName } from '../i18n'
+import { resolveBusyRamps, useCalendarTheme, withAlpha, type CalendarTheme } from '../lib/calendar-theme'
 
 interface Props {
   yearData: YearData
@@ -14,9 +15,9 @@ interface Props {
 }
 
 // 迷你格太小无法分层，按优先级取第一个启用的染色维度颜色
-function miniCellColor(day: Day, layerById: Map<string, Layer>, busyConfig?: TodoBusyConfig): string | null {
+function miniCellColor(day: Day, layerById: Map<string, Layer>, theme: CalendarTheme, busyConfig?: TodoBusyConfig): string | null {
   const coloringL = layerById.get('coloring')
-  if (coloringL?.enabled && day.coloring_level != null) return COLORING_COLORS[day.coloring_level]
+  if (coloringL?.enabled && day.coloring_level != null) return theme.coloring[day.coloring_level]
   const importantL = layerById.get('important')
   if (importantL?.enabled && day.gradient_bg && day.gradient_bg.toLowerCase() !== '#ffffff') return day.gradient_bg
   const scheduleL = layerById.get('schedule')
@@ -25,7 +26,7 @@ function miniCellColor(day: Day, layerById: Map<string, Layer>, busyConfig?: Tod
   }
   const holidayL = layerById.get('holiday')
   if (holidayL?.enabled && day.holiday?.name) return holidayL.color ?? '#8E24AA'
-  for (const b of getBusyColors(day, todayStr(), busyConfig)) {
+  for (const b of getBusyColors(day, todayStr(), busyConfig, resolveBusyRamps(theme, busyConfig))) {
     if (layerById.get(b.id)?.enabled) return b.color
   }
   if (day.custom_bg?.color) return day.custom_bg.color
@@ -34,6 +35,7 @@ function miniCellColor(day: Day, layerById: Map<string, Layer>, busyConfig?: Tod
 
 export function YearView({ yearData, layers, selectedDate, onSelectDate }: Props) {
   const lang = useLang()
+  const { theme } = useCalendarTheme()
   const layerById = useMemo(() => new Map(layers.map((l) => [l.layer_id, l])), [layers])
   const { data: busyConfig } = useQuery({ queryKey: ['todoBusyConfig'], queryFn: getTodoBusyConfig, staleTime: 60_000 })
 
@@ -59,26 +61,32 @@ export function YearView({ yearData, layers, selectedDate, onSelectDate }: Props
                     key={wi}
                     className={clsx(
                       'text-[8px] text-center',
-                      wi >= 5 ? 'text-red-400' : 'text-gray-400',
+                      wi >= 5 ? '' : 'text-gray-400',
                     )}
+                    style={wi >= 5 ? { color: theme.weekend } : undefined}
                   >
                     {w}
                   </span>
                 ))}
                 {days.map((day) => {
                   const { d } = parseDate(day.date)
-                  const color = miniCellColor(day, layerById)
+                  const color = miniCellColor(day, layerById, theme, busyConfig)
                   const isSel = selectedDate === day.date
                   return (
                     <button
                       key={day.date}
                       onClick={() => onSelectDate(day.date)}
-                      style={color ? { backgroundColor: color } : undefined}
+                      style={{
+                        backgroundColor: color ?? undefined,
+                        boxShadow: day.is_today
+                          ? `0 0 0 1px ${theme.today}`
+                          : isSel
+                            ? `0 0 0 1px ${withAlpha(theme.accent, 0.4)}`
+                            : undefined,
+                      }}
                       className={clsx(
                         'aspect-square w-full text-[8px] leading-none rounded-[2px]',
                         day.is_other_month ? 'opacity-30' : 'text-gray-600',
-                        day.is_today && 'ring-1 ring-blue-500',
-                        isSel && 'ring-1 ring-blue-300',
                       )}
                     >
                       {d}

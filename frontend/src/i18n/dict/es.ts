@@ -1,5 +1,5 @@
 /**
- * es 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 561 条）。
+ * es 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 576 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.es.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -216,6 +216,20 @@ export const es: DeepPartialDict<Dict> = {
     title: 'Ajustes',
     saving: 'Guardando…',
     loading: 'Cargando…',
+    appearance: {
+      sectionTitle: 'Apariencia',
+      colorStyle: 'Color del calendario',
+      soft: 'Suave',
+      vivid: 'Vívido',
+      hint: 'Suave: saturación reducida, intensidad conservada. Vívido: colores de la capa a plena intensidad.',
+      themeLabel: 'Tema de color',
+      themeHint: 'Cambia toda la paleta de la cuadrícula mensual: previsión cálida y completados en verde. Los colores personalizados de las capas no cambian.',
+      themeClassic: 'Clásico',
+      themeMorandi: 'Morandi',
+      themeScandinavian: 'Escandinavo',
+      themeMidcentury: 'Mid-century',
+      themeArtdeco: 'Art déco',
+    },
     import: {
       sectionTitle: 'Importar eventos',
       fieldSource: 'Fuente de datos',
@@ -266,6 +280,7 @@ export const es: DeepPartialDict<Dict> = {
         one: 'Instantánea de carga recalculada para {n} día',
         many: 'Instantánea de carga recalculada para {n} días',
       },
+      themeFollow: 'Los colores siguen el tema por defecto; al editar una muestra se fija un color personalizado.',
     },
     reminder: {
       sectionTitle: 'Recordatorio diario',
@@ -689,6 +704,10 @@ export const es: DeepPartialDict<Dict> = {
     },
     row: {
       completedWithCount: 'Completadas ({n})',
+    },
+    toast: {
+      completed: 'Completada',
+      undo: 'Deshacer',
     },
     csv: {
       done: 'Importados {inserted} elemento(s), creadas {lists} lista(s)',

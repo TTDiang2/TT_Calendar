@@ -200,6 +200,7 @@ settings.busy.actualLayer	Couche réelle
 settings.busy.levelTitle	Niveau {n}
 settings.busy.save	Enregistrer et recalculer
 settings.busy.savedDays	Instantané de charge recalculé pour {n} jours|Instantané de charge recalculé pour {n} jour|||Instantané de charge recalculé pour {n} jours
+settings.busy.themeFollow	Les couleurs suivent le thème par défaut ; modifier une pastille fixe une couleur personnalisée.
 settings.reminder.sectionTitle	Rappel quotidien
 settings.reminder.desc	À l'heure définie, si des tâches planifiées restent incomplètes aujourd'hui, une bannière discrète s'affiche en haut de l'application. Désactivé par défaut.
 settings.reminder.enable	Activer le rappel quotidien
@@ -481,6 +482,8 @@ todoview.empty.tagFiltered	Aucune tâche avec l'étiquette « {tag} »
 todoview.empty.desktop	Aucune tâche, cliquez sur « Nouvelle tâche » pour commencer
 todoview.empty.noneOpen	Aucune tâche ouverte
 todoview.row.completedWithCount	Terminées ({n})
+todoview.toast.completed	Terminé
+todoview.toast.undo	Annuler
 todoview.csv.done	Import de {inserted} élément(s), création de {lists} liste(s)
 todoview.csv.doneWithErrors	Import de {inserted} élément(s), création de {lists} liste(s), {n} ligne(s) en erreur
 todoview.csv.failed	Échec de l'import : {msg}
@@ -561,3 +564,15 @@ layers.play	Loisir
 layers.misc	Autre
 layers.scheduleTodoList	Tâches de créneau
 layers.defaultTaskList	Tâches
+settings.appearance.sectionTitle	Apparence
+settings.appearance.colorStyle	Couleur du calendrier
+settings.appearance.soft	Doux
+settings.appearance.vivid	Vif
+settings.appearance.hint	Doux : saturation réduite, intensité conservée. Vif : couleurs du calque à pleine intensité.
+settings.appearance.themeLabel	Thème de couleurs
+settings.appearance.themeHint	Bascule toute la palette de la grille mensuelle : prévisions chaudes et réalisations en vert. Les couleurs personnalisées des calques restent inchangées.
+settings.appearance.themeClassic	Classique
+settings.appearance.themeMorandi	Morandi
+settings.appearance.themeScandinavian	Scandinave
+settings.appearance.themeMidcentury	Mi-century
+settings.appearance.themeArtdeco	Art déco

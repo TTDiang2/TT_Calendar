@@ -27,7 +27,8 @@ import {
 import { useT, type TxKey } from '../i18n'
 import { layerLabel } from '../i18n/adapt/layerLabel'
 import { Plus, Trash2 } from 'lucide-react'
-import { COLORING_COLORS, dateRange } from '../data'
+import { dateRange } from '../data'
+import { useCalendarTheme } from '../lib/calendar-theme'
 import type { CalEvent, Layer, ScheduleItem } from '../types'
 
 /** 充实度 5 档的字典 key（labelKey 模式：渲染时 t(m.labelKey)，模块常量不存文案） */
@@ -354,6 +355,7 @@ export function ColoringPicker({
 }) {
   const t = useT()
   const qc = useQueryClient()
+  const { theme } = useCalendarTheme()
   const setMut = useMutation({
     mutationFn: (lvl: number) => upsertColoring(date, lvl),
     onSuccess: () => {
@@ -375,7 +377,7 @@ export function ColoringPicker({
         {t('dialogs.coloring.current', { level: current != null ? t(COLORING_LABELS[current].labelKey) : t('dialogs.coloring.notSet') })}
       </p>
       <div className="grid grid-cols-5 gap-2">
-        {COLORING_COLORS.map((c, i) => (
+        {theme.coloring.map((c, i) => (
           <button
             key={i}
             onClick={() => setMut.mutate(i)}
@@ -727,6 +729,7 @@ export function DayEntryDialog({
 }) {
   const t = useT()
   const qc = useQueryClient()
+  const { theme } = useCalendarTheme()
   const [kind, setKind] = useState<'dot' | 'color'>(initialKind)
 
   // ---- 日期区间：endDate 为空 = 单日 ----
@@ -777,7 +780,7 @@ export function DayEntryDialog({
   const isGraded = cmode === 'graded'
   const palette = cfgOf(colorCfg).palette as string[] | undefined
   const colorValue = isColoring
-    ? COLORING_COLORS[level]
+    ? theme.coloring[level]
     : isGraded && palette
       ? palette[level] ?? colorCfg?.color ?? '#9ca3af'
       : colorCfg?.color ?? '#9ca3af'
@@ -981,7 +984,7 @@ export function DayEntryDialog({
             {isColoring ? (
               <Field label={t('dialogs.dayEntry.levelFullness')}>
                 <div className="grid grid-cols-5 gap-2">
-                  {COLORING_COLORS.map((c, i) => (
+                  {theme.coloring.map((c, i) => (
                     <button
                       key={i}
                       onClick={() => setLevel(i)}

@@ -52,10 +52,16 @@ export function StretchSwitch({
         'relative inline-flex shrink-0 items-center rounded-full transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1',
         'disabled:cursor-not-allowed disabled:opacity-50',
-        checked ? 'bg-blue-500' : 'bg-gray-300',
+        !checked && 'bg-gray-300',
         className,
       )}
-      style={{ width: TRACK_WIDTH, height: TRACK_HEIGHT, paddingInline: TRACK_PADDING }}
+      style={{
+        width: TRACK_WIDTH,
+        height: TRACK_HEIGHT,
+        paddingInline: TRACK_PADDING,
+        // 开启态跟当前主题强调色走（--cal-accent 由 CalendarThemeProvider 写在 :root）
+        backgroundColor: checked ? 'var(--cal-accent, #3b82f6)' : undefined,
+      }}
     >
       <motion.span
         className="pointer-events-none block rounded-full bg-white shadow"

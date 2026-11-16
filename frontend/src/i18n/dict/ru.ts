@@ -1,5 +1,5 @@
 /**
- * ru 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 561 条）。
+ * ru 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 576 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.ru.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -218,6 +218,20 @@ export const ru: DeepPartialDict<Dict> = {
     title: 'Настройки',
     saving: 'Сохранение…',
     loading: 'Загрузка…',
+    appearance: {
+      sectionTitle: 'Оформление',
+      colorStyle: 'Цвет календаря',
+      soft: 'Мягкий',
+      vivid: 'Яркий',
+      hint: 'Мягкий: пониженная насыщенность, глубина сохранена. Яркий: полная заливка цветом слоя.',
+      themeLabel: 'Цветовая тема',
+      themeHint: 'Переключает всю палитру месячной сетки: тёплые прогнозы и зелёные выполнения. Пользовательские цвета слоёв не меняются.',
+      themeClassic: 'Классика',
+      themeMorandi: 'Моранди',
+      themeScandinavian: 'Скандинавский',
+      themeMidcentury: 'Мид-сенчури',
+      themeArtdeco: 'Ар-деко',
+    },
     import: {
       sectionTitle: 'Импорт событий',
       fieldSource: 'Источник данных',
@@ -269,6 +283,7 @@ export const ru: DeepPartialDict<Dict> = {
         few: 'Снимок загрузки пересчитан за {n} дня',
         many: 'Снимок загрузки пересчитан за {n} дней',
       },
+      themeFollow: 'По умолчанию цвета следуют теме; изменение образца закрепляет пользовательский цвет.',
     },
     reminder: {
       sectionTitle: 'Ежедневное напоминание',
@@ -701,6 +716,10 @@ export const ru: DeepPartialDict<Dict> = {
     },
     row: {
       completedWithCount: 'Выполненные ({n})',
+    },
+    toast: {
+      completed: 'Выполнено',
+      undo: 'Отменить',
     },
     csv: {
       done: 'Импортировано {inserted}, создано списков: {lists}',

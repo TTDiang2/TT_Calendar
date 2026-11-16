@@ -1,5 +1,6 @@
 import { Calendar, CheckSquare, ChevronLeft, ChevronRight, ListTodo, Rss, Search, Settings } from 'lucide-react'
 import { useT, type TxKey } from '../i18n'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 import type { TopTab, TodoViewMode, ViewMode } from '../types'
 import { WindowControls } from './WindowControls'
 import { SegmentedTabs } from './ui/SegmentedTabs'
@@ -41,14 +42,16 @@ const TODO_MODES: { key: TodoViewMode; labelKey: TxKey }[] = [
 
 export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeChange, onTodoViewChange, onPrev, onNext, onToday, canPrev, canNext, onOpenSearch, onOpenSubscription, onOpenSettings }: Props) {
   const t = useT()
+  // 窄宽度（960 最小窗口）下搜索框收成图标，把横向预算让给「期间导航 + 视图切换」
+  const compact = useMediaQuery('(max-width: 1100px)')
   const prevTitle = mode === 'year' ? t('topbar.nav.prevYear') : mode === 'week' ? t('topbar.nav.prevWeek') : mode === 'day' ? t('topbar.nav.prevDay') : t('topbar.nav.prevMonth')
   const nextTitle = mode === 'year' ? t('topbar.nav.nextYear') : mode === 'week' ? t('topbar.nav.nextWeek') : mode === 'day' ? t('topbar.nav.nextDay') : t('topbar.nav.nextMonth')
   return (
-    <header data-tauri-drag-region="deep" className="h-14 flex items-center justify-between px-4 bg-white border-b border-gray-200 select-none">
-      <div className="flex items-center gap-1">
-        {/* 顶级 tab：日历 / 待办 */}
+    <header data-tauri-drag-region="deep" className="h-14 flex items-center gap-3 px-4 bg-white border-b border-gray-200 select-none">
+      <div className="flex items-center gap-1 min-w-0">
+        {/* 顶级 tab：日历 / 待办 —— 应用级的两个世界，权重最高 */}
         <SegmentedTabs
-          className="mr-3"
+          className="mr-2 shrink-0"
           value={topTab}
           onChange={onTopTabChange}
           items={[
@@ -61,45 +64,48 @@ export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeCh
         {topTab === 'calendar' && (
           <>
             {mode !== 'countdown' && (
-              <>
+              /* 期间导航收成一个视觉组：‹ 2026年11月 › + 今天，一起读作「我在看哪段时间」 */
+              <div className="flex shrink-0 items-center gap-0.5">
                 <button
                   onClick={onPrev}
                   disabled={!canPrev}
-                  className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition"
                   title={prevTitle}
                 >
                   <ChevronLeft size={18} />
                 </button>
-                <h1 className="text-lg font-semibold text-gray-800 min-w-[140px] text-center">{title}</h1>
+                <h1 className="max-w-[190px] truncate px-1 text-[15px] font-semibold text-gray-800 text-center">{title}</h1>
                 <button
                   onClick={onNext}
                   disabled={!canNext}
-                  className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition"
                   title={nextTitle}
                 >
                   <ChevronRight size={18} />
                 </button>
                 <button
                   onClick={onToday}
-                  className="ml-2 shrink-0 whitespace-nowrap px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                  className="ml-1 shrink-0 whitespace-nowrap rounded-md border border-gray-200 px-2 py-1 text-[13px] font-medium text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 transition"
                 >
                   {t('topbar.today')}
                 </button>
-              </>
+              </div>
             )}
             {mode === 'countdown' && (
-              <>
+              <div className="flex shrink-0 items-center gap-0.5">
                 {/* 与月/周/日/年模式同构的占位（上一月/下一月/今天同宽），保持模式按钮组位置一致 */}
-                <div className="w-[34px] flex-shrink-0" aria-hidden />
-                <h1 className="text-lg font-semibold text-gray-800 flex items-center gap-1.5 min-w-[140px]">
+                <div className="w-[30px] flex-shrink-0" aria-hidden />
+                <h1 className="px-1 text-[15px] font-semibold text-gray-800 flex items-center gap-1.5 max-w-[190px]">
                   <ListTodo size={18} /> {t('terms.countdown')}
                 </h1>
-                <div className="w-[34px] flex-shrink-0" aria-hidden />
-                <div className="w-[52px] ml-2 flex-shrink-0" aria-hidden />
-              </>
+                <div className="w-[30px] flex-shrink-0" aria-hidden />
+                <div className="w-[46px] ml-1 flex-shrink-0" aria-hidden />
+              </div>
             )}
+            {/* 分隔线：左边是「时间轴」，右边是「看的方式」 */}
+            <span className="mx-1.5 h-5 w-px shrink-0 bg-gray-200" aria-hidden="true" />
             <SegmentedTabs
-              className="ml-4"
+              className="shrink-0"
               value={mode}
               onChange={onModeChange}
               items={MODES.map((m) => ({ value: m.key, label: t(m.labelKey) }))}
@@ -109,9 +115,10 @@ export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeCh
 
         {topTab === 'todo' && (
           <>
-            <h1 className="text-lg font-semibold text-gray-800 flex items-center gap-1.5"><ListTodo size={18} /> {t('terms.todo')}</h1>
+            <h1 className="flex shrink-0 items-center gap-1.5 text-[15px] font-semibold text-gray-800"><ListTodo size={18} /> {t('terms.todo')}</h1>
+            <span className="mx-1.5 h-5 w-px shrink-0 bg-gray-200" aria-hidden="true" />
             <SegmentedTabs
-              className="ml-4"
+              className="shrink-0"
               value={todoView}
               onChange={onTodoViewChange}
               items={TODO_MODES.map((m) => ({ value: m.key, label: t(m.labelKey) }))}
@@ -120,15 +127,26 @@ export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeCh
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="ml-auto flex shrink-0 items-center gap-1.5">
         {topTab === 'calendar' && (
-          <button
-            onClick={onOpenSearch}
-            className="relative flex items-center w-48 pl-2.5 pr-3 py-1.5 text-sm text-gray-400 bg-gray-50 border border-gray-200 rounded-lg hover:bg-white hover:text-gray-600 transition"
-          >
-            <Search size={14} className="mr-2" />
-            {t('topbar.searchPlaceholder')}
-          </button>
+          compact ? (
+            <button
+              onClick={onOpenSearch}
+              className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition"
+              title={t('topbar.searchPlaceholder')}
+              aria-label={t('topbar.searchPlaceholder')}
+            >
+              <Search size={18} />
+            </button>
+          ) : (
+            <button
+              onClick={onOpenSearch}
+              className="relative flex w-44 items-center rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-2.5 pr-3 text-sm text-gray-400 transition hover:bg-white hover:text-gray-600"
+            >
+              <Search size={14} className="mr-2" />
+              <span className="truncate">{t('topbar.searchPlaceholder')}</span>
+            </button>
+          )
         )}
         <button onClick={onOpenSubscription} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition" title={t('terms.subscription')}>
           <Rss size={18} />

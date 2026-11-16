@@ -1,5 +1,5 @@
 /**
- * zh-Hant 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 561 条）。
+ * zh-Hant 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 576 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.zh-Hant.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -212,6 +212,20 @@ export const zhHant: DeepPartialDict<Dict> = {
     title: '設定',
     saving: '儲存中…',
     loading: '加載中…',
+    appearance: {
+      sectionTitle: '外觀',
+      colorStyle: '日曆塗色',
+      soft: '柔和',
+      vivid: '鮮明',
+      hint: '柔和：降低飽和度，保留顏色深淺；鮮明：原色整格填滿。',
+      themeLabel: '主題配色',
+      themeHint: '整套切換月網格：暖色預測 + 綠色已完成；自訂圖層色保持不變。',
+      themeClassic: '經典',
+      themeMorandi: '莫蘭迪',
+      themeScandinavian: '北歐',
+      themeMidcentury: '中世紀現代',
+      themeArtdeco: '裝飾藝術',
+    },
     import: {
       sectionTitle: '事件匯入',
       fieldSource: '資料來源',
@@ -260,6 +274,7 @@ export const zhHant: DeepPartialDict<Dict> = {
       savedDays: {
         other: '已儲存並重算 {n} 天的忙度快照',
       },
+      themeFollow: '預設跟隨主題配色；在這裡改色後會固定為自訂色。',
     },
     reminder: {
       sectionTitle: '每日提醒',
@@ -667,6 +682,10 @@ export const zhHant: DeepPartialDict<Dict> = {
     },
     row: {
       completedWithCount: '已完成（{n}）',
+    },
+    toast: {
+      completed: '已完成',
+      undo: '復原',
     },
     csv: {
       done: '匯入 {inserted} 條，新建 {lists} 個列表',

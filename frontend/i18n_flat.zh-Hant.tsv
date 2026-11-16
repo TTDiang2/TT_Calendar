@@ -200,6 +200,7 @@ settings.busy.actualLayer	實際層
 settings.busy.levelTitle	檔位 {n}
 settings.busy.save	儲存並重算
 settings.busy.savedDays	已儲存並重算 {n} 天的忙度快照
+settings.busy.themeFollow	預設跟隨主題配色；在這裡改色後會固定為自訂色。
 settings.reminder.sectionTitle	每日提醒
 settings.reminder.desc	到了設定時間，若今日仍有計劃未完成的待辦，應用頂部會出現一條安靜橫幅。默認關。
 settings.reminder.enable	啟用每日提醒
@@ -481,6 +482,8 @@ todoview.empty.tagFiltered	沒有「{tag}」標籤的待辦
 todoview.empty.desktop	暫無待辦，點「新建待辦」開始
 todoview.empty.noneOpen	沒有未完成待辦
 todoview.row.completedWithCount	已完成（{n}）
+todoview.toast.completed	已完成
+todoview.toast.undo	復原
 todoview.csv.done	匯入 {inserted} 條，新建 {lists} 個列表
 todoview.csv.doneWithErrors	匯入 {inserted} 條，新建 {lists} 個列表，{n} 行錯誤
 todoview.csv.failed	匯入失敗: {msg}
@@ -561,3 +564,15 @@ layers.play	玩耍
 layers.misc	其他
 layers.scheduleTodoList	日程待辦
 layers.defaultTaskList	任務
+settings.appearance.sectionTitle	外觀
+settings.appearance.colorStyle	日曆塗色
+settings.appearance.soft	柔和
+settings.appearance.vivid	鮮明
+settings.appearance.hint	柔和：降低飽和度，保留顏色深淺；鮮明：原色整格填滿。
+settings.appearance.themeLabel	主題配色
+settings.appearance.themeHint	整套切換月網格：暖色預測 + 綠色已完成；自訂圖層色保持不變。
+settings.appearance.themeClassic	經典
+settings.appearance.themeMorandi	莫蘭迪
+settings.appearance.themeScandinavian	北歐
+settings.appearance.themeMidcentury	中世紀現代
+settings.appearance.themeArtdeco	裝飾藝術

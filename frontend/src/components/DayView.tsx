@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import clsx from 'clsx'
 import type { Layer, MonthData } from '../types'
-import { COLORING_COLORS, getBusyColors, parseDate, todayStr } from '../data'
+import { getBusyColors, parseDate, todayStr } from '../data'
 import { getTodoBusyConfig } from '../api/client'
 import { useT, useLang, fmtDate } from '../i18n'
 import { layerLabel } from '../i18n/adapt/layerLabel'
+import { resolveBusyRamps, useCalendarTheme, withAlpha } from '../lib/calendar-theme'
 
 interface Props {
   monthData: MonthData
@@ -17,6 +18,7 @@ interface Props {
 export function DayView({ monthData, layers, selectedDate, onSelect, onDoubleClick }: Props) {
   const t = useT()
   const lang = useLang()
+  const { theme } = useCalendarTheme()
   const { data: busyConfig } = useQuery({ queryKey: ['todoBusyConfig'], queryFn: getTodoBusyConfig, staleTime: 60_000 })
   const day = monthData.days[0]
   if (!day) return <div className="flex-1 flex items-center justify-center text-gray-400">{t('calendar.noData')}</div>
@@ -39,9 +41,9 @@ export function DayView({ monthData, layers, selectedDate, onSelect, onDoubleCli
     colorLayers.push(day.gradient_bg)
   }
   if (layerById.get('coloring')?.enabled && day.coloring_level != null) {
-    colorLayers.push(COLORING_COLORS[day.coloring_level])
+    colorLayers.push(theme.coloring[day.coloring_level])
   }
-  for (const b of getBusyColors(day, todayStr(), busyConfig)) {
+  for (const b of getBusyColors(day, todayStr(), busyConfig, resolveBusyRamps(theme, busyConfig))) {
     if (layerById.get(b.id)?.enabled) colorLayers.push(b.color)
   }
   // 多个染色维度时按优先级取一个做色条（避免多条色条叠加）
@@ -59,8 +61,9 @@ export function DayView({ monthData, layers, selectedDate, onSelect, onDoubleCli
         <div
           className={clsx(
             'px-4 py-3 pl-5 flex items-center justify-between cursor-pointer',
-            day.is_today ? 'bg-blue-500 text-white' : 'bg-gray-100',
+            day.is_today ? 'text-white' : 'bg-gray-100',
           )}
+          style={day.is_today ? { backgroundColor: theme.today } : undefined}
           onClick={() => onSelect(day.date)}
           onDoubleClick={() => onDoubleClick(day.date)}
         >
@@ -86,11 +89,14 @@ export function DayView({ monthData, layers, selectedDate, onSelect, onDoubleCli
           {day.coloring_level != null && (
             <div className="mb-4 flex items-center gap-1">
               <span className="text-xs text-gray-500 mr-1">{t('calendar.fullnessLabel')}</span>
-              {COLORING_COLORS.map((c, i) => (
+              {theme.coloring.map((c, i) => (
                 <span
                   key={i}
-                  className={clsx('w-6 h-2 rounded', i === day.coloring_level && 'ring-2 ring-blue-400')}
-                  style={{ backgroundColor: c }}
+                  className="w-6 h-2 rounded"
+                  style={{
+                    backgroundColor: c,
+                    boxShadow: i === day.coloring_level ? `0 0 0 2px ${withAlpha(theme.accent, 0.6)}` : undefined,
+                  }}
                 />
               ))}
             </div>

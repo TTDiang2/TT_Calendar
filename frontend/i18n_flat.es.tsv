@@ -200,6 +200,7 @@ settings.busy.actualLayer	Capa real
 settings.busy.levelTitle	Nivel {n}
 settings.busy.save	Guardar y recalcular
 settings.busy.savedDays	Instantánea de carga recalculada para {n} días|Instantánea de carga recalculada para {n} día|||Instantánea de carga recalculada para {n} días
+settings.busy.themeFollow	Los colores siguen el tema por defecto; al editar una muestra se fija un color personalizado.
 settings.reminder.sectionTitle	Recordatorio diario
 settings.reminder.desc	A la hora configurada, si hoy siguen sin completarse tareas planificadas, aparecerá un banner discreto arriba. Desactivado por defecto.
 settings.reminder.enable	Activar el recordatorio diario
@@ -481,6 +482,8 @@ todoview.empty.tagFiltered	No hay tareas con la etiqueta "{tag}"
 todoview.empty.desktop	Aún no hay tareas; pulsa "Nueva tarea" para empezar
 todoview.empty.noneOpen	No hay tareas pendientes
 todoview.row.completedWithCount	Completadas ({n})
+todoview.toast.completed	Completada
+todoview.toast.undo	Deshacer
 todoview.csv.done	Importados {inserted} elemento(s), creadas {lists} lista(s)
 todoview.csv.doneWithErrors	Importados {inserted} elemento(s), creadas {lists} lista(s), {n} línea(s) con error
 todoview.csv.failed	Error al importar: {msg}
@@ -561,3 +564,15 @@ layers.play	Ocio
 layers.misc	Otro
 layers.scheduleTodoList	Tareas de cita
 layers.defaultTaskList	Tareas
+settings.appearance.sectionTitle	Apariencia
+settings.appearance.colorStyle	Color del calendario
+settings.appearance.soft	Suave
+settings.appearance.vivid	Vívido
+settings.appearance.hint	Suave: saturación reducida, intensidad conservada. Vívido: colores de la capa a plena intensidad.
+settings.appearance.themeLabel	Tema de color
+settings.appearance.themeHint	Cambia toda la paleta de la cuadrícula mensual: previsión cálida y completados en verde. Los colores personalizados de las capas no cambian.
+settings.appearance.themeClassic	Clásico
+settings.appearance.themeMorandi	Morandi
+settings.appearance.themeScandinavian	Escandinavo
+settings.appearance.themeMidcentury	Mid-century
+settings.appearance.themeArtdeco	Art déco

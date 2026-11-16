@@ -26,6 +26,7 @@ import { SettingsDialog } from './components/SettingsDialog'
 import { ReminderBanner } from './components/ReminderBanner'
 import { useT, useLang, fmtDate } from './i18n'
 import { SYNC_IN_PROGRESS_MARK } from './i18n/dict/fragments/app'
+import { readCalendarColorStyle, writeCalendarColorStyle, type CalendarColorStyle } from './lib/calendar-style'
 
 type DialogState =
   | { kind: 'event'; date: string; event?: CalEvent | null }
@@ -61,6 +62,11 @@ export default function App() {
   const setTodoView = (v: TodoViewMode) => {
     localStorage.setItem('todo-view', v)
     setTodoViewState(v)
+  }
+  const [calendarStyle, setCalendarStyleState] = useState<CalendarColorStyle>(readCalendarColorStyle)
+  const setCalendarStyle = (v: CalendarColorStyle) => {
+    writeCalendarColorStyle(v)
+    setCalendarStyleState(v)
   }
   const [dialog, setDialog] = useState<DialogState>(null)
   const [exitSync, setExitSync] = useState<{ state: 'syncing' } | { state: 'failed'; error: string } | null>(null)
@@ -291,7 +297,7 @@ export default function App() {
   const importEnd = monthData2?.days[36]?.date ?? '2026-08-31'
 
   return (
-    <div className="h-full flex flex-col bg-gray-50">
+    <div className="h-full flex flex-col" style={{ backgroundColor: 'var(--cal-surface, #f9fafb)' }}>
       {exitSync && (
         <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center">
           <div className="bg-white rounded-2xl shadow-xl px-8 py-6 w-[360px] text-center">
@@ -392,6 +398,7 @@ export default function App() {
                   monthData={monthData2!}
                   layers={layers}
                   selectedDate={selectedDate}
+                  colorStyle={calendarStyle}
                   onSelect={setSelectedDate}
                   onDoubleClick={handleDoubleClick}
                   onContextMenu={handleContextMenu}
@@ -411,6 +418,7 @@ export default function App() {
                   monthData={monthData2!}
                   layers={layers}
                   selectedDate={selectedDate}
+                  colorStyle={calendarStyle}
                   onSelect={setSelectedDate}
                   onDoubleClick={handleDoubleClick}
                   onContextMenu={handleContextMenu}
@@ -498,6 +506,8 @@ export default function App() {
           onToggleLayer={toggleLayerFn}
           defaultStart={importStart}
           defaultEnd={importEnd}
+          colorStyle={calendarStyle}
+          onColorStyleChange={setCalendarStyle}
           onClose={() => setDialog(null)}
         />
       )}

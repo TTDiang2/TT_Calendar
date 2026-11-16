@@ -12,6 +12,8 @@ import {
 } from '../api/client'
 import { useT, useTPlural, chooseLang, activeLang, SELECTABLE_LANGS, LANG_META, type I18n, type Lang, type TxKey } from '../i18n'
 import type { Layer } from '../types'
+import type { CalendarColorStyle } from '../lib/calendar-style'
+import { CALENDAR_THEMES, CALENDAR_THEME_IDS, resolveBusyRamps, useCalendarTheme } from '../lib/calendar-theme'
 import { setNumberAtPath } from '../utils/configLogic'
 
 interface Props {
@@ -19,10 +21,12 @@ interface Props {
   onToggleLayer: (layerId: string) => void
   defaultStart: string
   defaultEnd: string
+  colorStyle: CalendarColorStyle
+  onColorStyleChange: (style: CalendarColorStyle) => void
   onClose: () => void
 }
 
-export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd, onClose }: Props) {
+export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd, colorStyle, onColorStyleChange, onClose }: Props) {
   const t = useT()
   const qc = useQueryClient()
   const [start, setStart] = useState(defaultStart)
@@ -54,6 +58,7 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
     <Modal title={t('settings.title')} onClose={onClose} width={720}>
       <div className="flex flex-col gap-5">
         <LanguageSection />
+        <AppearanceSection value={colorStyle} onChange={onColorStyleChange} />
         <section>
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.import.sectionTitle')}</h3>
           <div className="flex gap-2 mb-2">
@@ -139,12 +144,14 @@ function BusyConfigSection() {
   const t = useT()
   const tPlural = useTPlural()
   const qc = useQueryClient()
+  const { theme } = useCalendarTheme()
   const { data: cfg } = useQuery({ queryKey: ['todoBusyConfig'], queryFn: getTodoBusyConfig, staleTime: 60_000 })
   const [local, setLocal] = useState<TodoBusyConfig | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
   useEffect(() => {
     if (cfg && !local) setLocal(cfg)
   }, [cfg, local])
+  const ramps = local ? resolveBusyRamps(theme, local) : null
 
   const saveMut = useMutation({
     mutationFn: async () => {
@@ -220,10 +227,12 @@ function BusyConfigSection() {
           <div className="flex items-center gap-3">
             <span className="text-[11px] text-gray-500 flex-shrink-0">{t('settings.busy.predictLayer')}</span>
             <div className="flex gap-1">
-              {local.predict_colors.map((c, i) => (
+              {(ramps?.predict ?? []).map((c, i) => (
                 <input key={i} type="color" value={c} title={t('settings.busy.levelTitle', { n: i + 1 })}
                   onChange={(e) => {
+                    if (!ramps) return
                     const next = structuredClone(local)
+                    next.predict_colors = [...ramps.predict]
                     next.predict_colors[i] = e.target.value
                     setLocal(next)
                   }} />
@@ -233,16 +242,19 @@ function BusyConfigSection() {
           <div className="flex items-center gap-3">
             <span className="text-[11px] text-gray-500 flex-shrink-0">{t('settings.busy.actualLayer')}</span>
             <div className="flex gap-1">
-              {local.done_colors.map((c, i) => (
+              {(ramps?.done ?? []).map((c, i) => (
                 <input key={i} type="color" value={c} title={t('settings.busy.levelTitle', { n: i + 1 })}
                   onChange={(e) => {
+                    if (!ramps) return
                     const next = structuredClone(local)
+                    next.done_colors = [...ramps.done]
                     next.done_colors[i] = e.target.value
                     setLocal(next)
                   }} />
               ))}
             </div>
           </div>
+          <p className="text-[11px] text-gray-400">{t('settings.busy.themeFollow')}</p>
           <div className="flex items-center gap-2">
             <button
               onClick={() => saveMut.mutate()}
@@ -707,6 +719,80 @@ function LayerSubActions({ layer }: { layer: Layer }) {
   )
 }
 
+
+function AppearanceSection({ value, onChange }: { value: CalendarColorStyle; onChange: (style: CalendarColorStyle) => void }) {
+  const t = useT()
+  const { themeId, setThemeId } = useCalendarTheme()
+  const options: { v: CalendarColorStyle; labelKey: TxKey }[] = [
+    { v: 'soft', labelKey: 'settings.appearance.soft' },
+    { v: 'vivid', labelKey: 'settings.appearance.vivid' },
+  ]
+  return (
+    <section>
+      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('settings.appearance.sectionTitle')}</h3>
+      <div className="flex items-center gap-3">
+        <span className="flex-1 text-sm text-gray-700">{t('settings.appearance.colorStyle')}</span>
+        <div className="inline-flex rounded-lg bg-gray-100 p-0.5">
+          {options.map((o) => (
+            <button
+              key={o.v}
+              type="button"
+              onClick={() => onChange(o.v)}
+              aria-pressed={value === o.v}
+              className={clsx(
+                'px-3 py-1 text-sm rounded-md transition-colors',
+                value === o.v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700',
+              )}
+            >
+              {t(o.labelKey)}
+            </button>
+          ))}
+        </div>
+      </div>
+      <p className="text-xs text-gray-400 mt-1.5">{t('settings.appearance.hint')}</p>
+
+      <div className="mt-3">
+        <span className="text-sm text-gray-700">{t('settings.appearance.themeLabel')}</span>
+        <div className="mt-2 grid grid-cols-5 gap-2">
+          {CALENDAR_THEME_IDS.map((id) => {
+            const th = CALENDAR_THEMES[id]
+            const active = themeId === id
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setThemeId(id)}
+                aria-pressed={active}
+                title={t(th.labelKey)}
+                className={clsx(
+                  'rounded-lg border p-1 text-left transition',
+                  active ? 'border-gray-900 shadow-sm' : 'border-gray-200 hover:border-gray-300',
+                )}
+              >
+                <span className="block overflow-hidden rounded">
+                  <span className="flex h-2.5">
+                    {th.predict.map((c, i) => (
+                      <span key={`p${i}`} className="flex-1" style={{ backgroundColor: c }} />
+                    ))}
+                  </span>
+                  <span className="flex h-2.5">
+                    {th.done.map((c, i) => (
+                      <span key={`d${i}`} className="flex-1" style={{ backgroundColor: c }} />
+                    ))}
+                  </span>
+                </span>
+                <span className={clsx('mt-1 block truncate text-[11px]', active ? 'font-semibold text-gray-900' : 'text-gray-500')}>
+                  {t(th.labelKey)}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+        <p className="text-xs text-gray-400 mt-1.5">{t('settings.appearance.themeHint')}</p>
+      </div>
+    </section>
+  )
+}
 
 function LanguageSection() {
   const t = useT()

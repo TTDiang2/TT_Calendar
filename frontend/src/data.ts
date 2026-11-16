@@ -71,14 +71,16 @@ export function daysBetween(start: string, end: string): number {
 
 // 给 day + today + config（可选），返回当日应展示的忙度图层颜色数组：
 //   过去日期返回 done 色；今天双层（done 在下、predict 在上）；未来返回 predict 色
-// 颜色从 config.predict_colors / config.done_colors 取，缺省走 TODO_BUSY_*_COLORS
+// 颜色优先取调用方传入的主题色阶 ramps，其次 config.predict_colors / config.done_colors，
+// 最后回退 TODO_BUSY_*_COLORS（主题解析在 lib/calendar-theme.tsx，保留用户自定义色）。
 export function getBusyColors(
   day: { date: string; predict_level: number | null; done_level: number | null },
   todayStr: string,
   config?: { predict_colors?: string[]; done_colors?: string[] },
+  ramps?: { predict: string[]; done: string[] },
 ): { id: string; color: string }[] {
-  const predictColors = config?.predict_colors ?? TODO_BUSY_PREDICT_COLORS
-  const doneColors = config?.done_colors ?? TODO_BUSY_DONE_COLORS
+  const predictColors = ramps?.predict ?? config?.predict_colors ?? TODO_BUSY_PREDICT_COLORS
+  const doneColors = ramps?.done ?? config?.done_colors ?? TODO_BUSY_DONE_COLORS
   const isPast = day.date < todayStr
   const isToday = day.date === todayStr
   const out: { id: string; color: string }[] = []
@@ -150,4 +152,27 @@ export function pickContrastColor(bg: string): '#ffffff' | '#1f2937' {
   const rgb = parseColor(bg)
   if (!rgb) return '#1f2937'
   return relativeLuminance(rgb) > 0.45 ? '#1f2937' : '#ffffff'
+}
+
+// 柔和涂色：把原色与 60% 白混合。浅到「纸的底色」级别，格子的强弱不再靠大面积
+// 饱和色块传达，而由 DayCell 左侧的满色细条承担（同一组色阶，信息不丢）。
+// 返回不透明 rgb()，避免多层叠色时相互透底。
+export function softTint(color: string): string {
+  const rgb = parseColor(color)
+  if (!rgb) return 'rgb(241, 245, 249)'
+  const white = 0.62
+  const mix = rgb.map((v) => Math.round(v * (1 - white) + 255 * white))
+  return `rgb(${mix[0]}, ${mix[1]}, ${mix[2]})`
+}
+
+// 柔和底色上的文字颜色：选对比度更高的一侧。60% 白混合后所有档位都足够浅，
+// 实际恒为近黑字；保留对比度计算是为了用户自定义深色图层时不至于看不清。
+export function softTextColor(bg: string): '#111827' | '#ffffff' {
+  const rgb = parseColor(bg)
+  if (!rgb) return '#111827'
+  const bgLum = relativeLuminance(rgb)
+  const darkLum = relativeLuminance([17, 24, 39])
+  const darkContrast = (Math.max(bgLum, darkLum) + 0.05) / (Math.min(bgLum, darkLum) + 0.05)
+  const whiteContrast = 1.05 / (bgLum + 0.05)
+  return darkContrast >= whiteContrast ? '#111827' : '#ffffff'
 }

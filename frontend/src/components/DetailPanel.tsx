@@ -2,12 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarDays, CheckCircle2, Clock, Palette, Pencil, Sparkles, Trash2 } from 'lucide-react'
 import clsx from 'clsx'
 import type { CalEvent, Day, Layer } from '../types'
-import { COLORING_COLORS, parseDate, TODO_BUSY_PREDICT_COLORS, TODO_BUSY_DONE_COLORS } from '../data'
+import { parseDate } from '../data'
 import { deleteEvent, deleteMark, deleteScheduleItem, getSources, getTodoBusyConfig, updateTodo, type SourceFieldSpec } from '../api/client'
 import { useT, useLang, fmtWeekday } from '../i18n'
 import { layerLabel } from '../i18n/adapt/layerLabel'
 import { lunarDisplay } from '../i18n/adapt/labels'
 import { SourceFields } from './SourceFields'
+import { resolveBusyRamps, useCalendarTheme } from '../lib/calendar-theme'
 
 interface Props {
   day: Day | null
@@ -22,7 +23,9 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
   const t = useT()
   const lang = useLang()
   const qc = useQueryClient()
+  const { theme } = useCalendarTheme()
   const { data: busyConfig } = useQuery({ queryKey: ['todoBusyConfig'], queryFn: getTodoBusyConfig, staleTime: 60_000 })
+  const busyRamps = resolveBusyRamps(theme, busyConfig)
   const { data: sources } = useQuery({ queryKey: ['sources'], queryFn: getSources, staleTime: 5 * 60_000 })
   // source_id → 字段 UI 规格（插件声明；无规格的源不渲染 extra）
   const fieldSpecBySource = {} as Record<string, SourceFieldSpec>
@@ -129,7 +132,7 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
             <div className="flex items-center gap-2 group">
               <span className="text-[11px] text-gray-500 w-16 flex-shrink-0 truncate">{t('detail.fullness')}</span>
               <div className="flex-1 flex gap-px h-2 rounded overflow-hidden">
-                {COLORING_COLORS.map((c, i) => (
+                {theme.coloring.map((c, i) => (
                   <div key={i} className="flex-1" style={{ backgroundColor: c, opacity: i <= day.coloring_level! ? 1 : 0.3 }} />
                 ))}
               </div>
@@ -170,7 +173,7 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
             <div className="flex items-center gap-2">
               <span className="text-[11px] text-gray-500 w-16 flex-shrink-0 truncate">{t('detail.todoPredict')}</span>
               <div className="flex-1 flex gap-px h-2 rounded overflow-hidden">
-                {(busyConfig?.predict_colors ?? TODO_BUSY_PREDICT_COLORS).map((c, i) => (
+                {busyRamps.predict.map((c, i) => (
                   <div key={i} className="flex-1" style={{ backgroundColor: c, opacity: i <= day.predict_level! ? 1 : 0.3 }} />
                 ))}
               </div>
@@ -181,7 +184,7 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
             <div className="flex items-center gap-2">
               <span className="text-[11px] text-gray-500 w-16 flex-shrink-0 truncate">{t('detail.todoDone')}</span>
               <div className="flex-1 flex gap-px h-2 rounded overflow-hidden">
-                {(busyConfig?.done_colors ?? TODO_BUSY_DONE_COLORS).map((c, i) => (
+                {busyRamps.done.map((c, i) => (
                   <div key={i} className="flex-1" style={{ backgroundColor: c, opacity: i <= day.done_level! ? 1 : 0.3 }} />
                 ))}
               </div>
