@@ -225,6 +225,7 @@ def init_db(conn: sqlite3.Connection) -> None:
         _drop_legacy_schedule_layer(cur)
 
     migrate_builtin_subscriptions(conn)
+    dedupe_subscriptions(conn)
 
 
 def _drop_legacy_schedule_layer(cur: sqlite3.Cursor) -> None:
@@ -1696,6 +1697,85 @@ def migrate_builtin_subscriptions(conn: sqlite3.Connection) -> None:
                 (str(uuid.uuid4()), old_id),
             )
     conn.commit()
+
+
+def _subscription_config(raw: str | None) -> dict[str, Any]:
+    if not raw:
+        return {}
+    try:
+        parsed = json.loads(raw)
+    except (TypeError, ValueError):
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def dedupe_subscriptions(conn: sqlite3.Connection) -> int:
+    """合并同一内置数据源的重复订阅（幂等），返回删除的行数。
+
+    旧版核心每次启动都会播种一条 builtin:jisilu，再被 migrate_builtin_* 改成
+    新 uuid；用户升级后就会看到多条一模一样的「集思录」。这里保留最早的一条，
+    把其余行的开关、同步时间与配置合并进来，然后只删除重复订阅行
+    （events / layer_config 不引用 subscriptions.id，历史事件不受影响）。
+    custom:* 是用户在 UI 里自建的独立订阅，永远不合并。
+    """
+    rows = conn.execute(
+        "SELECT * FROM subscriptions WHERE source_key NOT LIKE 'custom:%' "
+        "ORDER BY source_key, created_at, id"
+    ).fetchall()
+    grouped: dict[str, list[sqlite3.Row]] = defaultdict(list)
+    for row in rows:
+        grouped[row["source_key"]].append(row)
+
+    removed = 0
+    with cursor(conn) as cur:
+        for source_key, group in grouped.items():
+            if len(group) < 2:
+                continue
+            keep = group[0]
+            statuses = {row["status"] for row in group}
+            if "active" in statuses:
+                status = "active"
+            elif "pending" in statuses:
+                status = "pending"
+            else:
+                status = keep["status"] or "error"
+
+            merged: dict[str, Any] = {}
+            for row in group:
+                merged.update(_subscription_config(row["config_json"]))
+            if status == "active":
+                # 旧错误提示不能留在已恢复的订阅上，否则 UI 仍显示红字。
+                merged.pop("last_error", None)
+
+            synced = max(
+                (row["last_synced_at"] for row in group if row["last_synced_at"]),
+                default=None,
+            )
+            duplicate_ids = [row["id"] for row in group[1:]]
+            cur.execute(
+                "UPDATE subscriptions SET enabled=?, auto_update=?, status=?, "
+                "last_synced_at=?, config_json=?, updated_at=datetime('now','localtime') "
+                "WHERE id=?",
+                (
+                    1 if any(row["enabled"] for row in group) else 0,
+                    1 if any(row["auto_update"] for row in group) else 0,
+                    status,
+                    synced,
+                    json.dumps(merged, ensure_ascii=False),
+                    keep["id"],
+                ),
+            )
+            cur.executemany(
+                "DELETE FROM subscriptions WHERE id=?", [(i,) for i in duplicate_ids]
+            )
+            removed += len(duplicate_ids)
+            log.info(
+                "subscriptions: merged %d duplicate(s) for source %s into %s",
+                len(duplicate_ids),
+                source_key,
+                keep["id"],
+            )
+    return removed
 
 
 _CN_DIGITS = "零一二三四五六七八九"
