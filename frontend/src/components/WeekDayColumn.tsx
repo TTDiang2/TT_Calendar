@@ -152,7 +152,8 @@ export const WeekDayColumn = memo(function WeekDayColumn({
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       className={clsx(
-        'group relative flex flex-col flex-1 basis-0 min-w-[118px] min-h-0 overflow-hidden rounded-xl border cursor-pointer',
+        // min-w 只做「再窄就横向滚」的兜底：118px 会让 1280 带详情面板时第 7 列被裁掉
+        'group relative flex flex-col flex-1 basis-0 min-w-[80px] min-h-0 overflow-hidden rounded-xl border cursor-pointer',
         'transition-[box-shadow,border-color,transform] duration-150',
         day.is_other_month && 'opacity-55',
         dragOver && 'scale-[1.01]',
@@ -208,7 +209,7 @@ export const WeekDayColumn = memo(function WeekDayColumn({
           {day.holiday?.is_workday_made_up && (
             <span
               className="text-[9px] px-1 rounded leading-tight"
-              style={{ backgroundColor: withAlpha(theme.warning, 0.14), color: theme.warning }}
+              style={{ backgroundColor: withAlpha(theme.warning, 0.14), color: theme.warningInk }}
             >
               {t('calendar.makeUpWorkday')}
             </span>
@@ -216,7 +217,7 @@ export const WeekDayColumn = memo(function WeekDayColumn({
           {day.holiday?.name && (
             <span
               className="text-[9px] px-1 rounded leading-tight truncate max-w-[64px]"
-              style={{ backgroundColor: withAlpha(theme.danger, 0.1), color: theme.danger }}
+              style={{ backgroundColor: withAlpha(theme.danger, 0.1), color: theme.dangerInk }}
               title={day.holiday.name}
             >
               {day.holiday.name}

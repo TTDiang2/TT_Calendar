@@ -469,3 +469,88 @@ jsdom 里 11 条断言全绿，仍不能证明用户点鼠标时对。这次补�
 本次把备份写进 `/tmp` 后文件消失了（沙箱与宿主不互通），换到工作区内路径**同样丢了一次**，
 害得修改要重做一遍。结论：**做完修改先 commit，用 git 当备份**，而不是依赖手工拷贝文件。
 `git checkout HEAD -- <file>` 恢复比任何临时文件都可靠。
+
+## 10. v2.3.0 五视图统一语言（2026-11-17）
+
+一次把 5 个视图（日历-周 / 日历-日 / 待办-矩阵 / 待办-看板 / 待办-量筒）拉进同一套视觉语言。
+每个视图单独 commit + 单独 checkpoint tag，便于**按视图回退**（用户确认前标签不删）：
+
+| 视图 | commit | 标签 |
+| --- | --- | --- |
+| 地基（design token） | `adcc60d` | `checkpoint/view-polish-1-foundation` |
+| 日历-周 + 日历-日 | `bcb6a84` | `checkpoint/view-polish-2-calendar` |
+| 待办-矩阵 | `fb1d1b3` | `checkpoint/view-polish-3-matrix` |
+| 待办-看板 | `1dac18c` | `checkpoint/view-polish-4-kanban` |
+| 待办-量筒 + TopBar 入口 | `5d53559` | `checkpoint/view-polish-5-jar` |
+
+回退单个视图：`git checkout checkpoint/view-polish-baseline-20261117 -- <该视图文件>`。
+基线镜像：`checkpoint/view-polish-baseline-20261117`。
+
+> ⚠️ 2~5 号标签是「代码节点」，**不保证整树单独构建**：`fmtDateRange` 是视图改完之后才补进
+> `i18n/format.ts` 的，直接 checkout 这些标签会编译不过。回退请始终用
+> `git checkout <tag> -- <那一个视图的文件>`，在当前 tip 上覆盖单个文件。
+
+### 10.1 地基：四组语义色
+
+`frontend/src/lib/calendar-theme.tsx` 五套主题各补 4 个语义色，写进 CSS 变量
+`--cal-danger / --cal-warning / --cal-success / --cal-info`，`index.css` 配套
+`.cal-danger / .cal-warning / .cal-success / .cal-info` 与 `.cal-card / .cal-card-hover`。
+
+之前视图里散落的 `text-red-600`、`bg-amber-50` 之类硬编码颜色全部换成语义类 ——
+这是"五视图看起来像同一个产品"的前提。**注意：`classic` 主题的色阶不做柔和重排**
+（`rebalanceRamp` 只对非 classic 生效），那是多轮推敲过的结果，动它就会发灰。
+
+### 10.2 日历-周：7 列计划板
+
+取代原来"整格铺色柱"的画法。抽出 `frontend/src/lib/day-presentation.ts` 统一
+"月格与周列怎么呈现同一天"的规则（`colorLayersOf / visibleEventsOf / dotsOf /
+scheduleGroupsOf / solidMarksOf`），再抽 `WeekDayColumn.tsx` 复用之。
+
+- 列头：22px 日期数字 + 今天 pill；跨月的列补月份名（`fmtMonthName`）
+- 顶部 3px 多段色条 = 当天各图层占比，替代整格色柱
+- 正文分组：全天 → 跨日延续条 → 定时日程 → 事件，`MAX_ROWS = 7` 溢出显示 `moreItems`
+- 列宽 `flex-1 basis-0 min-w-[118px]`，7 列恒等分
+
+### 10.3 日历-日：日期书脊 + 当日议程时间轴
+
+左 196px「书脊」：54px 日期数字、年月、周几+农历、节假日、充实度、忙度细条、标记点。
+右侧议程：统计行 → 全天 → 时间轴（52px 时间列 + 节点竖线）→ 事件。
+`DetailPanel` 新增 `variant='day'`，在日视图下隐藏日期头/日程清单/事件清单，避免与书脊重复。
+
+### 10.4 待办-矩阵：四象限降噪
+
+白底卡 + 3px 语义色条替代整块底色；`TodoMiniCard` 传
+`hide={{ importance: true, complexity: true, body: true }}`，`subText` 只留所属列表 ——
+象限标题已经表达了重要性/紧急度，卡上再重复一遍就是噪音。
+
+### 10.5 待办-看板：固定泳道 + 空列投放区
+
+`frontend/src/utils/todoBoards.ts` 固化列数：状态维度恒 4 列、重要性/复杂度恒 3 列、
+计划标签按数据长（`tagSlot`）。空列渲染虚线「拖到这里」投放区，让"能拖到哪"可见。
+列宽 `flex-1 basis-0 min-w-[124px]`；已完成列折叠 44px / 展开 300px。
+配套修掉 `TodoDetailPanel` 空闲态占 `w-72` 空白栏的问题 —— 改成 `w-9` 窄边，
+否则第 4 列必被裁（这是看板列宽反复调不出来的真凶）。
+
+### 10.6 待办-量筒：今日容量计（v4）
+
+从「岩石/卵石/沙子」堆叠插画改成**可读的容量计**：容量 12 格，
+困难 3 / 中等 2 / 简单 1，刻度 25/50/75/100；左 86px 量筒 + 右侧分组清单，
+已完成沉底半透明并可折叠。全部走主题色，超容量时显示 `overCapacity`。
+入口重新放回 TopBar（`TODO_MODES` 增加 `{ key: 'jar' }`）。
+
+### 10.7 教训：量筒刻度为什么对不齐
+
+刻度容器与玻璃体不在同一个高度体系里，`absolute` 定位各自算各自的百分比，
+于是刻度永远"看着偏一点"。修法：把玻璃体与刻度套进同一个固定高
+`METER_H` 容器，刻度用 `-right-9` 相对它定位。**尺子和被量的东西必须共用一根基准线。**
+
+### 10.8 验收链路（必须记住）
+
+Tauri 前端包**内嵌在 exe 里**，`npm run build` 只更新 `frontend/dist`，
+不重建 exe 的话看到的是旧界面。改前端后的正确流程：
+
+```bash
+cd frontend && npm run tauri build -- --no-bundle
+cp src-tauri/target/release/app.exe "../TT Calendar.exe"
+WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS="--remote-debugging-port=9222" "../TT Calendar.exe"
+```

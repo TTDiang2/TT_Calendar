@@ -98,7 +98,7 @@ export function DayView({ monthData, layers, onSelect, onDoubleClick, onEditEven
             {day.holiday?.name && (
               <span
                 className="text-[10px] px-1.5 py-0.5 rounded"
-                style={{ backgroundColor: withAlpha(theme.danger, 0.1), color: theme.danger }}
+                style={{ backgroundColor: withAlpha(theme.danger, 0.1), color: theme.dangerInk }}
               >
                 {day.holiday.name}
               </span>
@@ -106,7 +106,7 @@ export function DayView({ monthData, layers, onSelect, onDoubleClick, onEditEven
             {day.holiday?.is_workday_made_up && (
               <span
                 className="text-[10px] px-1.5 py-0.5 rounded"
-                style={{ backgroundColor: withAlpha(theme.warning, 0.14), color: theme.warning }}
+                style={{ backgroundColor: withAlpha(theme.warning, 0.14), color: theme.warningInk }}
               >
                 {t('calendar.makeUpWorkday')}
               </span>

@@ -27,7 +27,13 @@ const LABEL_KEY = {
   simple: 'todoboards.jar.legendSimple',
 } as const
 
-const METER_H = 268
+/**
+ * 玻璃体高度由容器决定（跟着窗口长），刻度与液面全部用百分比定位，
+ * 这样「尺子」和「被量的东西」永远共用同一根基准线，不会因为容器高度变化而错位。
+ */
+const JAR_W = 96
+const JAR_MAX_H = 380
+const TICKS = [25, 50, 75, 100] as const
 
 /**
  * 量筒 v4 = 今日容量计。
@@ -36,6 +42,12 @@ const METER_H = 268
  * 可读性都输了。这一版把「可视化」和「清单」拆开：左边一根量筒只回答「今天装了多少」，
  * 右边是能读全标题、能勾选、能看列表名的正常清单；两者共用同一份分组。
  * 颜色全部走主题语义 token，罐体玻璃用面板色与描边色生成，不再是一套固定的米色。
+ *
+ * v5 修掉三处硬伤：
+ * 1. 刻度曾用 `justify-between` 摊成 0/33/67/100，尺子本身就是错的 —— 改成绝对定位到 bottom:n%；
+ * 2. 超容量时真比例会把顶段顶出筒口被 `overflow-hidden` 静默切掉，看起来反而像「没装满」——
+ *    改成先按 pct 截断再分配，并在筒口上方单独画一格虚线「溢出帽」；
+ * 3. 86px 宽的筒配 6px 实心反光条读起来像根管子 —— 加宽到 96px、反光收到 3px 并降透明度。
  */
 export function TodoJarView({ todos, selectedTodoId, onSelect, onOpenNotes, onToggle }: Props) {
   const t = useT()
@@ -70,6 +82,7 @@ export function TodoJarView({ todos, selectedTodoId, onSelect, onOpenNotes, onTo
 
   const total = groups.hard.length + groups.medium.length + groups.simple.length
   const pct = Math.min(load / CAPACITY, 1)
+  const isOver = load > CAPACITY
 
   const dateStr = useMemo(() => {
     const d = new Date()
@@ -89,10 +102,11 @@ export function TodoJarView({ todos, selectedTodoId, onSelect, onOpenNotes, onTo
     )
   }
 
-  // 每段的可见高度：按权重占比，从底往上 困难 → 中等 → 简单
+  // 每段的可见高度：先按 pct 截断到筒高，再按段间权重分配。
+  // 直接拿 CAPACITY 换算会让超容量那段顶出筒口、被 overflow-hidden 静默切掉，看着像没装满。
   const segs = ORDER.map((cx) => {
     const w = groups[cx].length * WEIGHT[cx]
-    return { cx, h: (w / CAPACITY) * METER_H, count: groups[cx].length }
+    return { cx, pctH: load === 0 ? 0 : pct * (w / load) * 100, count: groups[cx].length }
   })
   const colorOf = (cx: Cx) => (cx === 'hard' ? theme.danger : cx === 'medium' ? theme.warning : theme.success)
 
@@ -100,93 +114,172 @@ export function TodoJarView({ todos, selectedTodoId, onSelect, onOpenNotes, onTo
     <div className="h-full flex gap-4 min-h-0 pb-2">
       {/* 左：量筒 */}
       <section
-        className="w-[188px] flex-shrink-0 flex flex-col rounded-xl border p-3 min-h-0"
+        className="w-[204px] flex-shrink-0 flex flex-col rounded-xl border p-3 min-h-0"
         style={{ backgroundColor: 'var(--cal-panel)', borderColor: theme.border }}
       >
         <div className="flex items-baseline justify-between">
           <span className="text-[10px] tracking-[0.14em]" style={{ color: theme.muted }}>
             {t('todoboards.jar.capacity')}
           </span>
-          <span className="text-[10px] tabular-nums" style={{ color: theme.muted }}>
+          <span
+            className="text-[10px] tabular-nums font-medium"
+            style={{ color: isOver ? theme.dangerInk : theme.muted }}
+          >
             {Math.round((load / CAPACITY) * 100)}%
           </span>
         </div>
 
-        <div className="relative mt-2 flex-1 min-h-0 flex items-center justify-center overflow-hidden">
-          {/* 刻度与量筒同高：容器固定 METER_H，刻度和玻璃体才对齐 */}
-          <div className="relative flex items-center" style={{ height: METER_H }}>
-            {/* 刻度：25/50/75/100 四条细线贴在量筒右侧 */}
-            <div className="absolute inset-y-0 -right-9 w-8 flex flex-col justify-between pointer-events-none">
-              {[100, 75, 50, 25].map((n) => (
-                <div key={n} className="flex items-center gap-1">
-                  <span className="flex-1 h-px" style={{ backgroundColor: theme.border }} />
-                  <span className="text-[8px] tabular-nums" style={{ color: theme.muted }}>{n}</span>
-                </div>
-              ))}
-            </div>
-
+        <div className="relative mt-2 flex-1 min-h-0 flex items-center justify-center">
+          {/* 量筒与刻度共用一根基准线：同高容器 + 绝对定位到 bottom:n% */}
+          <div
+            className="relative flex-shrink-0 h-full"
+            style={{ height: `min(100%, ${JAR_MAX_H}px)`, width: JAR_W }}
+          >
+            {/* 玻璃体 */}
             <div
-              className="relative w-[86px] rounded-t-md rounded-b-[16px] overflow-hidden"
+              className="absolute inset-0 overflow-hidden"
               style={{
-                height: METER_H,
-                border: `1.5px solid ${withAlpha(theme.muted, 0.45)}`,
-                background: `linear-gradient(180deg, ${withAlpha(theme.surface, 0.9)}, ${withAlpha(theme.subtle, 0.85)})`,
+                borderRadius: '3px 3px 18px 18px',
+                border: `1.5px solid ${withAlpha(theme.muted, 0.42)}`,
+                background: `linear-gradient(180deg, ${withAlpha(theme.surface, 0.5)}, ${withAlpha(theme.subtle, 0.72)})`,
+                boxShadow: `inset 0 3px 8px ${withAlpha(theme.ink, 0.045)}`,
               }}
               role="img"
               aria-label={t('todoboards.jar.jarAria')}
             >
-            {/* 装填：从底部堆叠三段，段高按权重 */}
-            <div className="absolute inset-x-0 bottom-0 flex flex-col-reverse">
-              {segs.map((s) =>
-                s.h <= 0 ? null : (
-                  <div
-                    key={s.cx}
-                    className="w-full relative transition-[height] duration-300"
+              {/* 装填：从底部往上 困难 → 中等 → 简单，段高按权重（百分比，跟着筒高走） */}
+              <div className="absolute inset-0 flex flex-col-reverse">
+                {segs.map((s) =>
+                  s.pctH <= 0.15 ? null : (
+                    <div
+                      key={s.cx}
+                      className="w-full relative flex-shrink-0 transition-[height] duration-500 ease-out"
+                      style={{
+                        height: `${s.pctH}%`,
+                        background: `linear-gradient(180deg, ${withAlpha(colorOf(s.cx), 0.6)}, ${withAlpha(colorOf(s.cx), 0.44)})`,
+                        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.32)`,
+                      }}
+                    >
+                      {s.pctH >= 7 && (
+                        <span
+                          className="absolute left-1/2 -translate-x-1/2 top-1 text-[9px] tabular-nums leading-none font-medium"
+                          style={{ color: 'rgba(255,255,255,0.88)', textShadow: `0 0 2px ${withAlpha(theme.ink, 0.35)}` }}
+                        >
+                          {s.count}
+                        </span>
+                      )}
+                    </div>
+                  ),
+                )}
+              </div>
+
+              {/* 液体整体的玻璃微光：左亮右暗，给色块一点体积感 */}
+              <span
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    'linear-gradient(90deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 26%, rgba(255,255,255,0) 72%, rgba(0,0,0,0.055))',
+                }}
+              />
+
+              {/* 刻度线：白色丝印，压在液体上也能看清（真实量筒就是这个做法） */}
+              <div className="absolute inset-0 pointer-events-none">
+                {TICKS.map((n) => (
+                  <span
+                    key={n}
+                    className="absolute right-0"
                     style={{
-                      height: s.h,
-                      backgroundColor: withAlpha(colorOf(s.cx), 0.55),
-                      borderTop: s.cx === 'simple' ? 'none' : `1px solid ${withAlpha(colorOf(s.cx), 0.75)}`,
+                      bottom: `${n}%`,
+                      width: n === 100 ? 16 : 10,
+                      height: n === 100 ? 1.5 : 1,
+                      backgroundColor:
+                        isOver && n === 100
+                          ? withAlpha('#FFFFFF', 0.9)
+                          : withAlpha('#FFFFFF', 0.68),
+                      boxShadow: `0 0 0 0.4px ${withAlpha(theme.ink, 0.13)}`,
                     }}
-                  >
-                    <span className="absolute left-1.5 top-1 text-[9px] tabular-nums" style={{ color: withAlpha(theme.ink, 0.75) }}>
-                      {s.count}
-                    </span>
-                  </div>
-                ),
+                  />
+                ))}
+              </div>
+
+              {/* 液面 + 玻璃反光 */}
+              {pct > 0.005 && pct < 0.995 && (
+                <span
+                  className="absolute left-0 right-0 h-[1.5px] pointer-events-none"
+                  style={{ bottom: `${pct * 100}%`, backgroundColor: withAlpha(theme.ink, 0.16) }}
+                />
+              )}
+              {/* 玻璃反光：横向柔化 + 纵向衰减，别做成一根硬白棍 */}
+              <span
+                className="absolute left-[10px] top-4 bottom-8 w-[7px] pointer-events-none"
+                style={{
+                  background:
+                    'linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0.06))',
+                  maskImage: 'linear-gradient(90deg, transparent, #000 45%, transparent)',
+                  WebkitMaskImage: 'linear-gradient(90deg, transparent, #000 45%, transparent)',
+                }}
+              />
+
+              {/* 今日完成 = 底部沉降层，不占装载量 */}
+              {todayDone.length > 0 && (
+                <div
+                  className="absolute inset-x-0 bottom-0 flex items-end justify-center pb-0.5 pointer-events-none"
+                  style={{
+                    height: Math.min(14 + todayDone.length * 3, 28),
+                    background: `linear-gradient(180deg, ${withAlpha(theme.muted, 0.06)}, ${withAlpha(theme.muted, 0.22)})`,
+                  }}
+                >
+                  <span className="text-[8px] tabular-nums" style={{ color: withAlpha(theme.ink, 0.6) }}>
+                    {todayDone.length}
+                  </span>
+                </div>
               )}
             </div>
 
-            {/* 液面高光 + 玻璃反光 */}
+            {/* 筒口：玻璃体的上沿，画在 overflow 之外 */}
             <span
-              className="absolute left-0 right-0 h-[2px] pointer-events-none"
-              style={{ bottom: `${pct * 100}%`, backgroundColor: withAlpha(theme.ink, 0.18) }}
-            />
-            <span
-              className="absolute left-2 top-3 bottom-6 w-[6px] rounded-full pointer-events-none"
-              style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.75), rgba(255,255,255,0.12))' }}
+              className="absolute -left-[3px] -right-[3px] -top-[3px] h-[7px] rounded-[3px] pointer-events-none"
+              style={{
+                border: `1.5px solid ${withAlpha(theme.muted, 0.42)}`,
+                backgroundColor: withAlpha(theme.panel, 0.95),
+              }}
             />
 
-            {/* 今日完成 = 底部沉降层，不占装载量 */}
-            {todayDone.length > 0 && (
+            {/* 溢出帽：装在筒口上方，一眼看出「满了还多出来」 */}
+            {isOver && (
               <div
-                className="absolute inset-x-0 bottom-0 flex items-end justify-center pb-0.5 pointer-events-none"
+                className="absolute -left-[3px] -right-[3px] rounded-[3px] border border-dashed pointer-events-none"
                 style={{
-                  height: Math.min(16 + todayDone.length * 4, 34),
-                  background: `linear-gradient(180deg, ${withAlpha(theme.muted, 0.08)}, ${withAlpha(theme.muted, 0.2)})`,
+                  top: -19,
+                  height: 12,
+                  borderColor: withAlpha(theme.danger, 0.8),
+                  backgroundColor: withAlpha(theme.danger, 0.14),
                 }}
-              >
-                <span className="text-[8px] tabular-nums" style={{ color: withAlpha(theme.ink, 0.6) }}>
-                  {todayDone.length}
-                </span>
-              </div>
+              />
             )}
-          </div>
+
+            {/* 刻度数字：贴在筒身右侧，与筒内刻度线同一 bottom 基准 */}
+            <div className="absolute inset-y-0 pointer-events-none" style={{ left: JAR_W + 6 }}>
+              {TICKS.map((n) => (
+                <span
+                  key={n}
+                  className="absolute text-[8.5px] tabular-nums leading-none"
+                  style={{
+                    bottom: `${n}%`,
+                    transform: 'translateY(50%)',
+                    color: isOver && n === 100 ? theme.dangerInk : theme.muted,
+                  }}
+                >
+                  {n}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 
         <div className="mt-2 flex items-center justify-between">
           <span className="text-[10px]" style={{ color: theme.muted }}>{t('todoboards.jar.loadLabel')}</span>
-          <span className="text-[11px] tabular-nums font-medium" style={{ color: theme.ink }}>
+          <span className="text-[11px] tabular-nums font-medium" style={{ color: isOver ? theme.dangerInk : theme.ink }}>
             {load}/{CAPACITY} <span className="font-normal" style={{ color: theme.muted }}>{t('todoboards.jar.cellUnit')}</span>
           </span>
         </div>
@@ -194,7 +287,7 @@ export function TodoJarView({ todos, selectedTodoId, onSelect, onOpenNotes, onTo
         {overflowCount > 0 && (
           <div
             className="mt-1.5 text-[10px] px-2 py-1 rounded-md text-center tabular-nums"
-            style={{ backgroundColor: withAlpha(theme.danger, 0.1), color: theme.danger }}
+            style={{ backgroundColor: withAlpha(theme.danger, 0.12), color: theme.dangerInk }}
           >
             {t('todoboards.jar.overCapacity', { n: overflowCount })}
           </div>
@@ -214,7 +307,7 @@ export function TodoJarView({ todos, selectedTodoId, onSelect, onOpenNotes, onTo
           <p className="text-[11px] tabular-nums flex-shrink-0" style={{ color: theme.muted }}>
             {total} {t('todoboards.jar.piece')}
             <span className="mx-1.5">·</span>
-            <span style={{ color: theme.success }}>{todayDone.length}</span> {t('todoboards.jar.settled')}
+            <span style={{ color: theme.successInk }}>{todayDone.length}</span> {t('todoboards.jar.settled')}
           </p>
         </header>
 
@@ -255,7 +348,7 @@ export function TodoJarView({ todos, selectedTodoId, onSelect, onOpenNotes, onTo
                             {td.due_date === today && (
                               <span
                                 className="text-[9.5px] px-1 py-[1px] rounded"
-                                style={{ backgroundColor: withAlpha(theme.warning, 0.12), color: theme.warning }}
+                                style={{ backgroundColor: withAlpha(theme.warning, 0.14), color: theme.warningInk }}
                               >
                                 {t('todoboards.card.today')}
                               </span>

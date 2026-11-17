@@ -28,6 +28,11 @@ html, body, #root {
   --cal-warning: #b4791f;
   --cal-success: #3f7d5c;
   --cal-info: #2563eb;
+  /* 语义色的「文字版」：JS 侧按 4.5:1 压深后写进来，小字号文字用这一组 */
+  --cal-danger-ink: #c2543d;
+  --cal-warning-ink: #b4791f;
+  --cal-success-ink: #3f7d5c;
+  --cal-info-ink: #2563eb;
 }
 
 body {
@@ -55,6 +60,10 @@ body {
   .cal-warning { color: var(--cal-warning); }
   .cal-success { color: var(--cal-success); }
   .cal-info { color: var(--cal-info); }
+  .cal-danger-ink { color: var(--cal-danger-ink); }
+  .cal-warning-ink { color: var(--cal-warning-ink); }
+  .cal-success-ink { color: var(--cal-success-ink); }
+  .cal-info-ink { color: var(--cal-info-ink); }
   .cal-danger-bg { background-color: var(--cal-danger); }
   .cal-warning-bg { background-color: var(--cal-warning); }
   .cal-success-bg { background-color: var(--cal-success); }

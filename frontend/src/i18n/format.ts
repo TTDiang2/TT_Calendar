@@ -28,6 +28,19 @@ export function fmtMonthName(lang: Lang, date: Date, width: 'short' | 'long' | '
   return fmtDate(lang, date, { month: width })
 }
 
+/**
+ * 日期区间（周视图标题：「11月16日 – 11月22日」）。
+ * 跨年时两端都带年份；同年只在起始端带年份，避免标题过长。
+ */
+export function fmtDateRange(lang: Lang, start: Date, end: Date): string {
+  const sameYear = start.getFullYear() === end.getFullYear()
+  const left = fmtDate(lang, start, sameYear
+    ? { month: 'short', day: 'numeric' }
+    : { year: 'numeric', month: 'short', day: 'numeric' })
+  const right = fmtDate(lang, end, { month: 'short', day: 'numeric' })
+  return `${left} – ${right}`
+}
+
 const nfCache = new Map<Lang, Intl.NumberFormat>()
 
 export function fmtNumber(lang: Lang, n: number): string {

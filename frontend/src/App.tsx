@@ -75,12 +75,17 @@ export default function App() {
   const dragSource = useRef<string | null>(null)
   const qc = useQueryClient()
 
-  // week/day 视图需要具体日期 anchor；selectedDate 为空时用当月 1 号（零填充，backend date.fromisoformat 要求）
+  // week/day 视图需要具体日期 anchor；未选中日期时：日视图回到「今天」，
+  // 周视图回到当月 1 号所在的那一周（零填充，backend date.fromisoformat 要求）
   const dayAnchor = useMemo(() => {
     if (selectedDate) return selectedDate
+    if (mode === 'day') {
+      const n = new Date()
+      return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`
+    }
     const [y, m] = monthKey.split('-').map(Number)
     return `${y}-${String(m).padStart(2, '0')}-01`
-  }, [selectedDate, monthKey])
+  }, [selectedDate, monthKey, mode])
   const { data: monthData, isLoading } = useViewData(
     mode === 'countdown' ? 'month' : mode,
     mode === 'week' || mode === 'day' ? dayAnchor : monthKey,
@@ -291,9 +296,12 @@ export default function App() {
   }, [mode, monthData, lang])
 
   const selectedDay = useMemo(() => {
-    if (!selectedDate || !monthData || mode === 'year') return null
+    if (!monthData || mode === 'year') return null
     if (!('days' in monthData)) return null
-    return monthData.days.find((d) => d.date === selectedDate) ?? null
+    if (selectedDate) return monthData.days.find((d) => d.date === selectedDate) ?? null
+    // 日视图总有一个「当前这一天」：没点选时就是今天，右栏据此显示编辑入口而不是占位提示
+    if (mode === 'day') return monthData.days[0] ?? null
+    return null
   }, [selectedDate, monthData, mode])
 
   function jumpToEvent(ev: CalEvent) {
@@ -441,7 +449,9 @@ export default function App() {
                 />
               )}
             </main>
-            {mode !== 'year' && (
+            {/* 周视图的 7 列本身就是详情，未选中日期时不必常驻一块「点击日期查看详情」的
+                占位面板——248px 的空白会把第 7 列挤出可视区 */}
+            {mode !== 'year' && (mode !== 'week' || !!selectedDay) && (
               <DetailPanel
                 day={selectedDay}
                 layers={layers}

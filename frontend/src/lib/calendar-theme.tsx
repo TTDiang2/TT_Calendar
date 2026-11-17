@@ -61,6 +61,50 @@ export interface CalendarTheme {
   success: string
   /** 语义色：信息 / 规划（矩阵「计划做」、看板进行中） */
   info: string
+  /** 上面四个语义色的「文字版」（已压到 4.5:1），只给小于 14px 的文字用 */
+  dangerInk: string
+  warningInk: string
+  successInk: string
+  infoInk: string
+}
+
+/** 语义色的「文字版」：往黑压到在给定底色上达到 4.5:1，只用于小字号文字 */
+function hexToRgb3(hex: string): [number, number, number] {
+  const h = hex.replace('#', '')
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]
+}
+
+function relLuminance(hex: string): number {
+  const [r, g, b] = hexToRgb3(hex).map((v) => {
+    const c = v / 255
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  }) as [number, number, number]
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+export function contrastRatio(a: string, b: string): number {
+  const la = relLuminance(a)
+  const lb = relLuminance(b)
+  const hi = Math.max(la, lb)
+  const lo = Math.min(la, lb)
+  return (hi + 0.05) / (lo + 0.05)
+}
+
+/**
+ * 语义色当文字用时会不够黑（莫兰迪/北欧这几套尤其明显，warning 只有 2.7:1）。
+ * 这里按「往黑等比混」逐档试探，压到 4.5:1 就停 —— 色相不变，只降明度。
+ * 色点、色条、色块仍用原色，所以主题的柔和观感不受影响。
+ */
+export function inkOn(color: string, bg: string, target = 4.5): string {
+  if (contrastRatio(color, bg) >= target) return color
+  const [r, g, b] = hexToRgb3(color)
+  for (let k = 0.06; k < 1; k += 0.04) {
+    const hex = `#${[r, g, b]
+      .map((c) => Math.round(c * (1 - k)).toString(16).padStart(2, '0'))
+      .join('')}`
+    if (contrastRatio(hex, bg) >= target) return hex
+  }
+  return '#000000'
 }
 
 export const CALENDAR_THEMES: Record<CalendarThemeId, CalendarTheme> = {
@@ -88,6 +132,10 @@ export const CALENDAR_THEMES: Record<CalendarThemeId, CalendarTheme> = {
     warning: '#B4791F',
     success: '#3F7D5C',
     info: '#2563EB',
+    dangerInk: inkOn('#C2543D', '#FFFFFF'),
+    warningInk: inkOn('#B4791F', '#FFFFFF'),
+    successInk: inkOn('#3F7D5C', '#FFFFFF'),
+    infoInk: inkOn('#2563EB', '#FFFFFF'),
   },
   morandi: {
     id: 'morandi',
@@ -110,6 +158,10 @@ export const CALENDAR_THEMES: Record<CalendarThemeId, CalendarTheme> = {
     warning: '#A07A45',
     success: '#6E8A62',
     info: '#6C8291',
+    dangerInk: inkOn('#A8625A', '#F2E8DD'),
+    warningInk: inkOn('#A07A45', '#F2E8DD'),
+    successInk: inkOn('#6E8A62', '#F2E8DD'),
+    infoInk: inkOn('#6C8291', '#F2E8DD'),
   },
   scandinavian: {
     id: 'scandinavian',
@@ -132,6 +184,10 @@ export const CALENDAR_THEMES: Record<CalendarThemeId, CalendarTheme> = {
     warning: '#B08948',
     success: '#5F8A6E',
     info: '#4F7F9B',
+    dangerInk: inkOn('#B4695A', '#E9F0F3'),
+    warningInk: inkOn('#B08948', '#E9F0F3'),
+    successInk: inkOn('#5F8A6E', '#E9F0F3'),
+    infoInk: inkOn('#4F7F9B', '#E9F0F3'),
   },
   midcentury: {
     id: 'midcentury',
@@ -154,6 +210,10 @@ export const CALENDAR_THEMES: Record<CalendarThemeId, CalendarTheme> = {
     warning: '#B8872E',
     success: '#7A8C43',
     info: '#4A6E86',
+    dangerInk: inkOn('#B5563C', '#F6EBD1'),
+    warningInk: inkOn('#B8872E', '#F6EBD1'),
+    successInk: inkOn('#7A8C43', '#F6EBD1'),
+    infoInk: inkOn('#4A6E86', '#F6EBD1'),
   },
   artdeco: {
     id: 'artdeco',
@@ -176,6 +236,10 @@ export const CALENDAR_THEMES: Record<CalendarThemeId, CalendarTheme> = {
     warning: '#B58A2E',
     success: '#5C7A55',
     info: '#2E5E8C',
+    dangerInk: inkOn('#A3483F', '#F5EBD5'),
+    warningInk: inkOn('#B58A2E', '#F5EBD5'),
+    successInk: inkOn('#5C7A55', '#F5EBD5'),
+    infoInk: inkOn('#2E5E8C', '#F5EBD5'),
   },
 }
 
@@ -282,6 +346,10 @@ export function CalendarThemeProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--cal-warning', theme.warning)
     root.style.setProperty('--cal-success', theme.success)
     root.style.setProperty('--cal-info', theme.info)
+    root.style.setProperty('--cal-danger-ink', theme.dangerInk)
+    root.style.setProperty('--cal-warning-ink', theme.warningInk)
+    root.style.setProperty('--cal-success-ink', theme.successInk)
+    root.style.setProperty('--cal-info-ink', theme.infoInk)
   }, [themeId, theme])
 
   const value = useMemo(() => ({ themeId, theme, setThemeId }), [themeId, theme, setThemeId])

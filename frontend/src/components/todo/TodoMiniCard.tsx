@@ -104,7 +104,7 @@ export function TodoMiniCard({ todo, selected, sub, onClick, onToggle, density =
             {overdue && (
               <span
                 className="text-[10px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap tabular-nums"
-                style={{ backgroundColor: withAlpha(theme.danger, 0.1), color: theme.danger }}
+                style={{ backgroundColor: withAlpha(theme.danger, 0.1), color: theme.dangerInk }}
               >
                 {tPlural('todoboards.card.overdueBy', -(din ?? 0))}
               </span>
@@ -112,7 +112,7 @@ export function TodoMiniCard({ todo, selected, sub, onClick, onToggle, density =
             {dueToday && (
               <span
                 className="text-[10px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap"
-                style={{ backgroundColor: withAlpha(theme.warning, 0.12), color: theme.warning }}
+                style={{ backgroundColor: withAlpha(theme.warning, 0.12), color: theme.warningInk }}
               >
                 {t('todoboards.card.today')}
               </span>
@@ -166,7 +166,7 @@ export function TodoMiniCard({ todo, selected, sub, onClick, onToggle, density =
             {!hide?.due && todo.due_date && (
               <span
                 className={clsx('tabular-nums flex-shrink-0', overdue && 'font-medium')}
-                style={overdue ? { color: theme.danger } : undefined}
+                style={overdue ? { color: theme.dangerInk } : undefined}
               >
                 {t('todoboards.card.due', { date: shortDate(todo.due_date) })}
               </span>

@@ -134,7 +134,7 @@ export function TodoMatrixView({ todos, lists, selectedTodoId, onSelect, onToggl
                   {soonCount > 0 && (
                     <span
                       className="flex items-center gap-1 text-[10px] tabular-nums"
-                      style={{ color: theme.warning }}
+                      style={{ color: theme.warningInk }}
                       title={ia.t('todoboards.matrix.soonTitle')}
                     >
                       <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.warning }} />

@@ -238,7 +238,7 @@ export function TodoKanbanView({ openTodos, completedTodos, completedCount, list
                     <div className="flex flex-col items-start min-w-0">
                       <span className="text-[12px] font-medium truncate" style={{ color: theme.ink }}>
                         {t('todoboards.kanban.completed')}
-                        <span className="ml-1.5 tabular-nums font-semibold" style={{ color: theme.success }}>
+                        <span className="ml-1.5 tabular-nums font-semibold" style={{ color: theme.successInk }}>
                           {fmtNumber(lang, completedCount)}
                         </span>
                       </span>
@@ -276,7 +276,7 @@ export function TodoKanbanView({ openTodos, completedTodos, completedCount, list
                   aria-label={t('todoboards.kanban.expandCompleted', { n: completedCount })}
                 >
                   <CheckCircle2 size={15} style={{ color: theme.success }} />
-                  <span className="text-[11px] font-semibold tabular-nums" style={{ color: theme.success }}>
+                  <span className="text-[11px] font-semibold tabular-nums whitespace-nowrap" style={{ color: theme.successInk }}>
                     {fmtNumber(lang, completedCount)}
                   </span>
                   <span className="text-[10px] [writing-mode:vertical-rl] tracking-widest">

@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import { Trash2, X } from 'lucide-react'
+import { MousePointerClick, Trash2, X } from 'lucide-react'
 import clsx from 'clsx'
 import type { Todo, TodoList } from '../types'
 import { useT, type TxKey } from '../i18n'
@@ -188,9 +188,14 @@ export const TodoDetailPanel = forwardRef<TodoDetailPanelRef, Props>(function To
   }, [todo?.id])
 
   if (!todo) {
+    // 空闲时收成一条窄边：看板/矩阵/量筒这些视图需要横向空间，288px 的空白栏
+    // 会把 4 个状态列压到 159px。选中任一卡片后自动展开成完整编辑栏。
     return (
-      <aside className="w-72 bg-white border-l border-gray-200 p-4">
-        <p className="text-sm text-gray-400">{t('todoDetail.emptyPanel')}</p>
+      <aside
+        className="w-9 flex-shrink-0 cal-panel-bg border-l cal-line-l flex items-start justify-center pt-4"
+        title={t('todoDetail.emptyPanel')}
+      >
+        <MousePointerClick size={14} className="cal-muted" />
       </aside>
     )
   }
