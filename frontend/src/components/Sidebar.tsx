@@ -225,9 +225,9 @@ function LayerRow({ layer, onToggle }: { layer: Layer; onToggle: (id: string) =>
   return (
     <div
       className={clsx(
-        'flex items-center gap-2 px-1 py-1.5 rounded-md transition-colors',
-        // 关闭的图层整行退到背景里，开着的那几行才有「在场」的底色
-        layer.enabled ? 'cal-subtle-bg' : 'bg-transparent cal-hover-bg',
+        'flex items-center gap-2 px-1 py-1.5 rounded-md transition-colors cal-hover-bg',
+        // 开关只反映在圆点与文字上，不给整行铺「选中」底色（那会让侧栏看起来像列表选中态）
+        !layer.enabled && 'opacity-90',
       )}
     >
       <span

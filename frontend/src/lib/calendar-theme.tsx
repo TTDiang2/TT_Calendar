@@ -59,16 +59,18 @@ export const CALENDAR_THEMES: Record<CalendarThemeId, CalendarTheme> = {
   classic: {
     id: 'classic',
     labelKey: 'settings.appearance.themeClassic',
-    predict: rebalanceRamp([...TODO_BUSY_PREDICT_COLORS], PREDICT_L),
-    done: rebalanceRamp([...COLORING_COLORS], DONE_L),
-    coloring: rebalanceRamp([...COLORING_COLORS], DONE_L),
+    // 经典的 5 档是反复调过的 Material 原色阶，不走 rebalanceRamp 重排：
+    // 重排会把最深的 #1b5e20 / #b45309 抬成中等明度，热力图对比直接塌掉。
+    predict: [...TODO_BUSY_PREDICT_COLORS],
+    done: [...COLORING_COLORS],
+    coloring: [...COLORING_COLORS],
     palettes: GRADED_PALETTES,
     panel: '#FFFFFF',
     shell: '#EDEFF3',
     subtle: '#F3F4F6',
     ink: '#111827',
     muted: '#6B7280',
-    surface: '#FCFCFD',
+    surface: '#F9FAFB',
     border: '#E5E7EB',
     today: '#2563EB',
     weekend: '#EF4444',
