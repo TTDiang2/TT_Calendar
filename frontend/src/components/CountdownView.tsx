@@ -14,6 +14,7 @@ function labelSuffix(lk: CountdownItem['label_kind'], t: (k: TxKey, p?: Record<s
   return ' ' + t('countdown.label.lunarAnniv')
 }
 import { useT, useTPlural, type I18n, type TxKey } from '../i18n'
+import { RightDrawer } from './ui/RightDrawer'
 
 const CATEGORY_COLORS: Record<string, string> = {
   生日: '#f472b6',
@@ -147,22 +148,26 @@ export function CountdownView() {
         </div>
       </div>
 
-      {/* 右详情栏 — w-72 */}
-      <CountdownDetailPanel
-        item={selected}
-        onClose={() => setSelectedId(null)}
-        onSave={(data, id) => {
-          if (id) updateMut.mutate({ id, data })
-          else createMut.mutate(data)
-          setSelectedId(null)
-        }}
-        onDelete={(id) => {
-          if (confirm(t('countdown.confirmDelete'))) {
-            deleteMut.mutate(id)
+      {/* 右详情栏：和待办列表同一套抽屉逻辑——不选中任何倒数日时根本不占位，
+          点卡片才从右边推出来。以前是常驻 288px 面板，未选中时还摆着一张新建表单，
+          既占地方，又从别的视图切进来时没有「进出场」可言。 */}
+      <RightDrawer open={selectedId !== null}>
+        <CountdownDetailPanel
+          item={selected}
+          onClose={() => setSelectedId(null)}
+          onSave={(data, id) => {
+            if (id) updateMut.mutate({ id, data })
+            else createMut.mutate(data)
             setSelectedId(null)
-          }
-        }}
-      />
+          }}
+          onDelete={(id) => {
+            if (confirm(t('countdown.confirmDelete'))) {
+              deleteMut.mutate(id)
+              setSelectedId(null)
+            }
+          }}
+        />
+      </RightDrawer>
     </div>
   )
 }
@@ -268,7 +273,7 @@ function CountdownDetailPanel({ item, onClose, onSave, onDelete }: {
   const isNew = !item
 
   return (
-    <aside className="w-72 cal-panel-bg border-l cal-line-l flex flex-col overflow-hidden">
+    <aside className="h-full w-full cal-panel-bg border-l cal-line-l flex flex-col overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-[color:var(--cal-border)]">
         <p className="text-xs cal-muted uppercase tracking-wide">{isNew ? t('countdown.createNew') : t('countdown.editTitle')}</p>
         <button onClick={onClose} className="p-1 cal-muted hover:cal-muted text-sm">×</button>

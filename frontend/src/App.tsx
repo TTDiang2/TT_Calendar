@@ -204,6 +204,9 @@ export default function App() {
       d.setDate(d.getDate() + delta)
       shiftAnchor(d)
     } else {
+      // 翻月/翻年之后原来的选中日期已经不在视图里，留着会让右栏和键盘 N 指向看不见的那天，
+      // 所以直接清掉：右栏自动回落到「今天」（见 selectedDay），状态和画面才对得上。
+      setSelectedDate(null)
       setMonthKey((k) => (mode === 'year' ? shiftYearKey(k, delta) : shiftMonthKey(k, delta)))
     }
   }
@@ -299,10 +302,18 @@ export default function App() {
   const selectedDay = useMemo(() => {
     if (!monthData || mode === 'year') return null
     if (!('days' in monthData)) return null
-    if (selectedDate) return monthData.days.find((d) => d.date === selectedDate) ?? null
-    // 日视图总有一个「当前这一天」：没点选时就是今天，右栏据此显示编辑入口而不是占位提示
-    if (mode === 'day') return monthData.days[0] ?? null
-    return null
+    const days = monthData.days
+    if (selectedDate) {
+      const hit = days.find((d) => d.date === selectedDate)
+      if (hit) return hit
+    }
+    // 月视图右栏本来就常驻，没有焦点时留一块「点击日期查看详情」的空白面板没有意义：
+    // 直接落在今天，进来看见的就是今天能编辑的入口。
+    const today = days.find((d) => d.is_today)
+    if (today) return today
+    // 翻到别的月份时今天不在网格里：退到该月第一天，保证面板始终是可用的编辑面
+    // （而不是翻月后空掉、只剩一句引导语）。
+    return days.find((d) => !d.is_other_month) ?? days[0] ?? null
   }, [selectedDate, monthData, mode])
 
   function jumpToEvent(ev: CalEvent) {

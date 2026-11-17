@@ -25,7 +25,9 @@ interface Props {
  */
 export function RightDrawer({ open, width = 288, children }: Props) {
   return (
-    <AnimatePresence initial={false}>
+    // 不写 initial={false}：整个视图分支被换掉时（倒数日/待办 ↔ 日历）抽屉会重新挂载，
+    // 这时也该是「从右边推出来」，而不是「啪」地就在那儿。
+    <AnimatePresence>
       {open && (
         <motion.div
           key="right-drawer"
