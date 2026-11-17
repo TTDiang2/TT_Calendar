@@ -2,12 +2,14 @@ import { useMemo, useState } from 'react'
 import clsx from 'clsx'
 import { CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Todo, TodoList } from '../../types'
-import { COMPLEXITY_KEYS, IMPORTANCE_KEYS, STATUS_KEYS, labelOf, todayStr } from '../../utils/todoLogic'
-import { useT, type I18n, type TxKey } from '../../i18n'
+import { todayStr } from '../../utils/todoLogic'
+import { buildColumns, type Dim } from '../../utils/todoBoards'
+import { useT, type TxKey } from '../../i18n'
+import { fmtNumber } from '../../i18n/format'
+import { useLang } from '../../i18n'
 import { layerLabel } from '../../i18n/adapt/layerLabel'
-import { TodoMiniCard } from './TodoMiniCard'
-
-type Dim = 'status' | 'planned' | 'importance' | 'complexity' | 'tag'
+import { useCalendarTheme, withAlpha } from '../../lib/calendar-theme'
+import { TodoMiniCard, type CardHide } from './TodoMiniCard'
 
 /** 维度切换胶囊（labelKey 模式：模块常量不存文案，渲染时 t(d.labelKey)） */
 const DIMS: { key: Dim; labelKey: TxKey }[] = [
@@ -16,6 +18,21 @@ const DIMS: { key: Dim; labelKey: TxKey }[] = [
   { key: 'importance', labelKey: 'todoboards.kanban.dim.importance' },
   { key: 'complexity', labelKey: 'todoboards.kanban.dim.complexity' },
   { key: 'tag', labelKey: 'todoboards.kanban.dim.tag' },
+]
+
+/** 当前维度对应的卡片字段：板块已经分组了，卡片不再重复显示这一维 */
+const HIDE_BY_DIM: Record<Dim, CardHide> = {
+  status: { status: true, body: true },
+  planned: { planned: true, body: true },
+  importance: { importance: true, body: true },
+  complexity: { complexity: true, body: true },
+  tag: { tags: true, body: true },
+}
+
+// 标签固定色槽：与 utils/todoBoards.ts 的 TAG_SLOT_COUNT 对齐（10 槽，低饱和）
+const TAG_COLORS = [
+  '#C2543D', '#B4791F', '#5F8A6E', '#4F7F9B', '#7A6C93',
+  '#A0625F', '#6E8A62', '#8A6F9B', '#4A6E86', '#9B7B4A',
 ]
 
 interface Props {
@@ -29,138 +46,20 @@ interface Props {
   onUpdate: (id: string, data: Record<string, unknown>) => void
 }
 
-interface Column {
-  key: string
-  title: string
-  tone?: string
-  headCls?: string
-  items: Todo[]
-}
-
-const IMPORTANCE_TONE: Record<string, string> = {
-  high: 'bg-red-50/70',
-  normal: 'bg-amber-50/70',
-  low: 'bg-emerald-50/70',
-}
-
-const COMPLEXITY_TONE: Record<string, string> = {
-  hard: 'bg-red-50/70',
-  medium: 'bg-amber-50/70',
-  simple: 'bg-emerald-50/70',
-}
-
-const STATUS_TONE: Record<string, string> = {
-  notStarted: 'bg-gray-50',
-  inProgress: 'bg-blue-50/70',
-  waitingOnOthers: 'bg-purple-50/70',
-  deferred: 'bg-amber-50/60',
-}
-
-// 计划日期色阶：同一蓝色系，今天最深、越远越浅——一扫就知道近期压力在哪
-function plannedTone(key: string, today: string): { tone: string; headCls: string } {
-  if (key === '__none__') return { tone: 'bg-gray-50', headCls: 'cal-muted' }
-  const days = Math.round((new Date(key).getTime() - new Date(today).getTime()) / 86400000)
-  if (days <= 0) return { tone: 'bg-blue-200/60', headCls: 'text-blue-800' }
-  if (days <= 2) return { tone: 'bg-blue-100/80', headCls: 'text-blue-700' }
-  if (days <= 7) return { tone: 'bg-blue-50', headCls: 'text-blue-600' }
-  return { tone: 'bg-blue-50/50', headCls: 'text-blue-400' }
-}
-
-// 标签固定配色：hash 到 10 色柔和调色板，同一标签永远同色（跨列/跨次渲染稳定）
-const TAG_PALETTE: { bg: string; head: string }[] = [
-  { bg: 'bg-rose-50/80', head: 'text-rose-700' },
-  { bg: 'bg-orange-50/80', head: 'text-orange-700' },
-  { bg: 'bg-amber-50/80', head: 'text-amber-700' },
-  { bg: 'bg-lime-50/80', head: 'text-lime-700' },
-  { bg: 'bg-emerald-50/80', head: 'text-emerald-700' },
-  { bg: 'bg-teal-50/80', head: 'text-teal-700' },
-  { bg: 'bg-sky-50/80', head: 'text-sky-700' },
-  { bg: 'bg-indigo-50/80', head: 'text-indigo-700' },
-  { bg: 'bg-violet-50/80', head: 'text-violet-700' },
-  { bg: 'bg-fuchsia-50/80', head: 'text-fuchsia-700' },
-]
-
-function tagHash(s: string): number {
-  let h = 0
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0
-  return h
-}
-
-/** 翻译函数形参类型（buildColumns 是模块级函数，无 hook 环境，由调用方传入 t） */
-type Translate = I18n['t']
-
-function buildColumns(openTodos: Todo[], dim: Dim, today: string, tr: Translate): Column[] {
-  const map = new Map<string, Column>()
-
-  const col = (key: string, title: string, tone?: string, headCls?: string): Column => {
-    let c = map.get(key)
-    if (!c) {
-      c = { key, title, tone, headCls, items: [] }
-      map.set(key, c)
-    }
-    return c
-  }
-
-  for (const t of openTodos) {
-    switch (dim) {
-      case 'status':
-        col(t.status, labelOf(STATUS_KEYS, t.status, tr), STATUS_TONE[t.status]).items.push(t)
-        break
-      case 'planned': {
-        if (t.planned_date && t.planned_date < today) break
-        const key = t.planned_date ?? '__none__'
-        // 标题带具体日期，用户不用算「后天是几号」；无日期列头走字典
-        const title = t.planned_date
-          ? (t.planned_date === today ? tr('todoboards.kanban.todayCol', { date: t.planned_date.slice(5) }) : t.planned_date)
-          : tr('todoboards.kanban.unplanned')
-        const { tone, headCls } = plannedTone(key, today)
-        col(key, title, tone, headCls).items.push(t)
-        break
-      }
-      case 'importance':
-        col(t.importance, labelOf(IMPORTANCE_KEYS, t.importance, tr), IMPORTANCE_TONE[t.importance]).items.push(t)
-        break
-      case 'complexity':
-        col(t.complexity, labelOf(COMPLEXITY_KEYS, t.complexity, tr), COMPLEXITY_TONE[t.complexity]).items.push(t)
-        break
-      case 'tag': {
-        const tags = t.tags ?? []
-        if (tags.length === 0) col('__none__', tr('todoboards.kanban.untagged')).items.push(t)
-        else
-          for (const tag of tags) {
-            const p = TAG_PALETTE[tagHash(tag) % TAG_PALETTE.length]
-            col(tag, `#${tag}`, p.bg, p.head).items.push(t)
-          }
-        break
-      }
-    }
-  }
-
-  const cols = Array.from(map.values())
-  if (dim === 'status') {
-    const order = ['notStarted', 'inProgress', 'waitingOnOthers', 'deferred']
-    cols.sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key))
-  } else if (dim === 'planned') {
-    cols.sort((a, b) => {
-      if (a.key === '__none__') return 1
-      if (b.key === '__none__') return -1
-      return a.key.localeCompare(b.key)
-    })
-  } else if (dim === 'importance') {
-    const order = ['high', 'normal', 'low']
-    cols.sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key))
-  } else if (dim === 'complexity') {
-    const order = ['hard', 'medium', 'simple']
-    cols.sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key))
-  }
-  return cols
-}
-
 // 已完成列展开时最多渲染的卡片数：千级完成全渲染会卡顿，这里只出最近 50 条
 const COMPLETED_RENDER_LIMIT = 50
 
+/**
+ * 待办看板 = 固定泳道。
+ *
+ * 旧版只给「有任务的列」建列：状态维度下只剩一个进行中任务时，整块板子就一根
+ * 240px 的列，右边全空，而且没有空列可拖。现在枚举维度永远出全 4/3/3 列，
+ * 空列自带虚线投放区；列宽改 flex-1，四列时自动铺满，标签多了才横向滚动。
+ */
 export function TodoKanbanView({ openTodos, completedTodos, completedCount, lists, selectedTodoId, onSelect, onToggle, onUpdate }: Props) {
   const t = useT()
+  const lang = useLang()
+  const { theme } = useCalendarTheme()
   const [dim, setDim] = useState<Dim>('status')
   const [dragId, setDragId] = useState<string | null>(null)
   const [overCol, setOverCol] = useState<string | null>(null)
@@ -177,10 +76,23 @@ export function TodoKanbanView({ openTodos, completedTodos, completedCount, list
 
   const dropOn = (colKey: string) => {
     if (!droppable || !dragId) return
-    const t = openTodos.find((x) => x.id === dragId)
+    const target = openTodos.find((x) => x.id === dragId)
     setDragId(null)
     setOverCol(null)
-    if (t && t.status !== colKey) onUpdate(dragId, { ...t, id: dragId, status: colKey })
+    if (target && target.status !== colKey) onUpdate(dragId, { ...target, id: dragId, status: colKey })
+  }
+
+  const toneColor = (col: (typeof columns)[number]): string => {
+    const tone = col.tone
+    if (tone.kind === 'semantic') {
+      return tone.tone === 'danger' ? theme.danger
+        : tone.tone === 'info' ? theme.info
+          : tone.tone === 'warning' ? theme.warning
+            : tone.tone === 'success' ? theme.success
+              : theme.muted
+    }
+    if (tone.kind === 'tag') return TAG_COLORS[tone.index % TAG_COLORS.length]!
+    return theme.accent
   }
 
   // 已完成卡片的副标题：完成时间比所属列表更有信息量（列表名仍前置）
@@ -190,137 +102,196 @@ export function TodoKanbanView({ openTodos, completedTodos, completedCount, list
     return [ln, ca].filter(Boolean).join(' · ')
   }
 
+  const hide = HIDE_BY_DIM[dim]
+
   return (
     <div className="h-full flex flex-col min-h-0">
-      <div className="flex items-center gap-2 pb-3 flex-shrink-0">
-        <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-50">
-          {DIMS.map((d) => (
-            <button
-              key={d.key}
-              onClick={() => setDim(d.key)}
-              className={clsx(
-                'px-2.5 py-1 text-xs rounded-md transition cursor-pointer',
-                dim === d.key ? 'bg-white cal-ink shadow-sm font-medium' : 'cal-muted hover:cal-ink',
-              )}
-            >
-              {t(d.labelKey)}
-            </button>
-          ))}
+      <div className="flex items-center gap-3 pb-2.5 flex-shrink-0">
+        <div
+          className="inline-flex rounded-lg p-0.5 flex-shrink-0"
+          style={{ backgroundColor: theme.subtle, border: `1px solid ${theme.border}` }}
+        >
+          {DIMS.map((d) => {
+            const active = dim === d.key
+            return (
+              <button
+                key={d.key}
+                onClick={() => setDim(d.key)}
+                className="px-2.5 py-1 text-[11px] rounded-md transition cursor-pointer"
+                style={{
+                  backgroundColor: active ? 'var(--cal-panel)' : 'transparent',
+                  color: active ? theme.ink : theme.muted,
+                  boxShadow: active ? '0 1px 2px rgba(17,24,39,0.08)' : undefined,
+                  fontWeight: active ? 500 : 400,
+                }}
+              >
+                {t(d.labelKey)}
+              </button>
+            )
+          })}
         </div>
-        {droppable && <span className="text-xs text-gray-400">{t('todoboards.kanban.dragHint')}</span>}
+        {droppable && (
+          <span className="text-[10px] truncate" style={{ color: theme.muted }}>
+            {t('todoboards.kanban.dragHint')}
+          </span>
+        )}
+        <span className="ml-auto text-[11px] tabular-nums flex-shrink-0" style={{ color: theme.muted }}>
+          {fmtNumber(lang, openTodos.length)} {t('todoboards.kanban.openCount')}
+        </span>
       </div>
 
-      <div className="flex-1 overflow-x-auto overflow-y-hidden pb-4">
-        <div className="flex gap-3 h-full min-w-max">
-          {columns.map((c) => (
-            <div
-              key={c.key}
-              onDragOver={(e) => {
-                if (!droppable || !dragId) return
-                e.preventDefault()
-                e.dataTransfer.dropEffect = 'move'
-                setOverCol(c.key)
-              }}
-              onDragLeave={() => overCol === c.key && setOverCol(null)}
-              onDrop={() => dropOn(c.key)}
-              className={clsx(
-                'w-60 flex flex-col rounded-xl border min-h-0 transition',
-                c.tone ?? 'bg-gray-50/60',
-                overCol === c.key ? 'border-blue-400 ring-2 ring-blue-200' : 'border-gray-200',
-              )}
-            >
-              <div className="px-3 py-2 flex items-center justify-between border-b border-black/5 flex-shrink-0">
-                <span className={clsx('text-sm font-medium truncate', c.headCls ?? 'cal-ink')}>{c.title}</span>
-                <span className="text-xs text-gray-400">{c.items.length}</span>
-              </div>
-              <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1.5 min-h-0">
-                {c.items.map((t) => (
-                  <div
-                    key={`${t.id}-${c.key}`}
-                    draggable={droppable}
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData('text/plain', t.id)
-                      e.dataTransfer.effectAllowed = 'move'
-                      setDragId(t.id)
-                    }}
-                    onDragEnd={() => { setDragId(null); setOverCol(null) }}
-                    className={clsx(dragId === t.id && 'opacity-30')}
-                  >
-                    <TodoMiniCard
-                      todo={t}
-                      selected={selectedTodoId === t.id}
-                      sub={listName(t)}
-                      onClick={() => onSelect(t.id)}
-                      onToggle={(done) => onToggle(t, done)}
-                    />
+      <div className="flex-1 overflow-x-auto overflow-y-hidden pb-2 min-h-0">
+        <div className="flex gap-2.5 h-full">
+          {columns.map((c) => {
+            const over = overCol === c.key
+            const tone = toneColor(c)
+            return (
+              <div
+                key={c.key}
+                onDragOver={(e) => {
+                  if (!droppable || !dragId) return
+                  e.preventDefault()
+                  e.dataTransfer.dropEffect = 'move'
+                  setOverCol(c.key)
+                }}
+                onDragLeave={() => overCol === c.key && setOverCol(null)}
+                onDrop={() => dropOn(c.key)}
+                className="flex-1 basis-0 min-w-[124px] flex flex-col rounded-xl border min-h-0 transition-[border-color,box-shadow]"
+                style={{
+                  backgroundColor: 'var(--cal-panel)',
+                  borderColor: over ? theme.accent : theme.border,
+                  boxShadow: over ? `0 0 0 3px ${withAlpha(theme.accent, 0.14)}` : undefined,
+                }}
+              >
+                <div className="h-[3px] rounded-t-xl flex-shrink-0" style={{ backgroundColor: tone, opacity: 0.85 }} />
+                <div
+                  className="px-3 py-2 flex items-center justify-between gap-2 flex-shrink-0"
+                  style={{ borderBottom: `1px solid ${theme.border}` }}
+                >
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="w-[6px] h-[6px] rounded-full flex-shrink-0" style={{ backgroundColor: tone }} />
+                    <span className="text-[12px] font-medium truncate" style={{ color: theme.ink }}>{c.title}</span>
                   </div>
-                ))}
-                {c.items.length === 0 && (
-                  <div className="flex-1 flex items-center justify-center text-xs text-gray-300 py-6">{t('todoboards.kanban.emptyCol')}</div>
-                )}
+                  <span className="text-[11px] tabular-nums flex-shrink-0" style={{ color: theme.muted }}>
+                    {fmtNumber(lang, c.items.length)}
+                  </span>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1.5 min-h-0">
+                  {c.items.map((td) => (
+                    <div
+                      key={`${td.id}-${c.key}`}
+                      draggable={droppable}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', td.id)
+                        e.dataTransfer.effectAllowed = 'move'
+                        setDragId(td.id)
+                      }}
+                      onDragEnd={() => { setDragId(null); setOverCol(null) }}
+                      className={clsx(dragId === td.id && 'opacity-30')}
+                    >
+                      <TodoMiniCard
+                        todo={td}
+                        density="compact"
+                        hide={hide}
+                        selected={selectedTodoId === td.id}
+                        sub={listName(td)}
+                        onClick={() => onSelect(td.id)}
+                        onToggle={(done) => onToggle(td, done)}
+                      />
+                    </div>
+                  ))}
+                  {c.items.length === 0 && (
+                    <div
+                      className="h-[68px] rounded-lg border border-dashed flex items-center justify-center text-[10px]"
+                      style={{
+                        borderColor: over ? withAlpha(theme.accent, 0.55) : theme.border,
+                        color: theme.muted,
+                        backgroundColor: over ? withAlpha(theme.accent, 0.05) : 'transparent',
+                      }}
+                    >
+                      {droppable ? t('todoboards.kanban.dropHere') : t('todoboards.kanban.emptyCol')}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
 
           {dim === 'status' && (
             <div
-              className={clsx(
-                'flex flex-col rounded-xl border border-gray-200 bg-emerald-50/50 min-h-0 overflow-hidden',
-                // 折叠=窄边条、展开=整列，宽度动画让过渡自然而非突兀弹开
-                'transition-all duration-300 ease-in-out',
-                showCompletedCol ? 'w-60' : 'w-11',
-              )}
+              className="flex flex-col rounded-xl border min-h-0 overflow-hidden transition-all duration-300 ease-in-out flex-shrink-0"
+              style={{
+                backgroundColor: 'var(--cal-panel)',
+                borderColor: theme.border,
+                width: showCompletedCol ? 300 : 44,
+              }}
             >
               {showCompletedCol ? (
                 <>
+                  <div className="h-[3px] flex-shrink-0" style={{ backgroundColor: theme.success, opacity: 0.85 }} />
                   <button
                     onClick={() => setShowCompletedCol(false)}
-                    className="px-3 py-2 flex items-center justify-between border-b border-black/5 flex-shrink-0 cursor-pointer hover:bg-emerald-100/60 rounded-t-xl transition-colors"
+                    className="px-3 py-2 flex items-center justify-between gap-2 flex-shrink-0 cursor-pointer"
+                    style={{ borderBottom: `1px solid ${theme.border}` }}
                   >
-                    <span className="text-sm font-medium cal-muted truncate">
-                      {t('todoboards.kanban.completed')} <span className="text-emerald-600 font-semibold">{completedCount}</span>
-                    </span>
-                    <ChevronRight size={14} className="text-gray-400" />
+                    <div className="flex flex-col items-start min-w-0">
+                      <span className="text-[12px] font-medium truncate" style={{ color: theme.ink }}>
+                        {t('todoboards.kanban.completed')}
+                        <span className="ml-1.5 tabular-nums font-semibold" style={{ color: theme.success }}>
+                          {fmtNumber(lang, completedCount)}
+                        </span>
+                      </span>
+                      <span className="text-[10px]" style={{ color: theme.muted }}>
+                        {t('todoboards.kanban.shownOf', { shown: Math.min(completedTodos.length, COMPLETED_RENDER_LIMIT), total: completedCount })}
+                      </span>
+                    </div>
+                    <ChevronRight size={14} style={{ color: theme.muted }} className="flex-shrink-0" />
                   </button>
                   <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1.5 min-h-0">
                     {completedTodos.length === 0 && (
-                      <div className="flex-1 flex items-center justify-center text-xs text-gray-300 py-6">{t('common.loading')}</div>
-                    )}
-                    {completedTodos.slice(0, COMPLETED_RENDER_LIMIT).map((t) => (
-                      <TodoMiniCard
-                        key={t.id}
-                        todo={t}
-                        selected={selectedTodoId === t.id}
-                        sub={doneSub(t)}
-                        onClick={() => onSelect(t.id)}
-                        onToggle={(done) => onToggle(t, done)}
-                      />
-                    ))}
-                    {completedTodos.length > COMPLETED_RENDER_LIMIT && (
-                      <div className="text-[10px] text-gray-400 text-center py-2 border-t border-black/5">
-                        {t('todoboards.kanban.shownOf', { shown: COMPLETED_RENDER_LIMIT, total: completedCount })}
+                      <div className="h-[68px] flex items-center justify-center text-[10px]" style={{ color: theme.muted }}>
+                        {t('common.loading')}
                       </div>
                     )}
+                    {completedTodos.slice(0, COMPLETED_RENDER_LIMIT).map((td) => (
+                      <TodoMiniCard
+                        key={td.id}
+                        todo={td}
+                        density="compact"
+                        hide={{ body: true, tags: true }}
+                        selected={selectedTodoId === td.id}
+                        sub={doneSub(td)}
+                        onClick={() => onSelect(td.id)}
+                        onToggle={(done) => onToggle(td, done)}
+                      />
+                    ))}
                   </div>
                 </>
               ) : (
-                // 折叠边条：竖排「已完成」+ 计数，占位极小，点一下平滑展开
                 <button
                   onClick={() => setShowCompletedCol(true)}
-                  className="flex-1 flex flex-col items-center gap-1.5 py-3 cursor-pointer hover:bg-emerald-100/50 transition-colors"
+                  className="flex-1 flex flex-col items-center gap-1.5 py-3 cursor-pointer transition-colors"
+                  style={{ color: theme.muted }}
                   aria-label={t('todoboards.kanban.expandCompleted', { n: completedCount })}
                 >
-                  <CheckCircle2 size={15} className="text-emerald-500" />
-                  <span className="text-xs font-semibold text-emerald-700">{completedCount}</span>
-                  <span className="text-[10px] cal-muted [writing-mode:vertical-rl] tracking-widest">{t('todoboards.kanban.completed')}</span>
-                  <ChevronLeft size={12} className="text-gray-400 mt-auto" />
+                  <CheckCircle2 size={15} style={{ color: theme.success }} />
+                  <span className="text-[11px] font-semibold tabular-nums" style={{ color: theme.success }}>
+                    {fmtNumber(lang, completedCount)}
+                  </span>
+                  <span className="text-[10px] [writing-mode:vertical-rl] tracking-widest">
+                    {t('todoboards.kanban.completed')}
+                  </span>
+                  <ChevronLeft size={12} className="mt-auto" style={{ color: theme.muted }} />
                 </button>
               )}
             </div>
           )}
 
           {columns.length === 0 && (
-            <div className="text-sm text-gray-300 flex items-center px-8">{t('todoboards.empty.none')}</div>
+            <div className="text-[13px] flex items-center px-8" style={{ color: theme.muted }}>
+              {t('todoboards.empty.none')}
+            </div>
           )}
         </div>
       </div>
