@@ -546,6 +546,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
               selectedTodoId={selectedTodoId}
               onSelect={setSelectedTodoId}
               onOpenNotes={(id) => { setSelectedTodoId(id); detailRef.current?.openNotes() }}
+              onToggle={handleToggle}
             />
           ) : filteredIncomplete.length === 0 && completedCount === undefined ? (
             <div className="h-full flex items-center justify-center text-gray-300 text-sm">

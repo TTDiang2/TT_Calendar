@@ -1,295 +1,307 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import clsx from 'clsx'
+import { CheckCircle2, ChevronDown, ChevronRight } from 'lucide-react'
 import type { Todo } from '../../types'
 import { todayStr } from '../../utils/todoLogic'
-import { fmtDate, fmtWeekday, useLang, useT, useTPlural } from '../../i18n'
+import { fmtDate, fmtWeekday, useLang, useT } from '../../i18n'
+import { useCalendarTheme, withAlpha } from '../../lib/calendar-theme'
+import { AnimatedCheck } from '../ui/AnimatedCheck'
 
 interface Props {
   todos: Todo[]
   selectedTodoId: string | null
   onSelect: (id: string) => void
   onOpenNotes?: (id: string) => void
+  onToggle?: (todo: Todo, done: boolean) => void
 }
 
-const BODY_W = 380
-const BODY_H = 440
-const INNER_W = 340
-const AVAIL = BODY_H - 26
+/** 一天的容量按「格」算：困难 3 格、中等 2 格、简单 1 格，默认 12 格 */
+const CAPACITY = 12
+const WEIGHT = { hard: 3, medium: 2, simple: 1 } as const
+type Cx = keyof typeof WEIGHT
 
-const HARD_ROW = 2
-const MED_ROW = 3
-const SIMPLE_ROW = 3
-
-const BLOBS = [
-  '58% 42% 55% 45% / 52% 60% 40% 48%',
-  '46% 54% 48% 52% / 58% 44% 56% 42%',
-  '52% 48% 60% 40% / 46% 54% 46% 54%',
-]
-
-// 三档明度 [亮面, 基色, 暗面]，左上光源；硬层深色配奶白字（对比 ≥5:1），中/浅层配深咖字
-const TONES = {
-  hard: [
-    ['#c98a6d', '#9d6045', '#7f4c34'],
-    ['#9db284', '#75905a', '#5c7042'],
-    ['#c98f8f', '#a35f5f', '#7f4a4a'],
-    ['#d1a45e', '#aa7c33', '#87632a'],
-  ],
-  medium: [
-    ['#f0cdb9', '#e0af94', '#c68d70'],
-    ['#dce8c6', '#c8d8ae', '#a9bd8b'],
-    ['#f0caca', '#e2b0b0', '#c68e8e'],
-    ['#f0d9a3', '#e4c483', '#c5a25f'],
-  ],
-  simple: [
-    ['#f6e2d0', '#f0d3b8', '#ddb994'],
-    ['#edf2de', '#e2ebd3', '#c9d7ac'],
-    ['#f4dede', '#eccccc', '#d8a8a8'],
-    ['#f6e9cc', '#f0dfb4', '#dcc388'],
-  ],
+const ORDER: Cx[] = ['hard', 'medium', 'simple']
+const LABEL_KEY = {
+  hard: 'todoboards.jar.legendHard',
+  medium: 'todoboards.jar.legendMedium',
+  simple: 'todoboards.jar.legendSimple',
 } as const
 
-const TEXT_DARK = 'text-[#453122]'
-const TEXT_CREAM = 'text-[#fdf6ea]'
+const METER_H = 268
 
-type Cx = 'hard' | 'medium' | 'simple'
-
-function hashStr(s: string): number {
-  let h = 2166136261
-  for (let i = 0; i < s.length; i += 1) {
-    h ^= s.charCodeAt(i)
-    h = Math.imul(h, 16777619)
-  }
-  return h >>> 0
-}
-
-interface Pebble {
-  todo: Todo
-  cx: Cx
-  x: number
-  bottom: number
-  w: number
-  h: number
-  rot: number
-  bg: string
-  blob: string
-}
-
-function packRow(items: Todo[], cx: Cx, perRow: number, baseH: number, wGap: number, startBottom: number, nestle: number) {
-  const placed: Pebble[] = []
-  let cursor = startBottom
-  let i = 0
-  while (i < items.length) {
-    const row = items.slice(i, i + perRow)
-    i += row.length
-    const hs = row.map((t) => baseH + (hashStr(t.id) % 5) - 2)
-    let rowMax = 0
-    row.forEach((t, j) => {
-      const h = hashStr(t.id)
-      const tone = TONES[cx][h % TONES[cx].length]
-      const slot = INNER_W / perRow
-      const w = slot - wGap
-      const jitterX = ((h >> 5) % 9) - 4
-      const x = slot * j + slot / 2 + jitterX
-      const rot = ((h >> 9) % 11) - 5
-      placed.push({
-        todo: t, cx, x, bottom: cursor + ((h >> 12) % 3), w,
-        h: hs[j], rot,
-        bg: `radial-gradient(120% 120% at 30% 25%, ${tone[0]} 0%, ${tone[1]} 48%, ${tone[2]} 100%)`,
-        blob: BLOBS[h % BLOBS.length],
-      })
-      rowMax = Math.max(rowMax, hs[j])
-    })
-    cursor += rowMax - nestle
-  }
-  return { placed, top: cursor }
-}
-
-export function TodoJarView({ todos, selectedTodoId, onSelect, onOpenNotes }: Props) {
+/**
+ * 量筒 v4 = 今日容量计。
+ *
+ * 前几版的问题不是画得不像罐子，而是把 12px 的任务标题塞进石块里——信息密度和
+ * 可读性都输了。这一版把「可视化」和「清单」拆开：左边一根量筒只回答「今天装了多少」，
+ * 右边是能读全标题、能勾选、能看列表名的正常清单；两者共用同一份分组。
+ * 颜色全部走主题语义 token，罐体玻璃用面板色与描边色生成，不再是一套固定的米色。
+ */
+export function TodoJarView({ todos, selectedTodoId, onSelect, onOpenNotes, onToggle }: Props) {
   const t = useT()
-  const tPlural = useTPlural()
   const lang = useLang()
+  const { theme } = useCalendarTheme()
   const today = todayStr()
+  const [showDone, setShowDone] = useState(false)
 
-  const { todayOpen, todayDone } = useMemo(() => {
-    const open = todos.filter((t) =>
-      t.status !== 'completed' && (t.due_date === today || t.planned_date === today))
-    const done = todos.filter((t) => t.status === 'completed' && (t.completed_at ?? '').slice(0, 10) === today)
-    return { todayOpen: open, todayDone: done }
+  const { groups, todayDone, load, overflowCount } = useMemo(() => {
+    const open = todos.filter((td) => td.status !== 'completed' && (td.due_date === today || td.planned_date === today))
+    const done = todos.filter((td) => td.status === 'completed' && (td.completed_at ?? '').slice(0, 10) === today)
+    const g: Record<Cx, Todo[]> = {
+      hard: open.filter((td) => td.complexity === 'hard'),
+      medium: open.filter((td) => td.complexity === 'medium'),
+      simple: open.filter((td) => td.complexity === 'simple' || !WEIGHT[td.complexity as Cx]),
+    }
+    let used = 0
+    let over = 0
+    for (const cx of ORDER) {
+      for (const _ of g[cx]) {
+        if (used + WEIGHT[cx] > CAPACITY) over += 1
+        used += WEIGHT[cx]
+      }
+    }
+    return {
+      groups: g,
+      todayDone: done,
+      load: used,
+      overflowCount: over,
+    }
   }, [todos, today])
 
-  const rocks = useMemo(() => todayOpen.filter((t) => t.complexity === 'hard'), [todayOpen])
-  const mediums = useMemo(() => todayOpen.filter((t) => t.complexity === 'medium'), [todayOpen])
-  const simples = useMemo(() => todayOpen.filter((t) => t.complexity === 'simple'), [todayOpen])
+  const total = groups.hard.length + groups.medium.length + groups.simple.length
+  const pct = Math.min(load / CAPACITY, 1)
 
-  const sandH = todayDone.length ? Math.min(20 + todayDone.length * 6, 88) : 0
-  const hardPack = useMemo(() => packRow(rocks, 'hard', HARD_ROW, 54, 16, sandH, 7), [rocks, sandH])
-  const medPack = useMemo(() => packRow(mediums, 'medium', MED_ROW, 38, 12, hardPack.top, 6), [mediums, hardPack.top])
-  const simplePack = useMemo(() => packRow(simples, 'simple', SIMPLE_ROW, 27, 12, medPack.top, 5), [simples, medPack.top])
-
-  const all = useMemo(
-    () => [...hardPack.placed, ...medPack.placed, ...simplePack.placed]
-      .filter((p) => p.bottom + p.h <= BODY_H - 10),
-    [hardPack, medPack, simplePack],
-  )
-  const used = simplePack.top
-  const overflowCount = useMemo(() => {
-    const excess = used - AVAIL
-    if (excess <= 0) return 0
-    let acc = 0
-    let n = 0
-    for (const p of [...all].sort((a, b) => b.bottom - a.bottom)) {
-      if (acc > excess) break
-      acc += p.h - 7
-      n += 1
-    }
-    return n
-  }, [used, all])
-
-  // 日期行：Intl 产出（原「M月d日 · 周X」手写格式删除，zh 输出逐字一致，沿 Neo 同款先例）
   const dateStr = useMemo(() => {
     const d = new Date()
     return `${fmtDate(lang, d, { month: 'long', day: 'numeric' })} · ${fmtWeekday(lang, d, 'short')}`
   }, [lang])
 
-  if (todayOpen.length === 0 && todayDone.length === 0) {
+  if (total === 0 && todayDone.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-3 bg-[#faf6ef] text-[#8a7455]">
-        <svg width="64" height="88" viewBox="0 0 72 96" aria-hidden="true">
-          <path d="M22 4 L50 4 L45 16 L45 78 Q45 88 36 88 Q27 88 27 78 L27 16 Z" fill="#f3ead9" stroke="#d5c9b6" strokeWidth="2.5" strokeLinejoin="round" />
-          <path d="M17 13 L55 13 L51 21 L21 21 Z" fill="#f8f1e4" stroke="#d5c9b6" strokeWidth="2.5" strokeLinejoin="round" />
-          <line x1="34" y1="42" x2="34" y2="72" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" opacity="0.8" />
-        </svg>
-        <p className="text-sm text-[#6b5a44]">{t('todoboards.jar.empty')}</p>
-        <p className="text-xs">{t('todoboards.jar.emptyHint')}</p>
+      <div className="h-full flex flex-col items-center justify-center gap-2">
+        <div
+          className="w-14 h-20 rounded-b-2xl rounded-t-lg border-2 border-dashed"
+          style={{ borderColor: withAlpha(theme.muted, 0.35) }}
+        />
+        <p className="text-[13px]" style={{ color: theme.ink }}>{t('todoboards.jar.empty')}</p>
+        <p className="text-[11px]" style={{ color: theme.muted }}>{t('todoboards.jar.emptyHint')}</p>
       </div>
     )
   }
 
-  return (
-    <div className="h-full overflow-auto bg-[#faf6ef]">
-      <div className="min-h-full flex flex-col items-center justify-center gap-4 py-8 px-4"
-        style={{ backgroundImage: 'radial-gradient(600px 420px at 50% 38%, #fdf9f0 0%, #faf6ef 70%)' }}>
+  // 每段的可见高度：按权重占比，从底往上 困难 → 中等 → 简单
+  const segs = ORDER.map((cx) => {
+    const w = groups[cx].length * WEIGHT[cx]
+    return { cx, h: (w / CAPACITY) * METER_H, count: groups[cx].length }
+  })
+  const colorOf = (cx: Cx) => (cx === 'hard' ? theme.danger : cx === 'medium' ? theme.warning : theme.success)
 
-        <div className="flex items-end justify-between" style={{ width: BODY_W }}>
-          <div>
-            <p className="text-[10px] tracking-[0.25em] font-medium text-[#a08a68]">{t('todoboards.jar.title')}</p>
-            <p className="text-[15px] font-semibold text-[#57503f] leading-tight mt-0.5">{dateStr}</p>
-          </div>
-          <p className="text-xs text-[#7a6a55]">
-            {t('todoboards.jar.carried')} <span className="font-semibold text-[#57503f] tabular-nums">{todayOpen.length}</span> {t('todoboards.jar.piece')}
-            <span className="mx-1.5 text-[#c9bda6]">·</span>
-            {t('todoboards.jar.settled')} <span className="font-semibold text-[#57503f] tabular-nums">{todayDone.length}</span> {t('todoboards.jar.piece')}
-          </p>
+  return (
+    <div className="h-full flex gap-4 min-h-0 pb-2">
+      {/* 左：量筒 */}
+      <section
+        className="w-[188px] flex-shrink-0 flex flex-col rounded-xl border p-3 min-h-0"
+        style={{ backgroundColor: 'var(--cal-panel)', borderColor: theme.border }}
+      >
+        <div className="flex items-baseline justify-between">
+          <span className="text-[10px] tracking-[0.14em]" style={{ color: theme.muted }}>
+            {t('todoboards.jar.capacity')}
+          </span>
+          <span className="text-[10px] tabular-nums" style={{ color: theme.muted }}>
+            {Math.round((load / CAPACITY) * 100)}%
+          </span>
         </div>
 
-        <div className="relative">
-          {overflowCount > 0 && (
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap text-[11px] font-medium px-3 py-1 rounded-full bg-[#fbf0da] border border-[#e3cba0] text-[#8a6420] shadow-sm">
-              {tPlural('todoboards.jar.overflow', overflowCount)}
-            </div>
-          )}
-
-          <div className="relative mx-auto" style={{ width: 300 }}>
-            <div className="h-[18px] rounded-[9px] border border-[#b99b6f]/60"
-              style={{ background: 'linear-gradient(180deg, #ddc49e 0%, #c8a87a 100%)' }} />
-            <div className="mx-auto h-[26px] border-x-2 border-t border-[#d5c9b6]"
-              style={{ width: 296, background: 'linear-gradient(180deg, rgba(255,252,246,0.9), rgba(250,244,235,0.8))' }} />
-          </div>
-
-          <div
-            role="img"
-            aria-label={t('todoboards.jar.jarAria')}
-            className="relative mx-auto overflow-hidden border-2 border-[#d5c9b6]"
-            style={{
-              width: BODY_W,
-              height: BODY_H,
-              borderRadius: '44px 44px 70px 70px / 30px 30px 90px 90px',
-              background: 'linear-gradient(175deg, rgba(255,253,248,0.95) 0%, rgba(250,243,232,0.88) 60%, rgba(246,236,220,0.9) 100%)',
-              boxShadow: 'inset 0 -16px 26px -18px rgba(120,90,50,0.4), 0 3px 6px rgba(140,110,70,0.1), 0 22px 44px -16px rgba(140,110,70,0.28)',
-            }}
-          >
-            {all.map((p) => {
-              const sel = selectedTodoId === p.todo.id
-              return (
-                <div
-                  key={p.todo.id}
-                  onClick={() => onSelect(p.todo.id)}
-                  onDoubleClick={onOpenNotes ? () => onOpenNotes(p.todo.id) : undefined}
-                  title={p.todo.title}
-                  style={{
-                    left: p.x - p.w / 2,
-                    bottom: p.bottom,
-                    width: p.w,
-                    height: p.h,
-                    borderRadius: p.blob,
-                    background: p.bg,
-                    transform: `rotate(${p.rot}deg)`,
-                    boxShadow: 'inset 0 -7px 10px -7px rgba(90,60,30,0.4), 0 2px 4px rgba(120,90,50,0.22)',
-                  }}
-                  className={clsx(
-                    'absolute flex items-center justify-center px-2.5 cursor-pointer select-none',
-                    'transition-[filter,transform] duration-200',
-                    'hover:brightness-105 hover:-translate-y-[2px]',
-                    sel && 'ring-2 ring-[#a3763d]/80 z-10 brightness-105',
-                  )}
-                >
-                  {p.todo.importance === 'high' && (
-                    <span className="absolute -top-1 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#c2543d] ring-2 ring-[#fdf8f0]/80" />
-                  )}
-                  <p className={clsx(
-                    'text-[12px] font-medium truncate w-full text-center leading-tight',
-                    p.cx === 'hard' ? TEXT_CREAM : TEXT_DARK,
-                  )} style={p.cx === 'hard' ? { textShadow: '0 1px 1px rgba(60,30,10,0.3)' } : undefined}>
-                    <span className={clsx(p.todo.due_date === today && 'underline decoration-[#c2543d]/60 decoration-wavy decoration-2 underline-offset-[3px]')}>
-                      {p.todo.title}
-                    </span>
-                  </p>
+        <div className="relative mt-2 flex-1 min-h-0 flex items-center justify-center overflow-hidden">
+          {/* 刻度与量筒同高：容器固定 METER_H，刻度和玻璃体才对齐 */}
+          <div className="relative flex items-center" style={{ height: METER_H }}>
+            {/* 刻度：25/50/75/100 四条细线贴在量筒右侧 */}
+            <div className="absolute inset-y-0 -right-9 w-8 flex flex-col justify-between pointer-events-none">
+              {[100, 75, 50, 25].map((n) => (
+                <div key={n} className="flex items-center gap-1">
+                  <span className="flex-1 h-px" style={{ backgroundColor: theme.border }} />
+                  <span className="text-[8px] tabular-nums" style={{ color: theme.muted }}>{n}</span>
                 </div>
-              )
-            })}
+              ))}
+            </div>
 
-            {sandH > 0 && (
+            <div
+              className="relative w-[86px] rounded-t-md rounded-b-[16px] overflow-hidden"
+              style={{
+                height: METER_H,
+                border: `1.5px solid ${withAlpha(theme.muted, 0.45)}`,
+                background: `linear-gradient(180deg, ${withAlpha(theme.surface, 0.9)}, ${withAlpha(theme.subtle, 0.85)})`,
+              }}
+              role="img"
+              aria-label={t('todoboards.jar.jarAria')}
+            >
+            {/* 装填：从底部堆叠三段，段高按权重 */}
+            <div className="absolute inset-x-0 bottom-0 flex flex-col-reverse">
+              {segs.map((s) =>
+                s.h <= 0 ? null : (
+                  <div
+                    key={s.cx}
+                    className="w-full relative transition-[height] duration-300"
+                    style={{
+                      height: s.h,
+                      backgroundColor: withAlpha(colorOf(s.cx), 0.55),
+                      borderTop: s.cx === 'simple' ? 'none' : `1px solid ${withAlpha(colorOf(s.cx), 0.75)}`,
+                    }}
+                  >
+                    <span className="absolute left-1.5 top-1 text-[9px] tabular-nums" style={{ color: withAlpha(theme.ink, 0.75) }}>
+                      {s.count}
+                    </span>
+                  </div>
+                ),
+              )}
+            </div>
+
+            {/* 液面高光 + 玻璃反光 */}
+            <span
+              className="absolute left-0 right-0 h-[2px] pointer-events-none"
+              style={{ bottom: `${pct * 100}%`, backgroundColor: withAlpha(theme.ink, 0.18) }}
+            />
+            <span
+              className="absolute left-2 top-3 bottom-6 w-[6px] rounded-full pointer-events-none"
+              style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.75), rgba(255,255,255,0.12))' }}
+            />
+
+            {/* 今日完成 = 底部沉降层，不占装载量 */}
+            {todayDone.length > 0 && (
               <div
-                className="absolute left-3 right-3 bottom-2 rounded-[10px] flex items-center justify-center"
+                className="absolute inset-x-0 bottom-0 flex items-end justify-center pb-0.5 pointer-events-none"
                 style={{
-                  height: sandH,
-                  background: 'radial-gradient(rgba(160,125,60,0.25) 1px, transparent 1.3px), linear-gradient(180deg, #f2e5c8 0%, #e9d7ae 100%)',
-                  backgroundSize: '8px 7px, auto',
+                  height: Math.min(16 + todayDone.length * 4, 34),
+                  background: `linear-gradient(180deg, ${withAlpha(theme.muted, 0.08)}, ${withAlpha(theme.muted, 0.2)})`,
                 }}
               >
-                <span className="text-[11px] font-medium text-[#8a6d3b]">{t('todoboards.jar.settledToday', { n: todayDone.length })}</span>
+                <span className="text-[8px] tabular-nums" style={{ color: withAlpha(theme.ink, 0.6) }}>
+                  {todayDone.length}
+                </span>
               </div>
             )}
-
-            <span className="absolute left-7 top-8 bottom-12 w-[9px] rounded-full pointer-events-none"
-              style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.25) 70%, rgba(255,255,255,0.05))', transform: 'rotate(3deg)' }} />
-            <span className="absolute right-8 top-10 bottom-16 w-[4px] rounded-full bg-white/40 pointer-events-none"
-              style={{ transform: 'rotate(-3deg)' }} />
-            <span className="absolute inset-y-0 right-0 w-10 pointer-events-none"
-              style={{ background: 'linear-gradient(270deg, rgba(190,160,115,0.14), transparent)' }} />
-            <span className="absolute -top-[11px] left-1/2 -translate-x-1/2 w-[302px] h-[22px] rounded-[50%] border-2 border-[#d5c9b6] pointer-events-none"
-              style={{ background: 'linear-gradient(180deg, rgba(255,252,246,0.95), rgba(240,230,214,0.5))' }} />
           </div>
-
-          <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[64%] h-5 bg-[#b09877]/25 blur-md rounded-[50%]" />
+          </div>
         </div>
 
-        <div className="flex items-center gap-3.5 flex-wrap text-[11px] text-[#7a6a55]" style={{ width: BODY_W }}>
-          {([['hard', 'todoboards.jar.legendHard', TONES.hard[0], rocks.length], ['medium', 'todoboards.jar.legendMedium', TONES.medium[0], mediums.length], ['simple', 'todoboards.jar.legendSimple', TONES.simple[0], simples.length]] as const).map(([cx, labelKey, tone, n]) => (
-            <span key={cx} className="flex items-center gap-1.5">
-              <i className="w-4 h-3 rounded-[40%_60%_55%_45%/55%_45%_60%_40%]"
-                style={{ background: `radial-gradient(120% 120% at 30% 25%, ${tone[0]}, ${tone[1]} 55%, ${tone[2]})`, boxShadow: 'inset 0 -2px 3px -2px rgba(90,60,30,0.4)' }} />
-              {t(labelKey)} {n}
-            </span>
-          ))}
-          <span className="flex items-center gap-1.5 text-[#8a6d3b]">
-            <i className="w-4 h-3 rounded-[4px]"
-              style={{ background: 'radial-gradient(rgba(160,125,60,0.25) 1px, transparent 1.3px), linear-gradient(180deg,#f2e5c8,#e9d7ae)', backgroundSize: '6px 5px, auto' }} />
-            {t('todoboards.jar.settled')} {todayDone.length}
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-[10px]" style={{ color: theme.muted }}>{t('todoboards.jar.loadLabel')}</span>
+          <span className="text-[11px] tabular-nums font-medium" style={{ color: theme.ink }}>
+            {load}/{CAPACITY} <span className="font-normal" style={{ color: theme.muted }}>{t('todoboards.jar.cellUnit')}</span>
           </span>
-          <span className="ml-auto text-[#a08a68]">{t('todoboards.jar.tagline')}</span>
         </div>
-      </div>
+
+        {overflowCount > 0 && (
+          <div
+            className="mt-1.5 text-[10px] px-2 py-1 rounded-md text-center tabular-nums"
+            style={{ backgroundColor: withAlpha(theme.danger, 0.1), color: theme.danger }}
+          >
+            {t('todoboards.jar.overCapacity', { n: overflowCount })}
+          </div>
+        )}
+      </section>
+
+      {/* 右：今日清单 */}
+      <section
+        className="flex-1 min-w-0 flex flex-col rounded-xl border overflow-hidden"
+        style={{ backgroundColor: 'var(--cal-panel)', borderColor: theme.border }}
+      >
+        <header className="px-3.5 py-2.5 flex items-center justify-between gap-2 flex-shrink-0" style={{ borderBottom: `1px solid ${theme.border}` }}>
+          <div className="min-w-0">
+            <p className="text-[10px] tracking-[0.14em]" style={{ color: theme.muted }}>{t('todoboards.jar.title')}</p>
+            <p className="text-[13px] font-medium truncate" style={{ color: theme.ink }}>{dateStr}</p>
+          </div>
+          <p className="text-[11px] tabular-nums flex-shrink-0" style={{ color: theme.muted }}>
+            {total} {t('todoboards.jar.piece')}
+            <span className="mx-1.5">·</span>
+            <span style={{ color: theme.success }}>{todayDone.length}</span> {t('todoboards.jar.settled')}
+          </p>
+        </header>
+
+        <div className="flex-1 overflow-y-auto px-2.5 py-2 min-h-0">
+          {ORDER.map((cx) => {
+            const items = groups[cx]
+            if (items.length === 0) return null
+            return (
+              <div key={cx} className="mb-2.5 last:mb-0">
+                <div className="flex items-center gap-1.5 px-1 mb-1">
+                  <span className="w-[6px] h-[6px] rounded-full" style={{ backgroundColor: colorOf(cx) }} />
+                  <span className="text-[11px] font-medium" style={{ color: theme.ink }}>{t(LABEL_KEY[cx])}</span>
+                  <span className="text-[10px] tabular-nums" style={{ color: theme.muted }}>{items.length}</span>
+                  <span className="flex-1 h-px" style={{ backgroundColor: theme.border }} />
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  {items.map((td) => {
+                    const sel = selectedTodoId === td.id
+                    return (
+                      <div
+                        key={td.id}
+                        onClick={() => onSelect(td.id)}
+                        onDoubleClick={() => onOpenNotes?.(td.id)}
+                        className={clsx('group flex items-start gap-2 px-1.5 py-1 rounded-lg cursor-pointer transition-colors cal-hover-bg')}
+                        style={sel ? { backgroundColor: withAlpha(theme.accent, 0.08) } : undefined}
+                      >
+                        <AnimatedCheck
+                          checked={false}
+                          onClick={(e) => { e.stopPropagation(); onToggle?.(td, true) }}
+                          ariaLabel={t('todoboards.aria.markDone')}
+                          shape="circle"
+                          checkSize={9}
+                          className="mt-0.5 border border-[color:var(--cal-border)] hover:border-[color:var(--cal-success)]"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[12.5px] leading-snug break-words" style={{ color: theme.ink }}>{td.title}</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            {td.due_date === today && (
+                              <span
+                                className="text-[9.5px] px-1 py-[1px] rounded"
+                                style={{ backgroundColor: withAlpha(theme.warning, 0.12), color: theme.warning }}
+                              >
+                                {t('todoboards.card.today')}
+                              </span>
+                            )}
+                            {(td.tags ?? []).slice(0, 2).map((tag) => (
+                              <span key={tag} className="text-[9.5px]" style={{ color: theme.muted }}>#{tag}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
+
+          {total === 0 && (
+            <p className="text-[12px] py-6 text-center" style={{ color: theme.muted }}>{t('todoboards.jar.empty')}</p>
+          )}
+        </div>
+
+        {todayDone.length > 0 && (
+          <div className="flex-shrink-0" style={{ borderTop: `1px solid ${theme.border}` }}>
+            <button
+              onClick={() => setShowDone((v) => !v)}
+              className="w-full px-3.5 py-2 flex items-center gap-1.5 text-[11px] cursor-pointer cal-hover-bg"
+              style={{ color: theme.muted }}
+            >
+              {showDone ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+              <CheckCircle2 size={12} style={{ color: theme.success }} />
+              {t('todoboards.jar.settledToday', { n: todayDone.length })}
+            </button>
+            {showDone && (
+              <div className="px-3 pb-2 flex flex-col gap-0.5 max-h-[140px] overflow-y-auto">
+                {todayDone.slice(0, 20).map((td) => (
+                  <div key={td.id} className="flex items-center gap-1.5 px-1.5 py-1 rounded">
+                    <CheckCircle2 size={11} style={{ color: theme.success }} className="flex-shrink-0" />
+                    <span className="text-[11.5px] line-through truncate" style={{ color: theme.muted }}>{td.title}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </section>
     </div>
   )
 }

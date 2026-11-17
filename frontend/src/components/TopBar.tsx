@@ -37,6 +37,9 @@ const TODO_MODES: { key: TodoViewMode; labelKey: TxKey }[] = [
   { key: 'matrix', labelKey: 'topbar.todoMode.matrix' },
   { key: 'kanban', labelKey: 'topbar.todoMode.kanban' },
   { key: 'gantt', labelKey: 'topbar.todoMode.gantt' },
+  // 量筒 v4 重做后放回入口：标签直接用视图名（todoboards.jar.title），
+  // 免得再为「今日拾贝」这一个词条新增一条 topbar 文案
+  { key: 'jar', labelKey: 'todoboards.jar.title' },
   { key: 'stickies', labelKey: 'topbar.todoMode.stickies' },
 ]
 
