@@ -17,9 +17,14 @@ interface Props {
   onEditSchedule: (date: string) => void
   onSetColoring: (date: string) => void
   onAddEntry: (date: string, kind: 'dot' | 'color') => void
+  /**
+   * day：日视图专用。日视图本身已经是完整议程，右栏不再重复日期头/日程清单/事件清单，
+   * 只保留新建入口与标记、涂色、待办这些「编辑」用途。
+   */
+  variant?: 'default' | 'day'
 }
 
-export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetColoring, onAddEntry }: Props) {
+export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetColoring, onAddEntry, variant = 'default' }: Props) {
   const t = useT()
   const lang = useLang()
   const qc = useQueryClient()
@@ -87,6 +92,7 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
 
   return (
     <aside className="w-72 cal-panel-bg border-l cal-line-l p-4 overflow-y-auto">
+      {variant === 'default' && (
       <div className="flex items-center justify-between mb-3">
         <div>
           <p className="text-[11px] cal-muted">{t('detail.selectedDate')}</p>
@@ -100,6 +106,7 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
           </p>
         </div>
       </div>
+      )}
 
       <div className="flex gap-1 mb-4">
         <button
@@ -218,7 +225,7 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
         </div>
       )}
 
-      {(day.schedule_items?.length ?? 0) > 0 && (
+      {variant === 'default' && (day.schedule_items?.length ?? 0) > 0 && (
         <div className="mb-4">
           <div className="flex items-center justify-between mb-1.5">
             <div className="flex items-center gap-1 text-xs cal-muted">
@@ -275,6 +282,7 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
         </div>
       )}
 
+      {variant === 'default' && (
       <div>
         <div className="flex items-center gap-1 mb-1.5 text-xs cal-muted">
           <CalendarDays size={12} /> {t('detail.eventsCount', { n: events.length })}
@@ -324,6 +332,7 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
           </div>
         )}
       </div>
+      )}
 
       {day.todos && day.todos.length > 0 && (
         <div className="mt-4">

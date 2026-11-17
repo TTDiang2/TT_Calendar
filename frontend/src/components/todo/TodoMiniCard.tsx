@@ -120,17 +120,21 @@ export function TodoMiniCard({ todo, selected, sub, onClick, onToggle, density =
           </span>
         </div>
 
-        {/* 元信息行：状态/重要性/复杂度/三类日期，条件渲染避免空分隔符堆积 */}
+        {/* 元信息行：状态/重要性/复杂度/三类日期，条件渲染避免空分隔符堆积。
+            紧凑模式压成一行不换行——板上一列放得下的卡片越多，越接近「一眼看板」。 */}
         {!done && (
           <div
             className={clsx(
-              'mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 leading-none',
-              compact ? 'text-[10px]' : 'text-[10px]',
+              'mt-1 flex items-center gap-1.5 text-[10px] leading-none',
+              compact ? 'overflow-hidden whitespace-nowrap' : 'flex-wrap',
             )}
             style={{ color: theme.muted }}
           >
+            {compact && sub && (
+              <span className="truncate flex-shrink-0 max-w-[52%]">{sub}</span>
+            )}
             {!hide?.status && (
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 flex-shrink-0">
                 <span
                   className="w-1.5 h-1.5 rounded-full"
                   style={{ backgroundColor: STATUS_DOT[todo.status] ?? theme.muted }}
@@ -140,7 +144,7 @@ export function TodoMiniCard({ todo, selected, sub, onClick, onToggle, density =
             )}
             {!hide?.importance && (
               <span
-                className="font-medium"
+                className="font-medium flex-shrink-0"
                 style={{ color: todo.importance === 'high' ? theme.danger : theme.muted }}
               >
                 {labelOf(IMPORTANCE_KEYS, todo.importance, t)}
@@ -148,6 +152,7 @@ export function TodoMiniCard({ todo, selected, sub, onClick, onToggle, density =
             )}
             {!hide?.complexity && (
               <span
+                className="flex-shrink-0"
                 style={{
                   color:
                     todo.complexity === 'hard' ? theme.danger
@@ -160,23 +165,23 @@ export function TodoMiniCard({ todo, selected, sub, onClick, onToggle, density =
             )}
             {!hide?.due && todo.due_date && (
               <span
-                className={clsx('tabular-nums', overdue && 'font-medium')}
+                className={clsx('tabular-nums flex-shrink-0', overdue && 'font-medium')}
                 style={overdue ? { color: theme.danger } : undefined}
               >
                 {t('todoboards.card.due', { date: shortDate(todo.due_date) })}
               </span>
             )}
             {!hide?.planned && todo.planned_date && (
-              <span className="tabular-nums">{t('todoboards.card.planned', { date: shortDate(todo.planned_date) })}</span>
+              <span className="tabular-nums flex-shrink-0">{t('todoboards.card.planned', { date: shortDate(todo.planned_date) })}</span>
             )}
-            {!hide?.start && todo.start_date && (
+            {!compact && !hide?.start && todo.start_date && (
               <span className="tabular-nums">{t('todoboards.card.start', { date: shortDate(todo.start_date) })}</span>
             )}
           </div>
         )}
 
         {!hide?.tags && shownTags.length > 0 && (
-          <div className="mt-1 flex flex-wrap items-center gap-1">
+          <div className={clsx('flex flex-wrap items-center gap-1', compact ? 'mt-0.5' : 'mt-1')}>
             {shownTags.map((tag) => (
               <span
                 key={tag}
@@ -201,8 +206,8 @@ export function TodoMiniCard({ todo, selected, sub, onClick, onToggle, density =
           </div>
         )}
 
-        {sub && (
-          <div className={clsx('mt-1 truncate', compact ? 'text-[10px]' : 'text-[11px]')} style={{ color: theme.muted }}>
+        {!compact && sub && (
+          <div className="mt-1 text-[11px] truncate" style={{ color: theme.muted }}>
             {sub}
           </div>
         )}

@@ -3,11 +3,12 @@ import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import clsx from 'clsx'
 import type { Day, Layer } from '../types'
-import { getBusyColors, parseDate, pickContrastColor, softTextColor, softTint, todayStr } from '../data'
+import { parseDate, pickContrastColor, softTextColor, softTint } from '../data'
 import { getTodoBusyConfig } from '../api/client'
 import { useT, useTPlural } from '../i18n'
 import type { CalendarColorStyle } from '../lib/calendar-style'
-import { resolveBusyRamps, useCalendarTheme, withAlpha } from '../lib/calendar-theme'
+import { useCalendarTheme, withAlpha } from '../lib/calendar-theme'
+import { colorLayersOf, dotsOf, visibleEventsOf } from '../lib/day-presentation'
 
 interface Props {
   day: Day
@@ -32,62 +33,15 @@ export const DayCell = memo(function DayCell({ day, layers, selected, dragOver, 
   const isSoft = colorStyle === 'soft'
   const isWeekend = [0, 6].includes(new Date(y, m - 1, d).getDay())
   const { data: busyConfig } = useQuery({ queryKey: ['todoBusyConfig'], queryFn: getTodoBusyConfig, staleTime: 60_000 })
-  const busyRamps = resolveBusyRamps(theme, busyConfig)
 
-  const visibleEvents = useMemo(() => {
-    // important/schedule 图层的事件始终显示（开关只控染色）；其他图层按开关过滤
-    const enabledSet = new Set(layers.filter((l) => l.enabled).map((l) => l.layer_id))
-    return Object.entries(day.events_by_layer)
-      .filter(([lid]) => lid === 'important' || lid === 'schedule' || enabledSet.has(lid))
-      .flatMap(([, evs]) => evs)
-      .sort((a, b) => a.sort_key - b.sort_key)
-  }, [day, layers])
-
-  const dots = useMemo(() => {
-    const seen = new Set<string>()
-    const out: string[] = []
-    for (const lid of Object.keys(day.events_by_layer)) {
-      const layer = layers.find((l) => l.layer_id === lid)
-      if (!layer?.enabled && lid !== 'important') continue
-      const c = layer?.color ?? '#9ca3af'
-      if (!seen.has(c) && visibleEvents.some((e) => e.layer_id === lid)) {
-        seen.add(c)
-        out.push(c)
-      }
-    }
-    // 日程类型点点图层：按图层 config.category 匹配当日 schedule_items 的 category
-    const items = day.schedule_items ?? []
-    if (items.length > 0) {
-      const catSet = new Set(items.map((i) => i.category ?? 'work'))
-      for (const layer of layers) {
-        if (layer.kind !== 'dot' || !layer.enabled) continue
-        const cat = (layer.config as Record<string, unknown>)?.category as string | undefined
-        if (cat && catSet.has(cat) && layer.color && !seen.has(layer.color)) {
-          seen.add(layer.color)
-          out.push(layer.color)
-        }
-      }
-    }
-    return out.slice(0, 5)
-  }, [day, layers, visibleEvents])
-
-  const layerById = new Map(layers.map((l) => [l.layer_id, l]))
-  const colorLayers: { id: string; color: string }[] = []
-  if (layerById.get('important')?.enabled && day.gradient_bg && day.gradient_bg.toLowerCase() !== '#ffffff') {
-    colorLayers.push({ id: 'important', color: day.gradient_bg })
-  }
-  if (layerById.get('coloring')?.enabled && day.coloring_level != null) {
-    colorLayers.push({ id: 'coloring', color: theme.coloring[day.coloring_level] })
-  }
-  if (layerById.get('holiday')?.enabled && day.holiday?.name) {
-    colorLayers.push({ id: 'holiday', color: layerById.get('holiday')!.color ?? '#8E24AA' })
-  }
-  for (const b of getBusyColors(day, todayStr(), busyConfig, busyRamps)) {
-    if (layerById.get(b.id)?.enabled) colorLayers.push(b)
-  }
-  if (day.custom_bg && day.custom_bg.color) {
-    colorLayers.push({ id: 'custom', color: day.custom_bg.color })
-  }
+  // 可见事件、色点、底色三组规则与周列共用一份（lib/day-presentation），
+  // 月格只管版式，避免两个视图各写一套后慢慢走偏。
+  const visibleEvents = useMemo(() => visibleEventsOf(day, layers), [day, layers])
+  const dots = useMemo(() => dotsOf(day, layers, visibleEvents), [day, layers, visibleEvents])
+  const colorLayers = useMemo(
+    () => colorLayersOf(day, layers, theme, busyConfig),
+    [day, layers, theme, busyConfig],
+  )
 
   const scheduleItems = day.schedule_items ?? []
   const primaryColor = colorLayers[colorLayers.length - 1]?.color

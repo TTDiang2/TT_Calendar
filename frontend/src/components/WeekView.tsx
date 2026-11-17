@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import type { Day, Layer, MonthData } from '../types'
-import { useLang, fmtWeekday } from '../i18n'
-import { DayCell } from './DayCell'
+import { fmtWeekday, useLang } from '../i18n'
 import type { CalendarColorStyle } from '../lib/calendar-style'
-import { useCalendarTheme } from '../lib/calendar-theme'
+import { WeekDayColumn } from './WeekDayColumn'
 
 interface Props {
   monthData: MonthData
@@ -17,29 +16,36 @@ interface Props {
   onDrop: (date: string) => void
 }
 
+/**
+ * 周视图 = 7 张计划卡。
+ *
+ * 旧版直接复用月格的 DayCell，整格铺忙度色，7 天变成 7 根超长色柱，
+ * 事件挤在顶部 10px 小字里。改成独立列以后：
+ *  - 底色只留顶部 3px 色条（强度仍可一眼扫过）
+ *  - 列头是日期本身，正文让给「几点、什么事」
+ *  - 窄窗口横向滚动，而不是把 7 列压成 60px
+ */
 export function WeekView({ monthData, layers, selectedDate, colorStyle, onSelect, onDoubleClick, onContextMenu, onDragStart, onDrop }: Props) {
   const [dragOver, setDragOver] = useState<string | null>(null)
   const lang = useLang()
-  const { theme } = useCalendarTheme()
+
+  const days = monthData.days.slice(0, 7)
+  // 跨月周：只要这一天不是「本周多数月份」，就在列头补一个小月份标签
+  const weekMonth = days[0] ? Number(days[0].date.slice(5, 7)) : 0
+
   return (
-    <div className="flex-1 flex flex-col min-h-0">
-      <div className="grid grid-cols-7 gap-1 mb-1">
-        {/* 周表头：以 2023-01-02（周一）为锚点走 Intl，zh「周一…周日」与旧手写数组逐字一致 */}
-        {Array.from({ length: 7 }, (_, i) => fmtWeekday(lang, new Date(2023, 0, 2 + i), 'short')).map((w, i) => (
-          <div
-            key={w}
-            className={`text-center text-xs font-medium py-1 ${i >= 5 && colorStyle === 'vivid' ? '' : 'text-gray-400'}`}
-            style={i >= 5 && colorStyle === 'vivid' ? { color: theme.weekend } : undefined}
-          >
-            {w}
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 gap-1 flex-1" onDragEnd={() => setDragOver(null)}>
-        {monthData.days.map((day: Day) => (
-          <DayCell
+    <div
+      className="flex-1 flex gap-2 min-h-0 overflow-x-auto pb-1"
+      onDragEnd={() => setDragOver(null)}
+    >
+      {days.map((day: Day) => {
+        const [y, m, d] = day.date.split('-').map(Number)
+        return (
+          <WeekDayColumn
             key={day.date}
             day={day}
+            weekday={fmtWeekday(lang, new Date(y, m - 1, d), 'short')}
+            showMonth={m !== weekMonth}
             layers={layers}
             selected={selectedDate === day.date}
             dragOver={dragOver === day.date}
@@ -47,19 +53,12 @@ export function WeekView({ monthData, layers, selectedDate, colorStyle, onSelect
             onClick={onSelect}
             onDoubleClick={onDoubleClick}
             onContextMenu={onContextMenu}
-            onDragStart={(d) => {
-              onDragStart(d)
-              setDragOver(d)
-            }}
-            onDragEnter={(d) => setDragOver(d)}
-            onDrop={(d) => {
-              setDragOver(null)
-              onDrop(d)
-            }}
-            maxLabels={6}
+            onDragStart={(dt) => { onDragStart(dt); setDragOver(dt) }}
+            onDragEnter={(dt) => setDragOver(dt)}
+            onDrop={(dt) => { setDragOver(null); onDrop(dt) }}
           />
-        ))}
-      </div>
+        )
+      })}
     </div>
   )
 }

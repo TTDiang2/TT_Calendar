@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useViewData, useCountdown } from './hooks/useApi'
 import { toggleLayer, moveDay, getTodoStats, getTodos, getSyncStatus, getSyncConfig, syncNow, refreshDueSubscriptions } from './api/client'
-import { shiftMonthKey, shiftYearKey } from './data'
+import { shiftMonthKey, shiftYearKey, parseDateStr } from './data'
 import type { CalEvent, MonthData, TopTab, TodoViewMode, ViewMode, YearData } from './types'
 import { TopBar } from './components/TopBar'
 import { Sidebar } from './components/Sidebar'
@@ -25,6 +25,7 @@ import {
 import { SettingsDialog } from './components/SettingsDialog'
 import { ReminderBanner } from './components/ReminderBanner'
 import { useT, useLang, fmtDate } from './i18n'
+import { fmtDateRange } from './i18n/format'
 import { SYNC_IN_PROGRESS_MARK } from './i18n/dict/fragments/app'
 import { readCalendarColorStyle, writeCalendarColorStyle, type CalendarColorStyle } from './lib/calendar-style'
 
@@ -57,7 +58,7 @@ export default function App() {
   const [topTab, setTopTab] = useState<TopTab>('calendar')
   const [todoView, setTodoViewState] = useState<TodoViewMode>(() => {
     const v = localStorage.getItem('todo-view')
-    return v === 'matrix' || v === 'kanban' || v === 'gantt' || v === 'stickies' ? v : 'list'
+    return v === 'matrix' || v === 'kanban' || v === 'gantt' || v === 'stickies' || v === 'jar' ? v : 'list'
   })
   const setTodoView = (v: TodoViewMode) => {
     localStorage.setItem('todo-view', v)
@@ -276,6 +277,16 @@ export default function App() {
     if (mode === 'year' && 'year' in monthData && !('days' in monthData)) {
       return fmtDate(lang, new Date(monthData.year, 0, 1), { year: 'numeric' })
     }
+    const days = 'days' in monthData ? monthData.days : []
+    // 周/日视图的标题跟着「看的那一段」走：周给区间，日给当天，月仍是年月
+    if (mode === 'week' && days.length > 0) {
+      const first = days[0]!
+      const last = days[6] ?? days[days.length - 1]!
+      return fmtDateRange(lang, parseDateStr(first.date), parseDateStr(last.date))
+    }
+    if (mode === 'day' && days.length > 0) {
+      return fmtDate(lang, parseDateStr(days[0]!.date), { year: 'numeric', month: 'long', day: 'numeric' })
+    }
     return fmtDate(lang, new Date(monthData.year, ('month' in monthData ? monthData.month : 1) - 1, 1), { year: 'numeric', month: 'long' })
   }, [mode, monthData, lang])
 
@@ -410,9 +421,11 @@ export default function App() {
                 <DayView
                   monthData={monthData2!}
                   layers={layers}
-                  selectedDate={selectedDate}
                   onSelect={setSelectedDate}
                   onDoubleClick={handleDoubleClick}
+                  onEditEvent={openEvent}
+                  onEditSchedule={(d) => setDialog({ kind: 'schedule', date: d })}
+                  onAddEntry={openEntry}
                 />
               ) : (
                 <MonthGrid
@@ -436,6 +449,8 @@ export default function App() {
                 onEditSchedule={(d) => setDialog({ kind: 'schedule', date: d })}
                 onSetColoring={(d) => setDialog({ kind: 'coloring', date: d })}
                 onAddEntry={openEntry}
+                // 日视图自己已经是完整议程，右栏只留编辑入口，不再重复列一遍
+                variant={mode === 'day' ? 'day' : 'default'}
               />
             )}
           </>
