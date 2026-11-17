@@ -525,6 +525,16 @@ todoboards.gantt.month	{n} мес.
 todoboards.gantt.overdueBar	Просрочено
 todoboards.gantt.barTitle	{range}{overdue} · {status}
 todoboards.gantt.overdueSuffix	(просрочено)
+todoboards.gantt.scale2w	2 недели
+todoboards.gantt.scale1m	1 месяц
+todoboards.gantt.scale3m	3 месяца
+todoboards.gantt.today	Сегодня
+todoboards.gantt.todayChip	Сегодня
+todoboards.gantt.unscheduled	Без даты
+todoboards.gantt.unscheduledCount	Без даты · {n}
+todoboards.gantt.unscheduledHint	Задачи без даты плана собраны здесь
+todoboards.gantt.emptyTitle	Пока нет запланированных задач
+todoboards.gantt.emptyHint	Добавьте дату плана или срок в задаче, чтобы увидеть её здесь
 todoboards.jar.title	Сбор дня
 todoboards.jar.carried	сложено
 todoboards.jar.piece	штук

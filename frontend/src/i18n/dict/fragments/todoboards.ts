@@ -73,6 +73,19 @@ export const todoboards = {
       barTitle: '{range}{overdue} · {status}',
       /** barTitle 里逾期时插入的后缀（插在区间与 · 之间，保留原版位置） */
       overdueSuffix: '（已过期）',
+      /** 时间轴缩放档位 */
+      scale2w: '2 周',
+      scale1m: '1 个月',
+      scale3m: '3 个月',
+      /** 回到今天按钮 / 今天刻度气泡 */
+      today: '回到今天',
+      todayChip: '今天',
+      /** 未排期抽屉与空状态 */
+      unscheduled: '未排期',
+      unscheduledCount: '未排期 · {n}',
+      unscheduledHint: '没有计划日期的待办收在这里',
+      emptyTitle: '还没有排期的待办',
+      emptyHint: '在待办详情里补上计划日或截止日，它就会出现在这里',
     },
     /** 量筒视图（今日拾贝） */
     jar: {
@@ -159,6 +172,16 @@ export const todoboards = {
       overdueBar: 'Overdue',
       barTitle: '{range}{overdue} · {status}',
       overdueSuffix: ' (overdue)',
+      scale2w: '2 weeks',
+      scale1m: '1 month',
+      scale3m: '3 months',
+      today: 'Today',
+      todayChip: 'Today',
+      unscheduled: 'Unscheduled',
+      unscheduledCount: 'Unscheduled · {n}',
+      unscheduledHint: 'To-dos without a plan or due date live here',
+      emptyTitle: 'Nothing scheduled yet',
+      emptyHint: 'Add a planned or due date in a to-do to see it here',
     },
     jar: {
       title: 'TODAY\'S PICKS',

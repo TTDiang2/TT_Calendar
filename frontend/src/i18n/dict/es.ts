@@ -1,5 +1,5 @@
 /**
- * es 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 576 条）。
+ * es 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 586 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.es.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -786,6 +786,16 @@ export const es: DeepPartialDict<Dict> = {
       overdueBar: 'Atrasada',
       barTitle: '{range}{overdue} · {status}',
       overdueSuffix: '(vencida)',
+      scale2w: '2 semanas',
+      scale1m: '1 mes',
+      scale3m: '3 meses',
+      today: 'Hoy',
+      todayChip: 'Hoy',
+      unscheduled: 'Sin planificar',
+      unscheduledCount: 'Sin planificar · {n}',
+      unscheduledHint: 'Las tareas sin fecha de planificación están aquí',
+      emptyTitle: 'Aún no hay tareas planificadas',
+      emptyHint: 'Añade una fecha de planificación o vencimiento a una tarea para verla aquí',
     },
     jar: {
       title: 'Recolección del día',

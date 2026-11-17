@@ -1,5 +1,5 @@
 /**
- * zh-Hant 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 576 条）。
+ * zh-Hant 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 586 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.zh-Hant.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -758,6 +758,16 @@ export const zhHant: DeepPartialDict<Dict> = {
       overdueBar: '逾期中',
       barTitle: '{range}{overdue} · {status}',
       overdueSuffix: '（已過期）',
+      scale2w: '2 週',
+      scale1m: '1 個月',
+      scale3m: '3 個月',
+      today: '回到今天',
+      todayChip: '今天',
+      unscheduled: '未排期',
+      unscheduledCount: '未排期 · {n}',
+      unscheduledHint: '沒有計劃日期的待辦收在這裡',
+      emptyTitle: '還沒有排期的待辦',
+      emptyHint: '在待辦詳情裡補上計劃日或截止日，它就會出現在這裡',
     },
     jar: {
       title: '今日拾貝',

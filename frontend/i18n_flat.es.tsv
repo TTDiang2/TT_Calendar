@@ -524,6 +524,16 @@ todoboards.gantt.month	{n} mes
 todoboards.gantt.overdueBar	Atrasada
 todoboards.gantt.barTitle	{range}{overdue} · {status}
 todoboards.gantt.overdueSuffix	(vencida)
+todoboards.gantt.scale2w	2 semanas
+todoboards.gantt.scale1m	1 mes
+todoboards.gantt.scale3m	3 meses
+todoboards.gantt.today	Hoy
+todoboards.gantt.todayChip	Hoy
+todoboards.gantt.unscheduled	Sin planificar
+todoboards.gantt.unscheduledCount	Sin planificar · {n}
+todoboards.gantt.unscheduledHint	Las tareas sin fecha de planificación están aquí
+todoboards.gantt.emptyTitle	Aún no hay tareas planificadas
+todoboards.gantt.emptyHint	Añade una fecha de planificación o vencimiento a una tarea para verla aquí
 todoboards.jar.title	Recolección del día
 todoboards.jar.carried	colocados
 todoboards.jar.piece	piezas

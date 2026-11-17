@@ -524,6 +524,16 @@ todoboards.gantt.month	{n} mois
 todoboards.gantt.overdueBar	En retard
 todoboards.gantt.barTitle	{range}{overdue} · {status}
 todoboards.gantt.overdueSuffix	(en retard)
+todoboards.gantt.scale2w	2 semaines
+todoboards.gantt.scale1m	1 mois
+todoboards.gantt.scale3m	3 mois
+todoboards.gantt.today	Aujourd'hui
+todoboards.gantt.todayChip	Aujourd'hui
+todoboards.gantt.unscheduled	Non planifié
+todoboards.gantt.unscheduledCount	Non planifié · {n}
+todoboards.gantt.unscheduledHint	Les tâches sans date de planification sont ici
+todoboards.gantt.emptyTitle	Aucune tâche planifiée
+todoboards.gantt.emptyHint	Ajoutez une date de planification ou une échéance dans une tâche pour la voir ici
 todoboards.jar.title	Récolte du jour
 todoboards.jar.carried	chargées
 todoboards.jar.piece	pièces

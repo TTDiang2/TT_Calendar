@@ -42,32 +42,57 @@ export function isImportant(t: Todo): boolean {
 }
 
 export interface GanttRange {
-  start: string
-  end: string
+  /** 排期视图只画有真实日期的待办；无日期任务由调用方收进「未排期」 */
+  start: string | null
+  end: string | null
+  scheduled: boolean
+  /** 起止同一天：画成里程碑而不是假装有一段持续时间 */
+  milestone: boolean
   overdue: boolean
   completed: boolean
 }
 
-/** 甘特区 间：start=created_at，end 按 completed→due→planned→start 优先级（TODO_VIEWS_DESIGN.md §2.3） */
+function dateOnly(v: string | null): string | null {
+  return v ? v.slice(0, 10) : null
+}
+
+/**
+ * 甘特排期区间（2026-11 改版）。
+ *
+ * 旧实现用 created_at 当起点，无日期待办会从创建日拉一条数月长的灰条，
+ * 36 条未完成待办里有 28 条没有计划日，整屏都是假长条。排期视图改为：
+ *   start = start_date → planned_date → due_date
+ *   end   = due_date → planned_date → start_date
+ * 三者都没有 → scheduled=false，交给「未排期」抽屉；起止同日 → milestone。
+ * 逾期只认有截止/计划日的任务，只有 start_date 的长项目不标逾期。
+ */
 export function ganttRange(t: Todo, today = todayStr()): GanttRange {
   const completed = t.status === 'completed'
-  const dateOf = (dt: string | null): string | null => {
-    if (!dt) return null
-    return dt.slice(0, 10)
+  const startDate = dateOnly(t.start_date)
+  const plannedDate = dateOnly(t.planned_date)
+  const dueDate = dateOnly(t.due_date)
+  const completedDate = dateOnly(t.completed_at)
+
+  let start = startDate ?? plannedDate ?? dueDate
+  let end = completed ? (completedDate ?? dueDate ?? plannedDate ?? startDate) : (dueDate ?? plannedDate ?? startDate)
+
+  if (!start && !end) {
+    return { start: null, end: null, scheduled: false, milestone: false, overdue: false, completed }
   }
-  const start = dateOf(t.created_at) ?? t.planned_date ?? t.due_date ?? today
-  let end = completed
-    ? dateOf(t.completed_at)
-    : t.due_date ?? t.planned_date ?? null
-  let overdue = false
-  if (!completed) {
-    const naturalEnd = end
-    if (!naturalEnd || toDay(naturalEnd) < toDay(today)) {
-      end = today
-      overdue = !!naturalEnd
-    }
+
+  start = start ?? end!
+  end = end ?? start!
+  if (toDay(start) > toDay(end)) [start, end] = [end, start]
+
+  const hasDeadline = !!dueDate || (!dueDate && !!plannedDate)
+  return {
+    start,
+    end,
+    scheduled: true,
+    milestone: start === end,
+    overdue: !completed && hasDeadline && toDay(end) < toDay(today),
+    completed,
   }
-  return { start, end: end ?? start, overdue, completed }
 }
 
 /**

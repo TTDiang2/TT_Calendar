@@ -1,5 +1,5 @@
 /**
- * ru 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 576 条）。
+ * ru 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 586 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.ru.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -801,6 +801,16 @@ export const ru: DeepPartialDict<Dict> = {
       overdueBar: 'Просрочено',
       barTitle: '{range}{overdue} · {status}',
       overdueSuffix: '(просрочено)',
+      scale2w: '2 недели',
+      scale1m: '1 месяц',
+      scale3m: '3 месяца',
+      today: 'Сегодня',
+      todayChip: 'Сегодня',
+      unscheduled: 'Без даты',
+      unscheduledCount: 'Без даты · {n}',
+      unscheduledHint: 'Задачи без даты плана собраны здесь',
+      emptyTitle: 'Пока нет запланированных задач',
+      emptyHint: 'Добавьте дату плана или срок в задаче, чтобы увидеть её здесь',
     },
     jar: {
       title: 'Сбор дня',

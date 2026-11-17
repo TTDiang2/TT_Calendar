@@ -4,6 +4,7 @@ import {
   collectTags,
   filterByTag,
   findTodoById,
+  ganttRange,
   sortByManualOrder,
 } from '../todoLogic'
 import type { Todo } from '../../types'
@@ -151,5 +152,61 @@ describe('findTodoById', () => {
   it('前段命中时优先返回前段（不去后段找同名）', () => {
     const dup = todo('dup')
     expect(findTodoById([[dup], [todo('dup')]], 'dup')).toBe(dup)
+  })
+})
+
+describe('ganttRange', () => {
+  const today = '2026-11-17'
+  const base = todo('gantt')
+
+  it('没有计划/开始/截止日 → 不排期，不再拿 created_at 拉长条', () => {
+    const r = ganttRange({ ...base, created_at: '2026-08-06T10:00:00' }, today)
+    expect(r).toMatchObject({ start: null, end: null, scheduled: false, milestone: false })
+  })
+
+  it('只有计划日 → 单日里程碑', () => {
+    const r = ganttRange({ ...base, planned_date: '2026-11-25' }, today)
+    expect(r).toMatchObject({
+      start: '2026-11-25',
+      end: '2026-11-25',
+      scheduled: true,
+      milestone: true,
+      overdue: false,
+    })
+  })
+
+  it('start + due → 从开始日到截止日，而不是从创建日', () => {
+    const r = ganttRange(
+      { ...base, created_at: '2026-08-06T10:00:00', start_date: '2026-11-01', due_date: '2026-12-01' },
+      today,
+    )
+    expect(r).toMatchObject({
+      start: '2026-11-01',
+      end: '2026-12-01',
+      scheduled: true,
+      milestone: false,
+      overdue: false,
+    })
+  })
+
+  it('只有截止日 → 里程碑；截止日已过 → 逾期', () => {
+    const r = ganttRange({ ...base, due_date: '2026-11-10' }, today)
+    expect(r).toMatchObject({
+      start: '2026-11-10',
+      end: '2026-11-10',
+      milestone: true,
+      overdue: true,
+    })
+  })
+
+  it('起止顺序反了会自动交换', () => {
+    const r = ganttRange({ ...base, start_date: '2026-12-01', due_date: '2026-11-01' }, today)
+    expect(r.start).toBe('2026-11-01')
+    expect(r.end).toBe('2026-12-01')
+  })
+
+  it('只有开始日的长项目不误标逾期', () => {
+    const r = ganttRange({ ...base, start_date: '2026-01-01' }, today)
+    expect(r).toMatchObject({ start: '2026-01-01', end: '2026-01-01', overdue: false })
   })
 })

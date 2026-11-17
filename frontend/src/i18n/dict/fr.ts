@@ -1,5 +1,5 @@
 /**
- * fr 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 576 条）。
+ * fr 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 586 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.fr.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -786,6 +786,16 @@ export const fr: DeepPartialDict<Dict> = {
       overdueBar: 'En retard',
       barTitle: '{range}{overdue} · {status}',
       overdueSuffix: '(en retard)',
+      scale2w: '2 semaines',
+      scale1m: '1 mois',
+      scale3m: '3 mois',
+      today: 'Aujourd\'hui',
+      todayChip: 'Aujourd\'hui',
+      unscheduled: 'Non planifié',
+      unscheduledCount: 'Non planifié · {n}',
+      unscheduledHint: 'Les tâches sans date de planification sont ici',
+      emptyTitle: 'Aucune tâche planifiée',
+      emptyHint: 'Ajoutez une date de planification ou une échéance dans une tâche pour la voir ici',
     },
     jar: {
       title: 'Récolte du jour',

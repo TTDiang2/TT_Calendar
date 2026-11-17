@@ -524,6 +524,16 @@ todoboards.gantt.month	{n} 月
 todoboards.gantt.overdueBar	逾期中
 todoboards.gantt.barTitle	{range}{overdue} · {status}
 todoboards.gantt.overdueSuffix	（已過期）
+todoboards.gantt.scale2w	2 週
+todoboards.gantt.scale1m	1 個月
+todoboards.gantt.scale3m	3 個月
+todoboards.gantt.today	回到今天
+todoboards.gantt.todayChip	今天
+todoboards.gantt.unscheduled	未排期
+todoboards.gantt.unscheduledCount	未排期 · {n}
+todoboards.gantt.unscheduledHint	沒有計劃日期的待辦收在這裡
+todoboards.gantt.emptyTitle	還沒有排期的待辦
+todoboards.gantt.emptyHint	在待辦詳情裡補上計劃日或截止日，它就會出現在這裡
 todoboards.jar.title	今日拾貝
 todoboards.jar.carried	裝了
 todoboards.jar.piece	件
