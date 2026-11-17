@@ -534,19 +534,15 @@ todoboards.gantt.unscheduledCount	Sin planificar · {n}
 todoboards.gantt.unscheduledHint	Las tareas sin fecha de planificación están aquí
 todoboards.gantt.emptyTitle	Aún no hay tareas planificadas
 todoboards.gantt.emptyHint	Añade una fecha de planificación o vencimiento a una tarea para verla aquí
-todoboards.jar.title	Recolección del día
-todoboards.jar.carried	colocados
-todoboards.jar.piece	piezas
-todoboards.jar.settled	al fondo
-todoboards.jar.overflow	El bote está lleno · no caben {n} elementos|El bote está lleno · no cabe {n} elemento|||El bote está lleno · no caben {n} elementos
-todoboards.jar.settledToday	Al fondo · {n} completada(s) hoy
-todoboards.jar.legendHard	Roca · difícil
-todoboards.jar.legendMedium	Guijarro · media
-todoboards.jar.legendSimple	Grano de arena · sencilla
-todoboards.jar.tagline	Primero las piedras grandes, luego la arena.
-todoboards.jar.jarAria	Bote de tareas del día
-todoboards.jar.empty	Hoy no hay nada planeado
-todoboards.jar.emptyHint	Empieza por meter una piedra grande (vencimiento o fecha planificada = hoy)
+todoboards.today.title	Hoy
+todoboards.today.piece	piezas
+todoboards.today.doneOf	{done} / {total} hechas
+todoboards.today.load	Carga
+todoboards.today.overCapacity	{n} de más
+todoboards.today.doneToday	{n} hechas hoy
+todoboards.today.ringAria	Progreso de hoy
+todoboards.today.empty	Hoy no hay nada planeado
+todoboards.today.emptyHint	Pon la fecha límite o la planificada en hoy y aparecerá aquí
 todoboards.stickies.empty	No hay ninguna nota en la pared
 todoboards.stickies.emptyHint	Pulsa "Nueva tarea" para pegar la primera
 todoboards.stickies.dblClickHint	Doble clic para ver o editar las notas
@@ -595,7 +591,3 @@ calendar.moreItems	+{n}
 todoboards.matrix.axisHint	Vertical: importancia · Horizontal: urgencia
 todoboards.kanban.dropHere	Suelta aquí
 todoboards.kanban.openCount	pendientes
-todoboards.jar.capacity	Capacidad
-todoboards.jar.loadLabel	Cargado
-todoboards.jar.cellUnit	casillas
-todoboards.jar.overCapacity	{n} de más

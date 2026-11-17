@@ -15,7 +15,8 @@
  * 其余沿用：日程→일정 / 事件→이벤트 / 涂色→채색 / 充实度→충실도 / 点点→도트 / 农历→음력 / 纪念日→기념일。
  * 老端独有概念批次内首译定名（登记）：适配→어댑터 작업、待适配→대기 중、子动作→하위 동작、星级→별점、
  * 集思录→Jisilu（品牌名）、事件导入→이벤트 가져오기、
- * 量筒计数三段（装了/件/沉底）→부유/건/가라앉음（对齐 Neo jar 隐喻）。
+ * 오늘 뷰(원래 유리항아리 '수집함')를 진행 통계로 재구성: 오늘→오늘, 완료 {done}/{total}→완료 {done}/{total},
+ * 부하→부하, 초과→초과; 항아리/바위/모래 은유 키는 전부 삭제.
  */
 import type { DeepPartialDict } from './types'
 import type { Dict } from './zh-CN'
@@ -760,24 +761,16 @@ export const ko: DeepPartialDict<Dict> = {
       emptyTitle: '아직 일정이 잡힌 할 일이 없습니다',
       emptyHint: '할 일 상세에서 계획 날짜나 마감일을 추가하면 여기에 표시됩니다',
     },
-    jar: {
-      title: '오늘의 수집함',
-      carried: '부유',
+    today: {
+      title: '오늘',
       piece: '건',
-      settled: '가라앉음',
-      overflow: { other: '항아리가 가득 참 · {n}건이 들어가지 않음' },
-      settledToday: '가라앉음 · 오늘 완료 {n}',
-      legendHard: '바위 · 어려움',
-      legendMedium: '조약돌 · 보통',
-      legendSimple: '모래 · 쉬움',
-      tagline: '큰 돌부터 넣고, 모래로 틈을 채웁니다.',
-      jarAria: '오늘의 할 일 유리항아리',
-      empty: '오늘은 아직 아무것도 없습니다',
-      emptyHint: '큰 돌 하나부터 넣어 보세요 (마감일/예정일을 오늘로 설정)',
-      capacity: '용량',
-      loadLabel: '적재',
-      cellUnit: '칸',
+      doneOf: '완료 {done} / {total}',
+      load: '부하',
       overCapacity: '{n}건 초과',
+      doneToday: '오늘 완료 {n}',
+      ringAria: '오늘 완료 진행률',
+      empty: '오늘은 아직 아무것도 없습니다',
+      emptyHint: '마감일이나 예정일을 오늘로 설정하면 여기에 표시됩니다',
     },
     stickies: {
       empty: '벽에 스티키가 한 장도 없습니다',

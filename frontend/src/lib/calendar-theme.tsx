@@ -53,11 +53,11 @@ export interface CalendarTheme {
   today: string
   weekend: string
   accent: string
-  /** 语义色：危险 / 逾期（矩阵「马上做」、量筒「困难」） */
+  /** 语义色：危险 / 逾期（矩阵「马上做」、今日「复杂」） */
   danger: string
-  /** 语义色：警告 / 临近（矩阵「授权做」、量筒「中等」） */
+  /** 语义色：警告 / 临近（矩阵「授权做」、今日「中等」） */
   warning: string
-  /** 语义色：安全 / 完成（量筒「简单」、看板投放区） */
+  /** 语义色：安全 / 完成（今日「简单」、看板投放区） */
   success: string
   /** 语义色：信息 / 规划（矩阵「计划做」、看板进行中） */
   info: string
@@ -341,7 +341,7 @@ export function CalendarThemeProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--cal-today', theme.today)
     root.style.setProperty('--cal-weekend', theme.weekend)
     root.style.setProperty('--cal-accent', theme.accent)
-    // 语义色也进变量表：矩阵/看板/量筒/周视图统一取这一组，不再各自硬编码 red-600 之类
+    // 语义色也进变量表：矩阵/看板/今日/周视图统一取这一组，不再各自硬编码 red-600 之类
     root.style.setProperty('--cal-danger', theme.danger)
     root.style.setProperty('--cal-warning', theme.warning)
     root.style.setProperty('--cal-success', theme.success)

@@ -534,19 +534,15 @@ todoboards.gantt.unscheduledCount	未排期 · {n}
 todoboards.gantt.unscheduledHint	沒有計劃日期的待辦收在這裡
 todoboards.gantt.emptyTitle	還沒有排期的待辦
 todoboards.gantt.emptyHint	在待辦詳情裡補上計劃日或截止日，它就會出現在這裡
-todoboards.jar.title	今日拾貝
-todoboards.jar.carried	裝了
-todoboards.jar.piece	件
-todoboards.jar.settled	沉底
-todoboards.jar.overflow	罐子滿了 · {n} 件放不下
-todoboards.jar.settledToday	沉底 · 今日完成 {n}
-todoboards.jar.legendHard	磐石 · 難
-todoboards.jar.legendMedium	卵石 · 中
-todoboards.jar.legendSimple	沙粒 · 簡
-todoboards.jar.tagline	大石頭先進，沙子填縫。
-todoboards.jar.jarAria	今日任務玻璃罐
-todoboards.jar.empty	今天還沒有安排
-todoboards.jar.emptyHint	先放一塊大石頭進去吧（截止/計劃日設為今天）
+todoboards.today.title	今日
+todoboards.today.piece	件
+todoboards.today.doneOf	完成 {done} / {total}
+todoboards.today.load	負載
+todoboards.today.overCapacity	超出 {n} 件
+todoboards.today.doneToday	今日完成 {n}
+todoboards.today.ringAria	今日完成進度
+todoboards.today.empty	今天還沒有安排
+todoboards.today.emptyHint	把截止日或計劃日設為今天，它就會出現在這裡
 todoboards.stickies.empty	牆上一張便籤都沒有
 todoboards.stickies.emptyHint	點「新建待辦」貼上第一張
 todoboards.stickies.dblClickHint	雙擊查看 / 編輯備註
@@ -595,7 +591,3 @@ calendar.moreItems	+{n}
 todoboards.matrix.axisHint	縱軸重要 · 橫軸緊急
 todoboards.kanban.dropHere	拖到此處
 todoboards.kanban.openCount	項未完成
-todoboards.jar.capacity	容量
-todoboards.jar.loadLabel	裝載
-todoboards.jar.cellUnit	格
-todoboards.jar.overCapacity	超出 {n} 件

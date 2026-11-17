@@ -1,5 +1,5 @@
 /**
- * zh-Hant 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 599 条）。
+ * zh-Hant 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 591 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.zh-Hant.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -778,26 +778,16 @@ export const zhHant: DeepPartialDict<Dict> = {
       emptyTitle: '還沒有排期的待辦',
       emptyHint: '在待辦詳情裡補上計劃日或截止日，它就會出現在這裡',
     },
-    jar: {
-      title: '今日拾貝',
-      carried: '裝了',
+    today: {
+      title: '今日',
       piece: '件',
-      settled: '沉底',
-      overflow: {
-        other: '罐子滿了 · {n} 件放不下',
-      },
-      settledToday: '沉底 · 今日完成 {n}',
-      legendHard: '磐石 · 難',
-      legendMedium: '卵石 · 中',
-      legendSimple: '沙粒 · 簡',
-      tagline: '大石頭先進，沙子填縫。',
-      jarAria: '今日任務玻璃罐',
-      empty: '今天還沒有安排',
-      emptyHint: '先放一塊大石頭進去吧（截止/計劃日設為今天）',
-      capacity: '容量',
-      loadLabel: '裝載',
-      cellUnit: '格',
+      doneOf: '完成 {done} / {total}',
+      load: '負載',
       overCapacity: '超出 {n} 件',
+      doneToday: '今日完成 {n}',
+      ringAria: '今日完成進度',
+      empty: '今天還沒有安排',
+      emptyHint: '把截止日或計劃日設為今天，它就會出現在這裡',
     },
     stickies: {
       empty: '牆上一張便籤都沒有',

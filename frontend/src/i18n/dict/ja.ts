@@ -22,7 +22,8 @@
  * 其余沿用：日程→予定 / 事件→イベント / 涂色→クリップ / 充实度→充実度 / 点点→ドット / 农历→旧暦 / 纪念日→記念日。
  * 老端独有概念批次内首译定名（登记）：适配→アダプター対応、待适配→対応待ち、子动作→サブアクション、星级→星評価/星数、
  * 集思录→Jisilu（品牌名）、事件导入→イベント取り込み、
- * 量筒计数三段（装了/件/沉底）→浮遊/件/沈殿（对齐 Neo jar 隐喻）。
+ * 今日视图（原玻璃罐「拾贝」）重组为进度统计：今日→今日、完成 {done}/{total}→完了 {done}/{total}、
+ * 负载→負荷、超出→あふれています；罐子/磐石/沙砾的隐喻词条整组删除。
  */
 import type { DeepPartialDict } from './types'
 import type { Dict } from './zh-CN'
@@ -767,24 +768,16 @@ export const ja: DeepPartialDict<Dict> = {
       emptyTitle: '予定されたToDoはまだありません',
       emptyHint: 'ToDoの詳細で予定日または期限を設定すると、ここに表示されます',
     },
-    jar: {
-      title: '今日の拾い物',
-      carried: '浮遊',
+    today: {
+      title: '今日',
       piece: '件',
-      settled: '沈殿',
-      overflow: { other: '瓶がいっぱい · {n}件が入りきらず' },
-      settledToday: '沈殿 · 今日完了{n}',
-      legendHard: '岩 · 難',
-      legendMedium: '小石 · 中',
-      legendSimple: '砂 · 易',
-      tagline: '大きな石を先に入れ、すき間は砂で埋める。',
-      jarAria: '今日のタスクのガラス瓶',
-      empty: '今日はまだ何もありません',
-      emptyHint: 'まず大きな石を1つ入れましょう（期限日／予定日を今日に設定）',
-      capacity: '容量',
-      loadLabel: '装填',
-      cellUnit: 'マス',
+      doneOf: '完了 {done} / {total}',
+      load: '負荷',
       overCapacity: '{n}件あふれています',
+      doneToday: '今日完了{n}',
+      ringAria: '今日の完了進捗',
+      empty: '今日はまだ何もありません',
+      emptyHint: '期限日／予定日を今日にすると、ここに表示されます',
     },
     stickies: {
       empty: '付箋がまだ1枚もありません',

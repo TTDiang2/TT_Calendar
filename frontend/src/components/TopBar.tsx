@@ -34,12 +34,11 @@ const MODES: { key: ViewMode; labelKey: TxKey }[] = [
 
 const TODO_MODES: { key: TodoViewMode; labelKey: TxKey }[] = [
   { key: 'list', labelKey: 'topbar.todoMode.list' },
+  // 「今日」紧跟在「列表」之后：两者是同一份待办的两种读法（全量 vs 只看今天）
+  { key: 'today', labelKey: 'todoboards.today.title' },
   { key: 'matrix', labelKey: 'topbar.todoMode.matrix' },
   { key: 'kanban', labelKey: 'topbar.todoMode.kanban' },
   { key: 'gantt', labelKey: 'topbar.todoMode.gantt' },
-  // 量筒 v4 重做后放回入口：标签直接用视图名（todoboards.jar.title），
-  // 免得再为「今日拾贝」这一个词条新增一条 topbar 文案
-  { key: 'jar', labelKey: 'todoboards.jar.title' },
   { key: 'stickies', labelKey: 'topbar.todoMode.stickies' },
 ]
 
@@ -77,7 +76,10 @@ export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeCh
                 >
                   <ChevronLeft size={18} />
                 </button>
-                <h1 className="max-w-[190px] truncate px-1 text-[15px] font-semibold cal-ink text-center">{title}</h1>
+                {/* 定宽：期间标题的文案长度随视图变（「2026年11月」→「2026年11月16日 - 22日」），
+                    用 max-w 时标题宽度跟着内容变，右侧的视图切换条就会左右滑来滑去。
+                    这里锁死一个宽度，切换条永远在同一个位置。 */}
+                <h1 className="w-[172px] truncate px-1 text-[15px] font-semibold cal-ink text-center">{title}</h1>
                 <button
                   onClick={onNext}
                   disabled={!canNext}
@@ -98,11 +100,11 @@ export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeCh
               <div className="flex shrink-0 items-center gap-0.5">
                 {/* 与月/周/日/年模式同构的占位（上一月/下一月/今天同宽），保持模式按钮组位置一致 */}
                 <div className="w-[30px] flex-shrink-0" aria-hidden />
-                <h1 className="px-1 text-[15px] font-semibold cal-ink flex items-center gap-1.5 max-w-[190px]">
+                <h1 className="w-[172px] px-1 text-[15px] font-semibold cal-ink flex items-center justify-center gap-1.5">
                   <ListTodo size={18} /> {t('terms.countdown')}
                 </h1>
                 <div className="w-[30px] flex-shrink-0" aria-hidden />
-                <div className="w-[46px] ml-1 flex-shrink-0" aria-hidden />
+                <div className="w-[44px] ml-1 flex-shrink-0" aria-hidden />
               </div>
             )}
             {/* 分隔线：左边是「时间轴」，右边是「看的方式」 */}

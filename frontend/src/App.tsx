@@ -11,6 +11,7 @@ import { WeekView } from './components/WeekView'
 import { DayView } from './components/DayView'
 import { YearView } from './components/YearView'
 import { DetailPanel } from './components/DetailPanel'
+import { RightDrawer } from './components/ui/RightDrawer'
 import { TodoView } from './components/TodoView'
 import { CountdownView } from './components/CountdownView'
 import {
@@ -58,7 +59,7 @@ export default function App() {
   const [topTab, setTopTab] = useState<TopTab>('calendar')
   const [todoView, setTodoViewState] = useState<TodoViewMode>(() => {
     const v = localStorage.getItem('todo-view')
-    return v === 'matrix' || v === 'kanban' || v === 'gantt' || v === 'stickies' || v === 'jar' ? v : 'list'
+    return v === 'today' || v === 'matrix' || v === 'kanban' || v === 'gantt' || v === 'stickies' ? v : 'list'
   })
   const setTodoView = (v: TodoViewMode) => {
     localStorage.setItem('todo-view', v)
@@ -449,9 +450,10 @@ export default function App() {
                 />
               )}
             </main>
-            {/* 周视图的 7 列本身就是详情，未选中日期时不必常驻一块「点击日期查看详情」的
-                占位面板——248px 的空白会把第 7 列挤出可视区 */}
-            {mode !== 'year' && (mode !== 'week' || !!selectedDay) && (
+            {/* 右栏按抽屉处理：周/日视图自己就是完整议程，年视图本来就是总览，
+                都不再重复挂一块详情面板；只有月视图常驻（未选中日期时给引导语）。
+                切视图时抽屉是滑出/收回，不是「啪」地占位或消失。 */}
+            <RightDrawer open={mode === 'month'}>
               <DetailPanel
                 day={selectedDay}
                 layers={layers}
@@ -459,10 +461,8 @@ export default function App() {
                 onEditSchedule={(d) => setDialog({ kind: 'schedule', date: d })}
                 onSetColoring={(d) => setDialog({ kind: 'coloring', date: d })}
                 onAddEntry={openEntry}
-                // 日视图自己已经是完整议程，右栏只留编辑入口，不再重复列一遍
-                variant={mode === 'day' ? 'day' : 'default'}
               />
-            )}
+            </RightDrawer>
           </>
         )}
       </div>

@@ -13,7 +13,8 @@ import { AnimatedCheck } from './ui/AnimatedCheck'
 import { TodoMatrixView } from './todo/TodoMatrixView'
 import { TodoKanbanView } from './todo/TodoKanbanView'
 import { TodoGanttView } from './todo/TodoGanttView'
-import { TodoJarView } from './todo/TodoJarView'
+import { TodoTodayView } from './todo/TodoTodayView'
+import { RightDrawer } from './ui/RightDrawer'
 import { TodoStickiesView } from './todo/TodoStickiesView'
 
 /** 排序下拉（labelKey 模式：模块常量不存文案，渲染时 t(o.labelKey)） */
@@ -154,12 +155,12 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
     if (toastTimer.current) clearTimeout(toastTimer.current)
   }, [])
 
-  // 量筒：今日完成（completed_on 精确过滤，避免全量 completed 截断丢今日）
+  // 今日视图：今日完成（completed_on 精确过滤，避免全量 completed 截断丢今日）
   const today = todayStr()
   const { data: todayDone = [] } = useQuery({
     queryKey: ['todos', 'doneOn', today],
     queryFn: () => getTodos({ status: 'completed', completed_on: today }),
-    enabled: viewMode === 'jar',
+    enabled: viewMode === 'today',
   })
 
   // 看板已完成：tag 筛选后用于展开列（计数直接用 stats）
@@ -336,7 +337,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
     [incomplete, tagFilter, manualOrder],
   )
 
-  const jarTodos = useMemo(() => [...filteredIncomplete, ...todayDone], [filteredIncomplete, todayDone])
+  const todayTodos = useMemo(() => [...filteredIncomplete, ...todayDone], [filteredIncomplete, todayDone])
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
@@ -540,9 +541,9 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
               onSelect={setSelectedTodoId}
               onOpenNotes={(id) => { setSelectedTodoId(id); detailRef.current?.openNotes() }}
             />
-          ) : viewMode === 'jar' ? (
-            <TodoJarView
-              todos={jarTodos}
+          ) : viewMode === 'today' ? (
+            <TodoTodayView
+              todos={todayTodos}
               selectedTodoId={selectedTodoId}
               onSelect={setSelectedTodoId}
               onOpenNotes={(id) => { setSelectedTodoId(id); detailRef.current?.openNotes() }}
@@ -648,35 +649,37 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
         </div>
       </div>
 
-      {/* 右详情栏 — w-72 对齐日历 DetailPanel */}
-      <TodoDetailPanel
-        ref={detailRef}
-        todo={selectedTodoId === '__NEW__'
-          ? { id: '' as string, list_id: selectedList ?? lists[0]?.id ?? '', title: '', body: null, importance: 'normal', due_date: null, planned_date: null, start_date: null, repeat: null, complexity: 'medium', tags: null, status: 'notStarted', created_at: null, completed_at: null, sort_order: 0 }
-          : selectedTodo}
-        lists={lists}
-        onClose={() => setSelectedTodoId(null)}
-        onSave={(data) => {
-          if (!data.id) {
-            createMut.mutate({
-              list_id: data.list_id,
-              title: data.title,
-              body: data.body,
-              importance: data.importance,
-              due_date: data.due_date,
-              planned_date: data.planned_date,
-              start_date: data.start_date,
-              repeat: data.repeat,
-              complexity: data.complexity,
-              tags: data.tags,
-              status: data.status,
-            })
-          } else {
-            updateMut.mutate({ id: data.id, data: { ...data, id: data.id } })
-          }
-        }}
-        onDelete={(id) => { deleteMut.mutate(id); setSelectedTodoId(null) }}
-      />
+      {/* 右详情栏：抽屉式，选中卡片时滑出，取消选中时收回（不再留 36px 窄边） */}
+      <RightDrawer open={!!selectedTodoId}>
+        <TodoDetailPanel
+          ref={detailRef}
+          todo={selectedTodoId === '__NEW__'
+            ? { id: '' as string, list_id: selectedList ?? lists[0]?.id ?? '', title: '', body: null, importance: 'normal', due_date: null, planned_date: null, start_date: null, repeat: null, complexity: 'medium', tags: null, status: 'notStarted', created_at: null, completed_at: null, sort_order: 0 }
+            : selectedTodo}
+          lists={lists}
+          onClose={() => setSelectedTodoId(null)}
+          onSave={(data) => {
+            if (!data.id) {
+              createMut.mutate({
+                list_id: data.list_id,
+                title: data.title,
+                body: data.body,
+                importance: data.importance,
+                due_date: data.due_date,
+                planned_date: data.planned_date,
+                start_date: data.start_date,
+                repeat: data.repeat,
+                complexity: data.complexity,
+                tags: data.tags,
+                status: data.status,
+              })
+            } else {
+              updateMut.mutate({ id: data.id, data: { ...data, id: data.id } })
+            }
+          }}
+          onDelete={(id) => { deleteMut.mutate(id); setSelectedTodoId(null) }}
+        />
+      </RightDrawer>
 
       <AnimatePresence>
         {undoToast && (

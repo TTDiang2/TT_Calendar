@@ -1,5 +1,5 @@
 /**
- * fr 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 599 条）。
+ * fr 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 591 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.fr.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -806,28 +806,16 @@ export const fr: DeepPartialDict<Dict> = {
       emptyTitle: 'Aucune tâche planifiée',
       emptyHint: 'Ajoutez une date de planification ou une échéance dans une tâche pour la voir ici',
     },
-    jar: {
-      title: 'Récolte du jour',
-      carried: 'chargées',
+    today: {
+      title: 'Aujourd\'hui',
       piece: 'pièces',
-      settled: 'au fond',
-      overflow: {
-        other: 'Bocal plein · {n} éléments ne rentrent pas',
-        one: 'Bocal plein · {n} élément ne rentre pas',
-        many: 'Bocal plein · {n} éléments ne rentrent pas',
-      },
-      settledToday: 'Au fond · {n} terminée(s) aujourd\'hui',
-      legendHard: 'Roc · difficile',
-      legendMedium: 'Galet · moyen',
-      legendSimple: 'Grain de sable · simple',
-      tagline: 'Les gros cailloux d\'abord, le sable ensuite.',
-      jarAria: 'Bocal des tâches du jour',
-      empty: 'Rien de prévu aujourd\'hui',
-      emptyHint: 'Commencez par y déposer un gros caillou (échéance ou date planifiée = aujourd\'hui)',
-      capacity: 'Capacité',
-      loadLabel: 'Chargé',
-      cellUnit: 'cases',
+      doneOf: '{done} / {total} terminées',
+      load: 'Charge',
       overCapacity: '{n} en trop',
+      doneToday: '{n} terminée(s) aujourd\'hui',
+      ringAria: 'Progression du jour',
+      empty: 'Rien de prévu aujourd\'hui',
+      emptyHint: 'Mettez l\'échéance ou la date planifiée à aujourd\'hui pour la voir ici',
     },
     stickies: {
       empty: 'Aucune note sur le mur',

@@ -1,16 +1,17 @@
 /**
- * todoboards 命名空间（老端版）：todo/ 目录六个子视图（矩阵/看板/甘特/量筒/便签）
+ * todoboards 命名空间（老端版）：todo/ 目录六个子视图（矩阵/看板/甘特/今日/便签）
  * + TodoMiniCard 的板级文案。key 命名与 en 沿 Neo todo.ts 对应分组（matrix/kanban/
- * gantt/jar/stickies/aria/card）复用；zh 分叉处以老端原文为准，老端独有渲染 en 自拟。
+ * gantt/today/stickies/aria/card）复用；zh 分叉处以老端原文为准，老端独有渲染 en 自拟。
  *
  * 与 Neo 的结构差异（老端渲染点不同，逐处登记）：
- *  - jar 顶部计数句含高亮数字 span（装了 [n] 件 · 沉底 [n] 件），拆 carried/piece/
- *    settled 三段渲染（Neo 为整句 counter，本批不整句化——保 span 格式，手册 §8.6）；
+ *  - today 分支由原「量筒（今日拾贝）」改写而来：玻璃罐/磐石/沙砾的隐喻全部去掉，
+ *    只保留「今日装了多少、完成多少」这一层意思，文案随之重新起（不再有
+ *    carried/settled/tagline/legend* 等罐子专属词条）；
  *  - kanban 已完成列头内嵌高亮计数 span，completed 存前缀词（Neo completedCol 为
  *    整句，不采——同上 §8.6）；
  *  - gantt 月份刻度保留手拼「{n} 月」（含数字两侧空格，老端原文；Neo 走 Intl 会
  *    去空格，zh 逐屏一致红线不采，留待 P5 统一裁决）；
- *  - jar 日期行改走 Intl（fmtDate/fmtWeekday，zh 输出「10月3日 · 周六」与手拼
+ *  - today 日期行改走 Intl（fmtDate/fmtWeekday，zh 输出「10月3日 · 周六」与手拼
  *    逐字一致，node 实测核对），沿 Neo「原 M月d日 · 周X 手写格式删除」先例，
  *    原 WEEKDAY 模块常量表随之删除。
  * 卡片级旧词表 todo.card.*（批③已注册）经 utils/todoLogic 的 KEYS+labelOf 继续服务
@@ -93,38 +94,25 @@ export const todoboards = {
       emptyTitle: '还没有排期的待办',
       emptyHint: '在待办详情里补上计划日或截止日，它就会出现在这里',
     },
-    /** 量筒视图（今日拾贝） */
-    jar: {
-      /** 左上小标题 */
-      title: '今日拾贝',
-      /** 顶部计数句三段（数字是高亮 span：装了 [n] 件 ·沉底 [n] 件，· 是独立样式节点） */
-      carried: '装了',
+    /** 今日视图（原「今日拾贝」）——去掉玻璃罐隐喻，就是一页今日统计 */
+    today: {
+      /** 左上小标题，同时也是 TopBar 里的视图名 */
+      title: '今日',
+      /** 计数单位（「14 件」） */
       piece: '件',
-      /** 计数句/图例共用的「沉底」前缀词 */
-      settled: '沉底',
-      /** 装不下提示徽标（数字做主语 → 复数） */
-      overflow: { other: '罐子满了 · {n} 件放不下' },
-      /** 沙层里的完成数说明 */
-      settledToday: '沉底 · 今日完成 {n}',
-      /** 图例：三档复杂度的石子（数量在渲染处拼接，词表只存名词段） */
-      legendHard: '磐石 · 难',
-      legendMedium: '卵石 · 中',
-      legendSimple: '沙粒 · 简',
-      /** 右下角一句话 */
-      tagline: '大石头先进，沙子填缝。',
-      /** 玻璃罐的 role=img aria-label */
-      jarAria: '今日任务玻璃罐',
-      /** 空态主句 + 提示 */
-      empty: '今天还没有安排',
-      emptyHint: '先放一块大石头进去吧（截止/计划日设为今天）',
-      /** 量筒 v4：容量计的标题词（右上角小标题，配合刻度条） */
-      capacity: '容量',
-      /** 装填量：数字在前，如「装载 9/12 格 · 75%」 */
-      loadLabel: '装载',
-      /** 容量单位（数字后，如「9/12 格」） */
-      cellUnit: '格',
+      /** 环形进度中心：完成 3 / 14 */
+      doneOf: '完成 {done} / {total}',
+      /** 负载行标签 */
+      load: '负载',
       /** 超出容量的徽标（{n} 为件数） */
       overCapacity: '超出 {n} 件',
+      /** 折叠区标题 */
+      doneToday: '今日完成 {n}',
+      /** 环形图的 role=img aria-label */
+      ringAria: '今日完成进度',
+      /** 空态主句 + 提示 */
+      empty: '今天还没有安排',
+      emptyHint: '把截止日或计划日设为今天，它就会出现在这里',
     },
     /** 便签墙视图 */
     stickies: {
@@ -200,24 +188,16 @@ export const todoboards = {
       emptyTitle: 'Nothing scheduled yet',
       emptyHint: 'Add a planned or due date in a to-do to see it here',
     },
-    jar: {
-      title: 'TODAY\'S PICKS',
-      carried: 'Carried',
+    today: {
+      title: 'TODAY',
       piece: 'items',
-      settled: 'Settled',
-      overflow: { one: 'Jar is full · 1 left out', other: 'Jar is full · {n} left out' },
-      settledToday: 'Settled · {n} done today',
-      legendHard: 'Rocks · Hard',
-      legendMedium: 'Pebbles · Medium',
-      legendSimple: 'Sand · Easy',
-      tagline: 'Big rocks first, sand fills the gaps.',
-      jarAria: 'Today\'s task jar',
-      empty: 'Nothing planned for today',
-      emptyHint: 'Drop in a big rock first (set due/planned date to today)',
-      capacity: 'Capacity',
-      loadLabel: 'Loaded',
-      cellUnit: 'slots',
+      doneOf: '{done} / {total} done',
+      load: 'Load',
       overCapacity: '{n} over capacity',
+      doneToday: '{n} done today',
+      ringAria: 'Today\'s completion',
+      empty: 'Nothing planned for today',
+      emptyHint: 'Set a due or planned date to today and it shows up here',
     },
     stickies: {
       empty: 'The wall has no stickies yet',

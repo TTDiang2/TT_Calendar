@@ -67,7 +67,7 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
 
   if (!day) {
     return (
-      <aside className="w-72 cal-panel-bg border-l cal-line-l p-4 overflow-y-auto">
+      <aside className="h-full w-full cal-panel-bg border-l cal-line-l p-4 overflow-y-auto">
         <p className="text-sm cal-muted">{t('detail.panelEmpty')}</p>
       </aside>
     )
@@ -91,7 +91,7 @@ export function DetailPanel({ day, layers, onEditEvent, onEditSchedule, onSetCol
   }
 
   return (
-    <aside className="w-72 cal-panel-bg border-l cal-line-l p-4 overflow-y-auto">
+    <aside className="h-full w-full cal-panel-bg border-l cal-line-l p-4 overflow-y-auto">
       {variant === 'default' && (
       <div className="flex items-center justify-between mb-3">
         <div>

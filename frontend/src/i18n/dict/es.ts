@@ -1,5 +1,5 @@
 /**
- * es 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 599 条）。
+ * es 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 591 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.es.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -806,28 +806,16 @@ export const es: DeepPartialDict<Dict> = {
       emptyTitle: 'Aún no hay tareas planificadas',
       emptyHint: 'Añade una fecha de planificación o vencimiento a una tarea para verla aquí',
     },
-    jar: {
-      title: 'Recolección del día',
-      carried: 'colocados',
+    today: {
+      title: 'Hoy',
       piece: 'piezas',
-      settled: 'al fondo',
-      overflow: {
-        other: 'El bote está lleno · no caben {n} elementos',
-        one: 'El bote está lleno · no cabe {n} elemento',
-        many: 'El bote está lleno · no caben {n} elementos',
-      },
-      settledToday: 'Al fondo · {n} completada(s) hoy',
-      legendHard: 'Roca · difícil',
-      legendMedium: 'Guijarro · media',
-      legendSimple: 'Grano de arena · sencilla',
-      tagline: 'Primero las piedras grandes, luego la arena.',
-      jarAria: 'Bote de tareas del día',
-      empty: 'Hoy no hay nada planeado',
-      emptyHint: 'Empieza por meter una piedra grande (vencimiento o fecha planificada = hoy)',
-      capacity: 'Capacidad',
-      loadLabel: 'Cargado',
-      cellUnit: 'casillas',
+      doneOf: '{done} / {total} hechas',
+      load: 'Carga',
       overCapacity: '{n} de más',
+      doneToday: '{n} hechas hoy',
+      ringAria: 'Progreso de hoy',
+      empty: 'Hoy no hay nada planeado',
+      emptyHint: 'Pon la fecha límite o la planificada en hoy y aparecerá aquí',
     },
     stickies: {
       empty: 'No hay ninguna nota en la pared',

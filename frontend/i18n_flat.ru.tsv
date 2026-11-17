@@ -535,19 +535,15 @@ todoboards.gantt.unscheduledCount	Без даты · {n}
 todoboards.gantt.unscheduledHint	Задачи без даты плана собраны здесь
 todoboards.gantt.emptyTitle	Пока нет запланированных задач
 todoboards.gantt.emptyHint	Добавьте дату плана или срок в задаче, чтобы увидеть её здесь
-todoboards.jar.title	Сбор дня
-todoboards.jar.carried	сложено
-todoboards.jar.piece	штук
-todoboards.jar.settled	на дне
-todoboards.jar.overflow	Банка полна · {n} не помещается|Банка полна · {n} не помещается||Банка полна · {n} не помещается|Банка полна · {n} не помещаются
-todoboards.jar.settledToday	На дне · выполнено сегодня {n}
-todoboards.jar.legendHard	Валун · трудно
-todoboards.jar.legendMedium	Камешек · средне
-todoboards.jar.legendSimple	Песчинка · просто
-todoboards.jar.tagline	Сначала крупные камни, потом песок.
-todoboards.jar.jarAria	Банка задач на сегодня
-todoboards.jar.empty	На сегодня ничего не запланировано
-todoboards.jar.emptyHint	Начните с большого камня (срок или дата плана = сегодня)
+todoboards.today.title	Сегодня
+todoboards.today.piece	шт.
+todoboards.today.doneOf	{done} / {total} готово
+todoboards.today.load	Нагрузка
+todoboards.today.overCapacity	перебор {n}
+todoboards.today.doneToday	сегодня выполнено {n}
+todoboards.today.ringAria	Прогресс дня
+todoboards.today.empty	На сегодня ничего не запланировано
+todoboards.today.emptyHint	Поставьте срок или дату плана на сегодня — задача появится здесь
 todoboards.stickies.empty	На стене нет ни одной заметки
 todoboards.stickies.emptyHint	Нажмите «Новая задача», чтобы приклеить первую
 todoboards.stickies.dblClickHint	Двойной щелчок — посмотреть или изменить заметки
@@ -596,7 +592,3 @@ calendar.moreItems	+{n}
 todoboards.matrix.axisHint	Вертикаль: важность · Горизонталь: срочность
 todoboards.kanban.dropHere	Перетащите сюда
 todoboards.kanban.openCount	открыто
-todoboards.jar.capacity	Ёмкость
-todoboards.jar.loadLabel	Загружено
-todoboards.jar.cellUnit	клеток
-todoboards.jar.overCapacity	перебор {n}
