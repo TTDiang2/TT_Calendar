@@ -1,5 +1,5 @@
 /**
- * ru 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 586 条）。
+ * ru 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 599 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.ru.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -490,6 +490,12 @@ export const ru: DeepPartialDict<Dict> = {
     contTitle: '{title} (день {i}/{total}, начиная с {start})',
     multiDayTitle: '{title} (несколько дней {start} ~ {end}, всего {total} дн.)',
     spanDays: ' ↦{n} дн.',
+    allDay: 'Весь день',
+    noPlans: 'Ничего не запланировано',
+    untimed: 'Время не задано',
+    scheduleUnit: 'записи',
+    eventUnit: 'события',
+    moreItems: '+{n}',
   },
   app: {
     syncExiting: 'Идёт синхронизация, после неё приложение закроется само…',
@@ -761,6 +767,7 @@ export const ru: DeepPartialDict<Dict> = {
         few: '{n} на подходе',
         many: '{n} на подходе',
       },
+      axisHint: 'Вертикаль: важность · Горизонталь: срочность',
       sub: {
         overdueBy: {
           other: 'Срок прошёл {n} дня назад',
@@ -788,6 +795,8 @@ export const ru: DeepPartialDict<Dict> = {
       },
       dragHint: 'Перетащите карточку в другой столбец, чтобы сменить статус; отметьте круглую кнопку, чтобы выполнить',
       emptyCol: 'Пусто',
+      dropHere: 'Перетащите сюда',
+      openCount: 'открыто',
       unplanned: 'Без плана',
       untagged: 'Без метки',
       todayCol: 'Сегодня · {date}',
@@ -831,6 +840,10 @@ export const ru: DeepPartialDict<Dict> = {
       jarAria: 'Банка задач на сегодня',
       empty: 'На сегодня ничего не запланировано',
       emptyHint: 'Начните с большого камня (срок или дата плана = сегодня)',
+      capacity: 'Ёмкость',
+      loadLabel: 'Загружено',
+      cellUnit: 'клеток',
+      overCapacity: 'перебор {n}',
     },
     stickies: {
       empty: 'На стене нет ни одной заметки',

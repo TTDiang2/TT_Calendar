@@ -11,6 +11,8 @@ export interface AnimatedCheckProps {
   size?: number
   checkSize?: number
   checkClassName?: string
+  /** 额外内联样式（卡片用主题 token 上色时传，宽高由 size 决定，这里不要覆盖） */
+  style?: React.CSSProperties
 }
 
 /**
@@ -26,6 +28,7 @@ export function AnimatedCheck({
   size = 16,
   checkSize = 11,
   checkClassName,
+  style,
 }: AnimatedCheckProps) {
   return (
     <motion.button
@@ -44,7 +47,7 @@ export function AnimatedCheck({
         shape === 'circle' ? 'rounded-full' : 'rounded',
         className,
       )}
-      style={{ width: size, height: size }}
+      style={{ width: size, height: size, ...style }}
     >
       {checked && (
         <motion.svg

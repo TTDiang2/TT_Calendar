@@ -1,5 +1,5 @@
 /**
- * fr 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 586 条）。
+ * fr 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 599 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.fr.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -482,6 +482,12 @@ export const fr: DeepPartialDict<Dict> = {
     contTitle: '{title} (jour {i}/{total}, à partir du {start})',
     multiDayTitle: '{title} (multi-jour {start} ~ {end}, {total} jours au total)',
     spanDays: ' ↦{n} j',
+    allDay: 'Toute la journée',
+    noPlans: 'Rien de prévu',
+    untimed: 'Horaire à définir',
+    scheduleUnit: 'rendez-vous',
+    eventUnit: 'événements',
+    moreItems: '+{n}',
   },
   app: {
     syncExiting: 'Synchronisation en cours ; l\'application se fermera automatiquement à la fin…',
@@ -748,6 +754,7 @@ export const fr: DeepPartialDict<Dict> = {
         one: '{n} échéance proche',
         many: '{n} échéances proches',
       },
+      axisHint: 'Vertical : importance · Horizontal : urgence',
       sub: {
         overdueBy: {
           other: 'Échéance dépassée depuis {n} jours',
@@ -773,6 +780,8 @@ export const fr: DeepPartialDict<Dict> = {
       },
       dragHint: 'Glissez une carte vers une autre colonne pour changer son statut ; cochez le bouton rond pour terminer',
       emptyCol: 'Vide',
+      dropHere: 'Déposer ici',
+      openCount: 'en cours',
       unplanned: 'Non planifié',
       untagged: 'Sans étiquette',
       todayCol: 'Aujourd\'hui · {date}',
@@ -815,6 +824,10 @@ export const fr: DeepPartialDict<Dict> = {
       jarAria: 'Bocal des tâches du jour',
       empty: 'Rien de prévu aujourd\'hui',
       emptyHint: 'Commencez par y déposer un gros caillou (échéance ou date planifiée = aujourd\'hui)',
+      capacity: 'Capacité',
+      loadLabel: 'Chargé',
+      cellUnit: 'cases',
+      overCapacity: '{n} en trop',
     },
     stickies: {
       empty: 'Aucune note sur le mur',

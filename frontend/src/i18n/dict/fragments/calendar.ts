@@ -34,6 +34,18 @@ export const calendar = {
     multiDayTitle: '{title}（多日 {start} ~ {end}，共 {total} 天）',
     /** 月格多日日程行尾的延续天数标（含前导空格与 ↦ 符号） */
     spanDays: ' ↦{n}天',
+    /** 周列/日议程的「全天」区段标题（无开始时间的日程归这里） */
+    allDay: '全天',
+    /** 周列没有日程事件时的占位短词 */
+    noPlans: '无安排',
+    /** 日议程里开始/结束时间都没有的日程分组标题 */
+    untimed: '未定时间',
+    /** 议程统计行的日程计数单位（数字在前，如「3 项日程」） */
+    scheduleUnit: '项日程',
+    /** 议程统计行的事件计数单位（数字在前，如「5 个事件」） */
+    eventUnit: '个事件',
+    /** 周视图列尾「还有 N 条」计数前的加号（沿用月格式，纯符号） */
+    moreItems: '+{n}',
   },
   en: {
     noData: 'No data',
@@ -47,5 +59,11 @@ export const calendar = {
     contTitle: '{title} (day {i}/{total}, from {start})',
     multiDayTitle: '{title} (multi-day {start} ~ {end}, {total} days)',
     spanDays: ' ↦{n}d',
+    allDay: 'All day',
+    noPlans: 'Nothing planned',
+    untimed: 'No time set',
+    scheduleUnit: 'schedules',
+    eventUnit: 'events',
+    moreItems: '+{n}',
   },
 } as const

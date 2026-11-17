@@ -1,5 +1,5 @@
 /**
- * es 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 586 条）。
+ * es 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 599 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.es.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -482,6 +482,12 @@ export const es: DeepPartialDict<Dict> = {
     contTitle: '{title} (día {i}/{total}, desde el {start})',
     multiDayTitle: '{title} (varios días {start} ~ {end}, {total} días en total)',
     spanDays: ' ↦{n} d',
+    allDay: 'Todo el día',
+    noPlans: 'Sin planes',
+    untimed: 'Sin hora',
+    scheduleUnit: 'citas',
+    eventUnit: 'eventos',
+    moreItems: '+{n}',
   },
   app: {
     syncExiting: 'Sincronizando; la aplicación se cerrará al terminar…',
@@ -748,6 +754,7 @@ export const es: DeepPartialDict<Dict> = {
         one: '{n} fecha próxima',
         many: '{n} fechas próximas',
       },
+      axisHint: 'Vertical: importancia · Horizontal: urgencia',
       sub: {
         overdueBy: {
           other: 'Vencido hace {n} días',
@@ -773,6 +780,8 @@ export const es: DeepPartialDict<Dict> = {
       },
       dragHint: 'Arrastra una tarjeta a otra columna para cambiar su estado; marca el botón redondo para completarla',
       emptyCol: 'Vacía',
+      dropHere: 'Suelta aquí',
+      openCount: 'pendientes',
       unplanned: 'Sin planificar',
       untagged: 'Sin etiqueta',
       todayCol: 'Hoy · {date}',
@@ -815,6 +824,10 @@ export const es: DeepPartialDict<Dict> = {
       jarAria: 'Bote de tareas del día',
       empty: 'Hoy no hay nada planeado',
       emptyHint: 'Empieza por meter una piedra grande (vencimiento o fecha planificada = hoy)',
+      capacity: 'Capacidad',
+      loadLabel: 'Cargado',
+      cellUnit: 'casillas',
+      overCapacity: '{n} de más',
     },
     stickies: {
       empty: 'No hay ninguna nota en la pared',

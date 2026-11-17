@@ -1,5 +1,5 @@
 /**
- * zh-Hant 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 586 条）。
+ * zh-Hant 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 599 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.zh-Hant.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -468,6 +468,12 @@ export const zhHant: DeepPartialDict<Dict> = {
     contTitle: '{title}（{i}/{total} 天，{start} 起）',
     multiDayTitle: '{title}（多日 {start} ~ {end}，共 {total} 天）',
     spanDays: ' ↦{n}天',
+    allDay: '全天',
+    noPlans: '無安排',
+    untimed: '未定時間',
+    scheduleUnit: '項日程',
+    eventUnit: '個事件',
+    moreItems: '+{n}',
   },
   app: {
     syncExiting: '正在同步，同步完成後會自動退出……',
@@ -724,6 +730,7 @@ export const zhHant: DeepPartialDict<Dict> = {
       nearing: {
         other: '{n} 臨近',
       },
+      axisHint: '縱軸重要 · 橫軸緊急',
       sub: {
         overdueBy: {
           other: '截止已過 {n} 天',
@@ -745,6 +752,8 @@ export const zhHant: DeepPartialDict<Dict> = {
       },
       dragHint: '拖動卡片到其他列即可改變狀態；勾選圓形按鈕直接完成',
       emptyCol: '空',
+      dropHere: '拖到此處',
+      openCount: '項未完成',
       unplanned: '未計劃',
       untagged: '無標籤',
       todayCol: '今天 · {date}',
@@ -785,6 +794,10 @@ export const zhHant: DeepPartialDict<Dict> = {
       jarAria: '今日任務玻璃罐',
       empty: '今天還沒有安排',
       emptyHint: '先放一塊大石頭進去吧（截止/計劃日設為今天）',
+      capacity: '容量',
+      loadLabel: '裝載',
+      cellUnit: '格',
+      overCapacity: '超出 {n} 件',
     },
     stickies: {
       empty: '牆上一張便籤都沒有',

@@ -32,6 +32,8 @@ export const todoboards = {
       /** 象限头的临近徽标（title 提示 + 计数，数字做主语 → 复数） */
       soonTitle: '3-7 天内到期',
       nearing: { other: '{n} 临近' },
+      /** 四象限顶部的一句话坐标轴提示（不参与布局，仅帮助首次使用者） */
+      axisHint: '纵轴重要 · 横轴紧急',
       /** 卡片副标题的截止描述（复合句成分 → 复数条目而非 fmtRelativeDays） */
       sub: {
         overdueBy: { other: '截止已过 {n} 天' },
@@ -48,6 +50,10 @@ export const todoboards = {
       dragHint: '拖动卡片到其他列即可改变状态；勾选圆形按钮直接完成',
       /** 空列占位 */
       emptyCol: '空',
+      /** 空列里的虚线投放区（仅看板可拖拽维度显示） */
+      dropHere: '拖到这里',
+      /** 工具栏右侧未完成计数（数字在前，如「36 项未完成」） */
+      openCount: '项未完成',
       /** 计划日期维度的无日期列头 */
       unplanned: '未计划',
       /** 标签维度的无标签列头 */
@@ -111,6 +117,14 @@ export const todoboards = {
       /** 空态主句 + 提示 */
       empty: '今天还没有安排',
       emptyHint: '先放一块大石头进去吧（截止/计划日设为今天）',
+      /** 量筒 v4：容量计的标题词（右上角小标题，配合刻度条） */
+      capacity: '容量',
+      /** 装填量：数字在前，如「装载 9/12 格 · 75%」 */
+      loadLabel: '装载',
+      /** 容量单位（数字后，如「9/12 格」） */
+      cellUnit: '格',
+      /** 超出容量的徽标（{n} 为件数） */
+      overCapacity: '超出 {n} 件',
     },
     /** 便签墙视图 */
     stickies: {
@@ -148,6 +162,7 @@ export const todoboards = {
       },
       soonTitle: 'Due in 3-7 days',
       nearing: { one: '1 nearing', other: '{n} nearing' },
+      axisHint: 'Vertical: importance · Horizontal: urgency',
       sub: {
         overdueBy: { one: 'Due 1 day ago', other: 'Due {n} days ago' },
         dueToday: 'Due today',
@@ -159,6 +174,8 @@ export const todoboards = {
       dim: { status: 'By status', planned: 'By planned date', importance: 'By importance', complexity: 'By complexity', tag: 'By tag' },
       dragHint: 'Drag cards between columns to change status; tick the circle to complete',
       emptyCol: 'Empty',
+      dropHere: 'Drop here',
+      openCount: 'open',
       unplanned: 'Unplanned',
       untagged: 'No tag',
       todayCol: 'Today · {date}',
@@ -197,6 +214,10 @@ export const todoboards = {
       jarAria: 'Today\'s task jar',
       empty: 'Nothing planned for today',
       emptyHint: 'Drop in a big rock first (set due/planned date to today)',
+      capacity: 'Capacity',
+      loadLabel: 'Loaded',
+      cellUnit: 'slots',
+      overCapacity: '{n} over capacity',
     },
     stickies: {
       empty: 'The wall has no stickies yet',

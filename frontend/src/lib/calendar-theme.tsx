@@ -53,6 +53,14 @@ export interface CalendarTheme {
   today: string
   weekend: string
   accent: string
+  /** 语义色：危险 / 逾期（矩阵「马上做」、量筒「困难」） */
+  danger: string
+  /** 语义色：警告 / 临近（矩阵「授权做」、量筒「中等」） */
+  warning: string
+  /** 语义色：安全 / 完成（量筒「简单」、看板投放区） */
+  success: string
+  /** 语义色：信息 / 规划（矩阵「计划做」、看板进行中） */
+  info: string
 }
 
 export const CALENDAR_THEMES: Record<CalendarThemeId, CalendarTheme> = {
@@ -75,6 +83,11 @@ export const CALENDAR_THEMES: Record<CalendarThemeId, CalendarTheme> = {
     today: '#2563EB',
     weekend: '#EF4444',
     accent: '#2563EB',
+    // 语义色沿用经典 Material 的语汇，但压掉一档饱和，避免整块铺色时抢戏
+    danger: '#C2543D',
+    warning: '#B4791F',
+    success: '#3F7D5C',
+    info: '#2563EB',
   },
   morandi: {
     id: 'morandi',
@@ -93,6 +106,10 @@ export const CALENDAR_THEMES: Record<CalendarThemeId, CalendarTheme> = {
     today: '#7D96A0',
     weekend: '#B06A5E',
     accent: '#A97968',
+    danger: '#A8625A',
+    warning: '#A07A45',
+    success: '#6E8A62',
+    info: '#6C8291',
   },
   scandinavian: {
     id: 'scandinavian',
@@ -111,6 +128,10 @@ export const CALENDAR_THEMES: Record<CalendarThemeId, CalendarTheme> = {
     today: '#4F7F9B',
     weekend: '#B56B52',
     accent: '#C79A58',
+    danger: '#B4695A',
+    warning: '#B08948',
+    success: '#5F8A6E',
+    info: '#4F7F9B',
   },
   midcentury: {
     id: 'midcentury',
@@ -129,6 +150,10 @@ export const CALENDAR_THEMES: Record<CalendarThemeId, CalendarTheme> = {
     today: '#2F7E78',
     weekend: '#B65C3A',
     accent: '#B8872E',
+    danger: '#B5563C',
+    warning: '#B8872E',
+    success: '#7A8C43',
+    info: '#4A6E86',
   },
   artdeco: {
     id: 'artdeco',
@@ -147,6 +172,10 @@ export const CALENDAR_THEMES: Record<CalendarThemeId, CalendarTheme> = {
     today: '#2E5E8C',
     weekend: '#A3483F',
     accent: '#B58A2E',
+    danger: '#A3483F',
+    warning: '#B58A2E',
+    success: '#5C7A55',
+    info: '#2E5E8C',
   },
 }
 
@@ -248,6 +277,11 @@ export function CalendarThemeProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--cal-today', theme.today)
     root.style.setProperty('--cal-weekend', theme.weekend)
     root.style.setProperty('--cal-accent', theme.accent)
+    // 语义色也进变量表：矩阵/看板/量筒/周视图统一取这一组，不再各自硬编码 red-600 之类
+    root.style.setProperty('--cal-danger', theme.danger)
+    root.style.setProperty('--cal-warning', theme.warning)
+    root.style.setProperty('--cal-success', theme.success)
+    root.style.setProperty('--cal-info', theme.info)
   }, [themeId, theme])
 
   const value = useMemo(() => ({ themeId, theme, setThemeId }), [themeId, theme, setThemeId])

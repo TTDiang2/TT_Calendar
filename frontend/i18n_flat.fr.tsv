@@ -586,3 +586,16 @@ settings.appearance.themeMorandi	Morandi
 settings.appearance.themeScandinavian	Scandinave
 settings.appearance.themeMidcentury	Mi-century
 settings.appearance.themeArtdeco	Art déco
+calendar.allDay	Toute la journée
+calendar.noPlans	Rien de prévu
+calendar.untimed	Horaire à définir
+calendar.scheduleUnit	rendez-vous
+calendar.eventUnit	événements
+calendar.moreItems	+{n}
+todoboards.matrix.axisHint	Vertical : importance · Horizontal : urgence
+todoboards.kanban.dropHere	Déposer ici
+todoboards.kanban.openCount	en cours
+todoboards.jar.capacity	Capacité
+todoboards.jar.loadLabel	Chargé
+todoboards.jar.cellUnit	cases
+todoboards.jar.overCapacity	{n} en trop

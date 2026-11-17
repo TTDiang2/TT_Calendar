@@ -24,6 +24,10 @@ html, body, #root {
   --cal-today: #2563eb;
   --cal-weekend: #ef4444;
   --cal-accent: #2563eb;
+  --cal-danger: #c2543d;
+  --cal-warning: #b4791f;
+  --cal-success: #3f7d5c;
+  --cal-info: #2563eb;
 }
 
 body {
@@ -45,6 +49,28 @@ body {
   .cal-line-r { border-right-color: var(--cal-border); }
   .cal-line-l { border-left-color: var(--cal-border); }
   .cal-line-t { border-top-color: var(--cal-border); }
+
+  /* 语义色：只做标记（点/条/chip），不做大面积铺色 */
+  .cal-danger { color: var(--cal-danger); }
+  .cal-warning { color: var(--cal-warning); }
+  .cal-success { color: var(--cal-success); }
+  .cal-info { color: var(--cal-info); }
+  .cal-danger-bg { background-color: var(--cal-danger); }
+  .cal-warning-bg { background-color: var(--cal-warning); }
+  .cal-success-bg { background-color: var(--cal-success); }
+  .cal-info-bg { background-color: var(--cal-info); }
+
+  /* 卡片：面板白底 + 主题描边，hover 才给阴影；选中用强调色环而非粗边框 */
+  .cal-card {
+    background-color: var(--cal-panel);
+    border: 1px solid var(--cal-border);
+    border-radius: 10px;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  }
+  .cal-card-hover:hover {
+    border-color: var(--cal-border);
+    box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04), 0 6px 16px -8px rgba(17, 24, 39, 0.18);
+  }
 }
 
 /* 滚动条美化 */

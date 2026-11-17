@@ -587,3 +587,16 @@ settings.appearance.themeMorandi	Моранди
 settings.appearance.themeScandinavian	Скандинавский
 settings.appearance.themeMidcentury	Мид-сенчури
 settings.appearance.themeArtdeco	Ар-деко
+calendar.allDay	Весь день
+calendar.noPlans	Ничего не запланировано
+calendar.untimed	Время не задано
+calendar.scheduleUnit	записи
+calendar.eventUnit	события
+calendar.moreItems	+{n}
+todoboards.matrix.axisHint	Вертикаль: важность · Горизонталь: срочность
+todoboards.kanban.dropHere	Перетащите сюда
+todoboards.kanban.openCount	открыто
+todoboards.jar.capacity	Ёмкость
+todoboards.jar.loadLabel	Загружено
+todoboards.jar.cellUnit	клеток
+todoboards.jar.overCapacity	перебор {n}
