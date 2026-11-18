@@ -83,7 +83,9 @@ def fetch_registry(force: bool = False) -> dict[str, Any] | None:
             if cached is not None:
                 return cached
     try:
-        raw = _http_get(REGISTRY_URL)
+        # registry 只有几 KB，4 秒拿不到基本就是网络到不了 GitHub raw。
+        # 之前用默认 10 秒，设置页会白转十秒才给「离线」提示，体感像卡死。
+        raw = _http_get(REGISTRY_URL, timeout=4.0)
         data = json.loads(raw)
         if not isinstance(data, dict) or not isinstance(data.get("plugins"), list):
             raise ValueError("registry 结构不合法")

@@ -33,7 +33,7 @@ function text() {
         warningTitle: '安装前确认',
         warningBody: (name: string) => `「${name}」将以与 TT Calendar 相同的权限运行：它可以读取你的全部日历数据，也可以访问网络。只安装你信任的插件。`,
         warningConfirm: '确认安装',
-        loading: '加载中…',
+        loading: '正在读取插件源…',
         reload: '重新加载插件',
         reloaded: '已重新加载',
         failed: '操作失败',
@@ -62,7 +62,7 @@ function text() {
         warningTitle: 'Before installing',
         warningBody: (name: string) => `"${name}" will run with the same permissions as TT Calendar: it can read all of your calendar data and access the network. Only install plugins you trust.`,
         warningConfirm: 'Install anyway',
-        loading: 'Loading…',
+        loading: 'Loading plugin registry…',
         reload: 'Reload plugins',
         reloaded: 'Reloaded',
         failed: 'Failed',
@@ -204,7 +204,7 @@ export function PluginManager() {
       ) : data?.offline ? (
         <div className="rounded-lg border border-[color:var(--cal-border)] px-3 py-3 text-xs cal-muted">
           {c.offline}
-          <button onClick={() => refetch()} className="ml-2 underline">{c.retry}</button>
+          <button onClick={() => refetch()} className="ml-2 font-medium text-blue-600 hover:underline">{c.retry}</button>
         </div>
       ) : items.length === 0 ? (
         <p className="text-xs cal-muted">{c.empty}</p>
