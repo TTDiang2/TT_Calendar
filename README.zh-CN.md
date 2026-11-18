@@ -137,12 +137,15 @@ TT Calendar 反过来做 —— **你的规则优先，而且 100% 可改**。
 
 | 文件 | 作用 |
 |---|---|
-| `TT-Calendar-Setup-x.y.z.exe` | 安装包 —— 双击、下一步、完成 |
-| `TT-Calendar-x.y.z.msi` | 同一应用的 MSI，适合批量部署 |
+| `TT-Calendar-Setup-x.y.z.exe` | **普通用户选这个** —— 双击、下一步、完成，不需要管理员权限 |
 | `TT-Calendar-Portable-x.y.z.zip` | 便携版 —— 解压即用，不写注册表 |
+| `TT-Calendar-x.y.z.msi` | 企业批量部署（GPO / Intune / SCCM）用，按机器安装、需要管理员权限 |
 
 安装包按当前用户安装（不需要管理员权限），自动创建开始菜单快捷方式，可从
 Windows 设置里卸载。用户数据存放在 `%APPDATA%\TT Calendar`，升级和卸载都**不会删除**。
+
+> **别在同台机器上混装 exe 与 msi**：自动更新的清单指向 NSIS 安装包，MSI 装的机器点
+> 「检查更新」会用 NSIS 再装一遍，控制面板里留下两条卸载记录。普通用户请只用 `.exe`。
 
 > ✅ **不需要安装 Python** —— 后端已内置完整 Python 运行时，开箱即用。
 > ✅ 不需要注册、不强制联网、不需要任何配置。

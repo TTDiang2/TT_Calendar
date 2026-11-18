@@ -139,13 +139,17 @@ Grab the latest **installer** from [GitHub Releases](https://github.com/TTDiang2
 
 | File | Role |
 |---|---|
-| `TT-Calendar-Setup-x.y.z.exe` | Installer — double-click, next, done |
-| `TT-Calendar-x.y.z.msi` | Same app as an MSI, for managed deployment |
+| `TT-Calendar-Setup-x.y.z.exe` | **Most people want this** — double-click, next, done, no admin prompt |
 | `TT-Calendar-Portable-x.y.z.zip` | Portable build — unzip anywhere, no install |
+| `TT-Calendar-x.y.z.msi` | Managed deployment (GPO / Intune / SCCM), per-machine, needs admin |
 
 The installer is per-user (no admin prompt), adds a Start-menu shortcut, and can be
 uninstalled from Windows Settings. User data lives in `%APPDATA%\TT Calendar` and is
 **kept** across upgrades and uninstalls.
+
+> **Don't install the exe and the msi on the same machine.** The updater manifest points
+> at the NSIS package, so an MSI install that runs "Check for updates" gets an NSIS install
+> on top and leaves two entries in the uninstall list.
 
 > ✅ No Python needed — the backend bundles a full Python runtime.
 > ✅ No registration, no mandatory internet, no configuration.
