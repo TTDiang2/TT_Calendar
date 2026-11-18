@@ -1,80 +1,109 @@
 @echo off
-setlocal
+setlocal EnableDelayedExpansion
 rem ============================================================
-rem  TT Calendar - one-click release build
-rem  Builds all 3 exes into .\release\ (no system Python needed
-rem  to RUN the app; this script only needs build toolchain:
-rem  Node.js + Rust + Python/PyInstaller to BUILD).
+rem  TT Calendar - release build
+rem
+rem  Usage:
+rem    build_release.bat            installer + portable zip
+rem    build_release.bat preview    quick no-bundle build (target\release\app.exe)
+rem
+rem  Requirements: Node.js, Rust, Python + PyInstaller
+rem  Output: .\release\
 rem ============================================================
 
 set "ROOT=%~dp0"
 set "OUT=%ROOT%release"
+set "MODE=%~1"
+if "%MODE%"=="" set "MODE=all"
 if not exist "%OUT%" mkdir "%OUT%"
 
-echo === [0/6] Killing related processes ===
-taskkill /F /IM "TT Calendar.exe" 2>nul
-taskkill /F /IM app.exe 2>nul
-taskkill /F /IM "TT-Calendar-Launcher.exe" 2>nul
-taskkill /F /IM tt-calendar-backend.exe 2>nul
-timeout /t 3 /nobreak >nul
+echo === [0/7] Killing related processes ===
+taskkill /F /IM "TT Calendar.exe" >nul 2>&1
+taskkill /F /IM app.exe >nul 2>&1
+taskkill /F /IM "TT-Calendar-Launcher.exe" >nul 2>&1
+taskkill /F /IM tt-calendar-backend.exe >nul 2>&1
+timeout /t 2 /nobreak >nul
 
 echo.
-echo === [1/6] Building frontend (npm) ===
-pushd "%ROOT%frontend"
-call npm run build
-if errorlevel 1 (
-    echo === FRONTEND BUILD FAILED ===
-    popd & exit /b 1
-)
-popd
-
-echo.
-echo === [2/6] Building Tauri app (no bundle) ===
-pushd "%ROOT%frontend"
-call npx tauri build --no-bundle
-if errorlevel 1 (
-    echo === TAURI BUILD FAILED ===
-    popd & exit /b 1
-)
-popd
-
-echo.
-echo === [3/6] Building backend exe (PyInstaller) ===
+echo === [1/7] Syncing version ===
 pushd "%ROOT%"
+python scripts\sync_version.py
+if errorlevel 1 goto :fail
+for /f "usebackq delims=" %%v in (`python -c "import json;print(json.load(open('version.json',encoding='utf-8'))['version'])"`) do set "VER=%%v"
+if "%VER%"=="" (
+    echo === VERSION READ FAILED ===
+    goto :fail
+)
+echo Version: %VER%
+
+echo.
+echo === [2/7] Building backend (PyInstaller onedir) ===
 python -m PyInstaller --noconfirm --clean tt-calendar-backend.spec
-if errorlevel 1 (
-    echo === PYINSTALLER FAILED ===
-    popd & exit /b 1
+if errorlevel 1 goto :fail
+if not exist "%ROOT%dist\tt-calendar-backend\tt-calendar-backend.exe" (
+    echo === BACKEND EXE MISSING ===
+    goto :fail
 )
 popd
 
-echo.
-echo === [4/6] Building launcher (cargo) ===
-pushd "%ROOT%launcher"
-call cargo build --release
-if errorlevel 1 (
-    echo === CARGO BUILD FAILED ===
-    popd & exit /b 1
-)
-popd
-
-echo.
-echo === [5/6] Collecting artifacts ===
-copy /Y "%ROOT%frontend\src-tauri\target\release\app.exe" "%OUT%\TT-Calendar-x64.exe" >nul
-copy /Y "%ROOT%dist\tt-calendar-backend.exe" "%OUT%\tt-calendar-backend-x64.exe" >nul
-copy /Y "%ROOT%launcher\target\release\tt-calendar-launcher.exe" "%OUT%\TT-Calendar-Launcher-x64.exe" >nul
-
-echo.
-echo === [6/6] Verifying sizes ===
-for %%A in ("%OUT%\TT-Calendar-x64.exe" "%OUT%\tt-calendar-backend-x64.exe" "%OUT%\TT-Calendar-Launcher-x64.exe") do (
-    if exist "%%~A" (
-        echo OK  %%~nxA  %%~zA bytes
-    ) else (
-        echo MISSING  %%~A
+if /I "%MODE%"=="preview" (
+    echo.
+    echo === [3/7] Tauri build ^(preview, no bundle^) ===
+    pushd "%ROOT%frontend"
+    call npx tauri build --no-bundle
+    if errorlevel 1 (
+        popd
+        goto :fail
     )
+    popd
+    echo.
+    echo === DONE: %ROOT%frontend\src-tauri\target\release\app.exe ===
+    exit /b 0
 )
 
 echo.
-echo === DONE! Release files in: %OUT% ===
-echo Copy all 3 exes into ONE folder and run TT-Calendar-Launcher.exe
-pause
+echo === [3/7] Building installer (Tauri bundle) ===
+pushd "%ROOT%frontend"
+call npx tauri build
+if errorlevel 1 (
+    popd
+    goto :fail
+)
+popd
+
+echo.
+echo === [4/7] Collecting installer ===
+set "SETUP=%ROOT%frontend\src-tauri\target\release\bundle\nsis\TT Calendar_%VER%_x64-setup.exe"
+set "MSI=%ROOT%frontend\src-tauri\target\release\bundle\msi\TT Calendar_%VER%_x64_en-US.msi"
+if exist "%SETUP%" (
+    copy /Y "%SETUP%" "%OUT%\TT-Calendar-Setup-%VER%.exe" >nul
+) else (
+    echo === NSIS SETUP NOT FOUND: %SETUP% ===
+    goto :fail
+)
+if exist "%MSI%" copy /Y "%MSI%" "%OUT%\TT-Calendar-%VER%.msi" >nul
+
+echo.
+echo === [5/7] Building portable zip ===
+powershell -NoProfile -ExecutionPolicy Bypass -File "%ROOT%scripts\make_portable_zip.ps1" -Version "%VER%" -Root "%ROOT:~0,-1%"
+if errorlevel 1 goto :fail
+
+echo.
+echo === [6/7] Checksums ===
+certutil -hashfile "%OUT%\TT-Calendar-Setup-%VER%.exe" SHA256 | findstr /v ":"
+certutil -hashfile "%OUT%\TT-Calendar-Portable-%VER%.zip" SHA256 | findstr /v ":"
+
+echo.
+echo === [7/7] Done ===
+for %%A in ("%OUT%\TT-Calendar-Setup-%VER%.exe" "%OUT%\TT-Calendar-Portable-%VER%.zip") do (
+    if exist "%%~A" (echo OK  %%~nxA  %%~zA bytes) else (echo MISSING  %%~A)
+)
+echo.
+echo Release files are in: %OUT%
+exit /b 0
+
+:fail
+echo.
+echo === BUILD FAILED ===
+popd 2>nul
+exit /b 1
