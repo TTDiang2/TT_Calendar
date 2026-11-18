@@ -5,24 +5,22 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import Final
+
+# 全部路径解析集中在 paths.py：开发态写仓库、打包态写 LocalAppData，
+# 插件目录独立放 Roaming，升级与卸载都不碰用户数据。
+from .paths import (
+    BACKUP_DIR as BACKUP_DIR,
+    DATA_DIR as DATA_DIR,
+    HOME as HOME,
+    PLUGINS_DIR as PLUGINS_DIR,
+    PROJECT_ROOT as PROJECT_ROOT,
+)
 
 # ---------------------------------------------------------------------------
 # 路径
 # ---------------------------------------------------------------------------
-
-# 项目根目录：源码运行时是仓库根；PyInstaller 打包后是 exe 所在目录
-# （onefile 模式下 __file__ 指向 _MEIPASS 临时解压目录，写入会丢失）
-if getattr(sys, "frozen", False):
-    PROJECT_ROOT: Final[Path] = Path(sys.executable).resolve().parent
-else:
-    PROJECT_ROOT: Final[Path] = Path(__file__).resolve().parent.parent
-
-# 数据目录：SQLite 数据库 + 旧 JSON 备份
-DATA_DIR: Final[Path] = PROJECT_ROOT / "data"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # SQLite 数据库主文件
 DB_PATH: Final[Path] = DATA_DIR / "calendar.db"

@@ -26,10 +26,16 @@ _PLUGINS: dict[str, type[Source]] | None = None
 
 
 def _plugins_dir():
-    """插件目录：项目根/plugins（源码模式）或 exe 旁 plugins（打包模式）。"""
+    """插件目录：源码模式在仓库 plugins/，打包模式在 %APPDATA%\\TT Calendar\\plugins。"""
     from .. import config as cfg
 
-    return cfg.PROJECT_ROOT / "plugins"
+    return cfg.PLUGINS_DIR
+
+
+def reload_plugins() -> None:
+    """清空发现缓存，下次 list_sources() 重新扫描目录（安装/卸载插件后调用）。"""
+    global _PLUGINS
+    _PLUGINS = None
 
 
 def _discover_plugins() -> dict[str, type[Source]]:
