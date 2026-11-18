@@ -132,6 +132,37 @@ git push origin v2.4.1
 tag 与 `version.json` 不一致会**直接失败**，这是故意的：否则会出现「tag 是 v2.4.1、
 包里装着 2.4.0」的版本错乱，而 updater 靠版本号判断要不要升级。
 
+### 实测：v2.4.0 首次发布（2026-11-18）
+
+第一次跑挂在最后一步 `Generate latest.json`，报 `UnicodeEncodeError: 'charmap'`。
+原因不是签名也不是打包，而是 **windows-latest 的默认控制台编码是 cp1252**，而
+`gen_latest_json.py` 里 `print("[ok] 写入 …")` 是中文。最坑的是它在写盘**之后**崩——
+文件其实已经生成好了，看上去却像没生成。
+
+修法是两层，缺一不可：
+
+- workflow 全局 `env` 加 `PYTHONUTF8: "1"` / `PYTHONIOENCODING: "utf-8"`，
+  一次兜住所有 Python 步骤（`sync_version.py` 同样 print 中文）
+- 脚本自己 `sys.stdout.reconfigure(encoding="utf-8")`，不指望调用方设对
+
+同一类坑在 pytest 里也踩过（`test_main_accepts_port_argument` 拉子进程跑
+`--help`），那边的修法见那个用例的注释。**凡是要 print 中文的脚本，都别赌 runner 的编码。**
+
+修好后 `workflow_dispatch` 重跑，7 分钟出包，资产清单：
+
+| 资产 | 大小 |
+| --- | --- |
+| `TT-Calendar-Setup-2.4.0.exe` | 15.3 MB |
+| `TT-Calendar-2.4.0.msi` | 19.7 MB |
+| `TT-Calendar-Portable-2.4.0.zip` | 19.5 MB |
+| `latest.json` | 826 B |
+| `SHA256SUMS.txt` | 279 B |
+
+`https://github.com/TTDiang2/TT_Calendar/releases/latest/download/latest.json`
+返回 200；装着的 2.4.0 点「检查更新」显示「已是最新版本」——端点、manifest
+解析、版本比较三段都通。真正走完「下载 → 验签 → 重启」需要一个更高版本的
+release，首次升级时验证。
+
 ---
 
 ## 5. 代码签名（可选，但强烈建议）
