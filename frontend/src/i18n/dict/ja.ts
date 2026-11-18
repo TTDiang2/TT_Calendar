@@ -324,6 +324,16 @@ export const ja: DeepPartialDict<Dict> = {
       reportWarning: '（{warning}）',
       resolvedDone: 'バインド完了：{report}',
     },
+    diagnostics: {
+      sectionTitle: '診断とサポート',
+      desc: 'バージョン、システム、パス、ログなどトラブルシューティング用の情報を書き出します。カレンダーデータ、設定、認証情報は含まれません。',
+      export: '診断パッケージを書き出す',
+      exporting: '作成中…',
+      savedTo: '保存先',
+      copy: 'パスをコピー',
+      copied: 'コピーしました',
+      failed: '書き出しに失敗しました',
+    },
   },
   terms: {
     calendar: 'カレンダー',

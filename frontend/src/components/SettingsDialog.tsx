@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import clsx from 'clsx'
-import { Trash2 } from 'lucide-react'
+import { Trash2, FileArchive, Copy } from 'lucide-react'
 import { Modal, Field } from './ui/Modal'
 import {
   toggleLayer, importSource, getSources, getLayerSubActions, updateLayerConfig, deleteLayer,
@@ -9,6 +9,7 @@ import {
   getTodoReminderConfig, setTodoReminderConfig, type TodoReminderConfig,
   getSyncConfig, getSyncStatus, saveSyncConfig, testSync, syncNow, resolveSync,
   type SyncResult,
+  exportDiagnostics, getVersionInfo, type DiagnosticsBundle,
 } from '../api/client'
 import { useT, useTPlural, chooseLang, activeLang, SELECTABLE_LANGS, LANG_META, type I18n, type Lang, type TxKey } from '../i18n'
 import type { Layer } from '../types'
@@ -34,6 +35,7 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
   const [result, setResult] = useState<string | null>(null)
   const [importSourceId, setImportSourceId] = useState('')
   const { data: sources } = useQuery({ queryKey: ['sources'], queryFn: getSources })
+  const { data: version } = useQuery({ queryKey: ['version'], queryFn: getVersionInfo })
 
   const importMut = useMutation({
     mutationFn: () => importSource(importSourceId, start, end),
@@ -132,9 +134,10 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
         <BusyConfigSection />
         <ReminderConfigSection />
         <SyncConfigSection />
+        <DiagnosticsSection />
       </div>
       <p className="mt-5 pt-3 border-t border-[color:var(--cal-border)] text-center text-[11px] cal-muted select-none">
-        TT Calendar <span className="font-medium">v2.2.0</span>
+        TT Calendar <span className="font-medium">v{version?.version ?? '…'}</span>
       </p>
     </Modal>
   )
@@ -808,6 +811,68 @@ function LanguageSection() {
           <option key={lang} value={lang}>{LANG_META[lang].endonym}</option>
         ))}
       </select>
+    </section>
+  )
+}
+
+function DiagnosticsSection() {
+  const t = useT()
+  const [bundle, setBundle] = useState<DiagnosticsBundle | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [error, setError] = useState('')
+  const mut = useMutation({
+    mutationFn: exportDiagnostics,
+    onSuccess: (res) => {
+      setBundle(res)
+      setCopied(false)
+      setError('')
+    },
+    onError: (e) => {
+      setBundle(null)
+      setError(e instanceof Error ? e.message : String(e))
+    },
+  })
+
+  const copyPath = async () => {
+    if (!bundle) return
+    try {
+      await navigator.clipboard.writeText(bundle.path)
+      setCopied(true)
+    } catch {
+      setCopied(false)
+    }
+  }
+
+  return (
+    <section>
+      <h3 className="text-xs font-semibold cal-muted uppercase tracking-wide mb-2">{t('settings.diagnostics.sectionTitle')}</h3>
+      <p className="text-xs cal-muted mb-2">{t('settings.diagnostics.desc')}</p>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => mut.mutate()}
+          disabled={mut.isPending}
+          className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40"
+        >
+          <FileArchive size={14} />
+          {mut.isPending ? t('settings.diagnostics.exporting') : t('settings.diagnostics.export')}
+        </button>
+        {error && <span className="text-sm text-red-500">{t('settings.diagnostics.failed')}: {error}</span>}
+      </div>
+      {bundle && (
+        <div className="mt-2 rounded-lg border border-[color:var(--cal-border)] bg-[color:var(--cal-subtle)] px-3 py-2">
+          <div className="text-[11px] cal-muted">{t('settings.diagnostics.savedTo')}</div>
+          <div className="mt-0.5 flex items-start gap-2">
+            <code className="flex-1 text-xs cal-ink break-all select-all">{bundle.path}</code>
+            <button
+              onClick={copyPath}
+              className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-[color:var(--cal-border)] cal-hover-bg flex-shrink-0"
+            >
+              <Copy size={12} />
+              {copied ? t('settings.diagnostics.copied') : t('settings.diagnostics.copy')}
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

@@ -142,6 +142,16 @@ export const settings = {
       /** 冲突决策执行完成提示，{report} 为 sync.report 渲染结果 */
       resolvedDone: '绑定完成：{report}',
     },
+    diagnostics: {
+      sectionTitle: '诊断与支持',
+      desc: '导出排错信息（版本、系统、路径、日志）。不包含日历数据、配置或账号凭据。',
+      export: '导出诊断包',
+      exporting: '打包中…',
+      savedTo: '已保存到',
+      copy: '复制路径',
+      copied: '已复制',
+      failed: '导出失败',
+    },
   },
   en: {
     title: 'Settings',
@@ -254,6 +264,16 @@ export const settings = {
       report: 'Pulled {pulled} · Pushed {pushed} · Conflicts {conflicts} · Deleted {deleted}',
       reportWarning: ' ({warning})',
       resolvedDone: 'Binding complete: {report}',
+    },
+    diagnostics: {
+      sectionTitle: 'Diagnostics & support',
+      desc: 'Export troubleshooting details (version, system, paths, logs). It never includes calendar data, settings, or account credentials.',
+      export: 'Export diagnostic bundle',
+      exporting: 'Packing…',
+      savedTo: 'Saved to',
+      copy: 'Copy path',
+      copied: 'Copied',
+      failed: 'Export failed',
     },
   },
 } as const

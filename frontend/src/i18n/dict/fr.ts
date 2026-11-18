@@ -319,6 +319,16 @@ export const fr: DeepPartialDict<Dict> = {
       reportWarning: '({warning})',
       resolvedDone: 'Liaison terminée : {report}',
     },
+    diagnostics: {
+      sectionTitle: 'Diagnostics et support',
+      desc: 'Exporte les informations de dépannage (version, système, chemins, journaux). Ne contient ni données de calendrier, ni configuration, ni identifiants.',
+      export: 'Exporter le paquet de diagnostic',
+      exporting: 'Création…',
+      savedTo: 'Enregistré dans',
+      copy: 'Copier le chemin',
+      copied: 'Copié',
+      failed: 'Échec de l’export',
+    },
   },
   terms: {
     calendar: 'Calendrier',

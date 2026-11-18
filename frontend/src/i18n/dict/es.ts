@@ -319,6 +319,16 @@ export const es: DeepPartialDict<Dict> = {
       reportWarning: '({warning})',
       resolvedDone: 'Vinculación completada: {report}',
     },
+    diagnostics: {
+      sectionTitle: 'Diagnóstico y soporte',
+      desc: 'Exporta información para resolver problemas (versión, sistema, rutas, registros). No incluye datos del calendario, configuración ni credenciales.',
+      export: 'Exportar paquete de diagnóstico',
+      exporting: 'Generando…',
+      savedTo: 'Guardado en',
+      copy: 'Copiar ruta',
+      copied: 'Copiado',
+      failed: 'Error al exportar',
+    },
   },
   terms: {
     calendar: 'Calendario',

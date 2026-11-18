@@ -317,6 +317,16 @@ export const ko: DeepPartialDict<Dict> = {
       reportWarning: '({warning})',
       resolvedDone: '연결 완료: {report}',
     },
+    diagnostics: {
+      sectionTitle: '진단 및 지원',
+      desc: '버전, 시스템, 경로, 로그 등 문제 해결 정보를 내보냅니다. 캘린더 데이터, 설정, 계정 자격 증명은 포함되지 않습니다.',
+      export: '진단 패키지 내보내기',
+      exporting: '만드는 중…',
+      savedTo: '저장 위치',
+      copy: '경로 복사',
+      copied: '복사됨',
+      failed: '내보내기 실패',
+    },
   },
   terms: {
     calendar: '달력',

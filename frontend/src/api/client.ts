@@ -361,3 +361,20 @@ export async function syncNow(): Promise<SyncResult> {
 
 export const resolveSync = (mode: 'pull_overwrite' | 'merge_push') =>
   post<SyncResult>('/sync/resolve', { mode })
+
+export interface DiagnosticsBundle {
+  name: string
+  size: number
+  path: string
+}
+
+export const exportDiagnostics = () => post<DiagnosticsBundle>('/diagnostics/export')
+
+export interface VersionInfo {
+  version: string
+  frozen: boolean
+  data_dir: string
+  plugins_dir: string
+}
+
+export const getVersionInfo = () => get<VersionInfo>('/version')

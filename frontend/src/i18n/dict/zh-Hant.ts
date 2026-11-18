@@ -311,6 +311,16 @@ export const zhHant: DeepPartialDict<Dict> = {
       reportWarning: '（{warning}）',
       resolvedDone: '綁定完成：{report}',
     },
+    diagnostics: {
+      sectionTitle: '診斷與支援',
+      desc: '匯出排錯資訊（版本、系統、路徑、日誌）。不包含日曆資料、設定或帳號憑證。',
+      export: '匯出診斷包',
+      exporting: '打包中…',
+      savedTo: '已儲存到',
+      copy: '複製路徑',
+      copied: '已複製',
+      failed: '匯出失敗',
+    },
   },
   terms: {
     calendar: '日曆',

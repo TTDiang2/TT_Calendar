@@ -22,7 +22,7 @@ from tt_calendar.sources import get_source
 from tt_calendar.sources.base import sub_filter_pattern
 from tt_calendar.utils.date_utils import parse_date
 
-from backend import aggregator
+from backend import aggregator, diagnostics
 from backend.deps import get_db
 from tt_calendar.sync import engine as sync_engine
 
@@ -1408,3 +1408,8 @@ async def onboarding_import(file: UploadFile = File(...)):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     return {"ok": True}
+
+
+@router.post("/diagnostics/export")
+def export_diagnostics(conn=Depends(get_db)):
+    return diagnostics.export(conn)
