@@ -115,7 +115,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
   })
 
   // 未完成 + 进行中：首屏只拉这一部分（快）
-  const { data: rawIncomplete = [] } = useQuery({
+  const { data: rawIncomplete = [], isFetched: incompleteFetched } = useQuery({
     queryKey: ['todos', selectedList, 'incomplete', sort],
     queryFn: () => getTodos({ list_id: selectedList ?? undefined, status: 'notStarted', sort }),
   })
@@ -157,7 +157,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
 
   // 今日视图：今日完成（completed_on 精确过滤，避免全量 completed 截断丢今日）
   const today = todayStr()
-  const { data: todayDone = [] } = useQuery({
+  const { data: todayDone = [], isFetched: todayDoneFetched } = useQuery({
     queryKey: ['todos', 'doneOn', today],
     queryFn: () => getTodos({ status: 'completed', completed_on: today }),
     enabled: viewMode === 'today',
@@ -166,10 +166,22 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
   // 看板已完成：tag 筛选后用于展开列（计数直接用 stats）
   const filteredCompleted = useMemo(() => filterByTag(completed, tagFilter), [completed, tagFilter])
 
+  // 今日已完成不在 completed 查询里（今日视图只拉 completed_on），一并查，
+  // 否则从「今日完成」里选中会得到空详情。
   const selectedTodo = useMemo(
-    () => findTodoById([incomplete, completed], selectedTodoId),
-    [incomplete, completed, selectedTodoId],
+    () => findTodoById([incomplete, completed, todayDone], selectedTodoId),
+    [incomplete, completed, todayDone, selectedTodoId],
   )
+
+  // 选中的待办从可见数据里消失时（勾完成、删除、切筛选）立即收回抽屉。
+  // 否则 selectedTodoId 还留着，右侧会停着一条 288px 的空白灰抽屉。
+  // 必须等数据源真正加载完再判断：切列表/换排序时 queryKey 变了、新 key 还没数据，
+  // 这时「找不到」只是没加载好，不能把用户正看的详情关掉。
+  const detailDataReady = incompleteFetched && (viewMode !== 'today' || todayDoneFetched)
+  useEffect(() => {
+    if (!selectedTodoId || selectedTodoId === '__NEW__' || selectedTodo) return
+    if (detailDataReady) setSelectedTodoId(null)
+  }, [selectedTodoId, selectedTodo, detailDataReady])
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['todos'] })
@@ -649,8 +661,13 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
         </div>
       </div>
 
-      {/* 右详情栏：抽屉式，选中卡片时滑出，取消选中时收回（不再留 36px 窄边） */}
-      <RightDrawer open={!!selectedTodoId}>
+      {/* 右详情栏：抽屉式，选中卡片时滑出，取消选中时收回（不再留 36px 窄边）。
+          open 挂在「内容是否存在」而不是 selectedTodoId 上：列表里勾掉这条待办后，
+          数据一刷新 selectedTodo 就没了，若此时 open 还是 true，退出动画期间
+          TodoDetailPanel 返回 null，用户会看见一条 288px 的灰壳缓缓收回去——
+          也就是「勾完留个灰抽屉」那个 bug。绑到内容上，AnimatePresence 保留的是
+          上一帧（有内容）的子树，整个过程里抽屉都不会空。 */}
+      <RightDrawer open={!!selectedTodo || selectedTodoId === '__NEW__'}>
         <TodoDetailPanel
           ref={detailRef}
           todo={selectedTodoId === '__NEW__'
