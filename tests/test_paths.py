@@ -18,11 +18,11 @@ def test_dev_home_is_repo_root(monkeypatch):
     assert paths.resolve_home() == paths.PROJECT_ROOT
 
 
-def test_windows_home_uses_localappdata(monkeypatch, tmp_path):
+def test_windows_home_uses_appdata(monkeypatch, tmp_path):
     monkeypatch.delenv("TT_CALENDAR_HOME", raising=False)
-    monkeypatch.delenv("APPDATA", raising=False)
+    monkeypatch.delenv("LOCALAPPDATA", raising=False)
     monkeypatch.setattr(sys, "frozen", True, raising=False)
-    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    monkeypatch.setenv("APPDATA", str(tmp_path))
     assert paths.resolve_home() == tmp_path / "TT Calendar"
 
 

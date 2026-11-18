@@ -42,7 +42,7 @@ fn app_home() -> PathBuf {
             return PathBuf::from(home);
         }
     }
-    match std::env::var("LOCALAPPDATA") {
+    match std::env::var("APPDATA") {
         Ok(base) => PathBuf::from(base).join("TT Calendar"),
         Err(_) => PathBuf::from(".tt-calendar"),
     }

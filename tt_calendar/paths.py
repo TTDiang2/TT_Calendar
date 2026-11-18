@@ -2,7 +2,7 @@
 
 优先级：
 - ``TT_CALENDAR_HOME`` 环境变量（Tauri 启动后端时注入）
-- 打包态：``%LOCALAPPDATA%\\TT Calendar``
+- 打包态：``%APPDATA%\\TT Calendar``
 - 源码态：仓库根目录（保持既有 ``data/``、``plugins/`` 行为不变）
 
 插件目录单独解析：打包态放 ``%APPDATA%\\TT Calendar\\plugins``，与安装目录
@@ -32,7 +32,9 @@ def resolve_home() -> Path:
     if env:
         return Path(env).expanduser().resolve()
     if getattr(sys, "frozen", False):
-        base = os.environ.get("LOCALAPPDATA") or os.environ.get("APPDATA")
+        # 必须与安装目录分开：NSIS currentUser 装到 %LOCALAPPDATA%\TT Calendar，
+        # 卸载会递归删除安装目录；数据放 Roaming 才不会被误删。
+        base = os.environ.get("APPDATA") or os.environ.get("LOCALAPPDATA")
         if base:
             return Path(base) / APP_NAME
         return Path.home() / ".tt-calendar"
