@@ -15,7 +15,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
-from tt_calendar import backup, db
+from tt_calendar import backup, db, onboarding
 from tt_calendar import config as app_config
 from tt_calendar.models import ColoringEntry, Event, LayerConfig, Mark, ScheduleEntry, ScheduleItem, Todo, TodoList
 from tt_calendar.sources import get_source
@@ -1385,3 +1385,26 @@ def create_backup(conn=Depends(get_db)):
         "size": dest.stat().st_size,
         "path": str(dest),
     }
+
+
+@router.get("/onboarding/status")
+def onboarding_status(conn=Depends(get_db)):
+    return onboarding.status(conn)
+
+
+@router.post("/onboarding/complete")
+def onboarding_complete():
+    onboarding.mark_initialized()
+    return {"ok": True}
+
+
+@router.post("/onboarding/import")
+async def onboarding_import(file: UploadFile = File(...)):
+    data = await file.read(onboarding.MAX_IMPORT_BYTES + 1)
+    if len(data) > onboarding.MAX_IMPORT_BYTES:
+        raise HTTPException(status_code=413, detail="数据库超过 200 MB，已拒绝导入")
+    try:
+        onboarding.save_import(data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    return {"ok": True}

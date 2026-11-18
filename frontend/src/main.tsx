@@ -103,7 +103,7 @@ async function bootstrap() {
   if (!(await waitForBackend())) {
     root.render(
       <BootScreen
-        error={`无法连接本地服务（${getApiBase()}）。请确认后端已启动，或查看日志：%LOCALAPPDATA%\\TT Calendar\\data\\backend.log`}
+        error={`无法连接本地服务（${getApiBase()}）。请确认后端已启动，或查看日志：%APPDATA%\\TT Calendar\\data\\backend.log`}
       />,
     )
     return

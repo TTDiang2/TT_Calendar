@@ -1,5 +1,6 @@
 import { useHasChosenLang } from './i18n'
 import { LanguagePickerScreen } from './components/LanguagePickerScreen'
+import { OnboardingGate } from './components/OnboardingGate'
 import App from './App'
 
 // P2 AppGate（手册 §9）：未完成首次语言选择 → 语言选择页；确认后进主界面。
@@ -8,5 +9,9 @@ import App from './App'
 export function AppGate() {
   const hasChosen = useHasChosenLang()
   if (!hasChosen) return <LanguagePickerScreen />
-  return <App />
+  return (
+    <OnboardingGate>
+      <App />
+    </OnboardingGate>
+  )
 }

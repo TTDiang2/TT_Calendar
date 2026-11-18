@@ -38,6 +38,7 @@ BODYLESS_POSTS = [
     "/api/subscriptions/{sub_id}/refresh",
     "/api/settings/todo-busy/recompute",
     "/api/backups/now",
+    "/api/onboarding/complete",
 ]
 
 EVIL_ORIGINS = [
