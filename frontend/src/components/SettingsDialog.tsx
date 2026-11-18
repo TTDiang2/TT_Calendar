@@ -4,6 +4,7 @@ import clsx from 'clsx'
 import { Trash2, FileArchive, Copy } from 'lucide-react'
 import { Modal, Field } from './ui/Modal'
 import { PluginManager } from './PluginManager'
+import { UpdateSection } from './UpdateSection'
 import {
   toggleLayer, importSource, getSources, getLayerSubActions, updateLayerConfig, deleteLayer,
   getTodoBusyConfig, setTodoBusyConfig, recomputeTodoBusy, type TodoBusyConfig,
@@ -136,6 +137,7 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
         <ReminderConfigSection />
         <SyncConfigSection />
         <PluginManager />
+        <UpdateSection />
         <DiagnosticsSection />
       </div>
       <p className="mt-5 pt-3 border-t border-[color:var(--cal-border)] text-center text-[11px] cal-muted select-none">

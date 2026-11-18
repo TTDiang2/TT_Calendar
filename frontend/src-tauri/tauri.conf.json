@@ -32,6 +32,7 @@
   "bundle": {
     "active": true,
     "targets": ["msi", "nsis"],
+    "createUpdaterArtifacts": true,
     "shortDescription": "本地优先的日历与待办桌面应用",
     "icon": [
       "icons/32x32.png",
@@ -50,6 +51,14 @@
         "languages": ["SimpChinese", "English"],
         "displayLanguageSelector": false
       }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/TTDiang2/TT_Calendar/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDJFQUIyMjYzQTJEMDgyMjkKUldRcGd0Q2lZeUtyTG12Z0xza0ZWQjRVVWxIQTNYOWt0dHMxZGdXNExWWGZuaEFNcTdnVG1QMWwK"
     }
   }
 }

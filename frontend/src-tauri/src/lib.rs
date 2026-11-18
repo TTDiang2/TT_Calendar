@@ -157,6 +157,10 @@ pub fn run() {
             }
         }))
         .plugin(tauri_plugin_opener::init())
+        // 自动更新：前端 updater 的 downloadAndInstall 需要 Rust 侧注册插件；
+        // 装完用 process 插件的 relaunch 重启（比自定义 restart_app 更贴合插件语义）。
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .plugin(
             tauri_plugin_log::Builder::default()
                 .level(log::LevelFilter::Info)

@@ -15,6 +15,9 @@
     "core:window:allow-is-maximized",
     "core:window:allow-internal-toggle-maximize",
     "log:default",
-    "opener:allow-reveal-item-in-dir"
+    "opener:allow-reveal-item-in-dir",
+    "opener:allow-open-url",
+    "updater:default",
+    "process:allow-restart"
   ]
 }
