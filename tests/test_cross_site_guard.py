@@ -40,6 +40,7 @@ BODYLESS_POSTS = [
     "/api/backups/now",
     "/api/onboarding/complete",
     "/api/diagnostics/export",
+    "/api/plugins/reload",
 ]
 
 EVIL_ORIGINS = [

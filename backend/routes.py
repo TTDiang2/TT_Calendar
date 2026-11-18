@@ -22,7 +22,7 @@ from tt_calendar.sources import get_source
 from tt_calendar.sources.base import sub_filter_pattern
 from tt_calendar.utils.date_utils import parse_date
 
-from backend import aggregator, diagnostics
+from backend import aggregator, diagnostics, plugins_api
 from backend.deps import get_db
 from tt_calendar.sync import engine as sync_engine
 
@@ -1413,3 +1413,33 @@ async def onboarding_import(file: UploadFile = File(...)):
 @router.post("/diagnostics/export")
 def export_diagnostics(conn=Depends(get_db)):
     return diagnostics.export(conn)
+
+
+class PluginInstallIn(BaseModel):
+    source_id: str = Field(min_length=1)
+
+
+@router.get("/plugins")
+def get_plugins():
+    return plugins_api.list_plugins()
+
+
+@router.post("/plugins/install")
+def install_plugin(payload: PluginInstallIn):
+    try:
+        return plugins_api.install(payload.source_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@router.delete("/plugins/{source_id}")
+def uninstall_plugin(source_id: str):
+    try:
+        return plugins_api.uninstall(source_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@router.post("/plugins/reload")
+def reload_plugins_endpoint():
+    return plugins_api.reload_all()
