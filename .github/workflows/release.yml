@@ -18,6 +18,11 @@ permissions:
 env:
   # 从 tag 或 version.json 推导，后续所有步骤共用
   FORCE_COLOR: "1"
+  # windows-latest 的默认控制台编码是 cp1252，本仓库脚本与 argparse 的文案都是中文，
+  # 一旦 print 到 stdout 就 UnicodeEncodeError 退出（不是语法错，是编码错）。
+  # 关掉这个坑：所有 Python 步骤走 UTF-8，不受 runner 语言设置影响。
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: "utf-8"
 
 jobs:
   windows:

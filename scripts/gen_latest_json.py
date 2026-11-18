@@ -66,6 +66,15 @@ def release_asset_name(artifact: Path, version: str) -> str:
 
 
 def main() -> int:
+    # 本脚本会 print 中文；Windows 上若控制台是 cp1252（GitHub Actions runner 就是），
+    # 直接 print 会 UnicodeEncodeError 退出，而且是在「已经写盘成功」之后崩——
+    # 表面上像生成失败，其实文件是好的。自己兜住，不指望调用方设对编码。
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--version", default=None, help="不传则读 version.json")
     ap.add_argument("--repo", default=REPO)
