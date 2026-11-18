@@ -5,7 +5,7 @@ a = Analysis(
     ['backend\\main.py'],
     pathex=['.'],
     binaries=[],
-    datas=[('frontend/dist', 'frontend/dist')],
+    datas=[],
     hiddenimports=[
         'uvicorn.logging', 'uvicorn.protocols.http.auto', 'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan.on',
         # borax is imported statically (tt_calendar/utils/lunar_utils.py) but force-bundle it
@@ -15,6 +15,8 @@ a = Analysis(
         # (CF bypass via chrome impersonation). Force-bundle so a rebuild never drops it.
         # 注：插件（plugins/*.py）不打包进 exe —— 由用户从插件仓库放入 exe 旁 plugins/ 目录
         'curl_cffi', 'curl_cffi.requests', 'curl_cffi.requests.session',
+        # 版本号由 scripts/sync_version.py 在构建前生成
+        'tt_calendar._build_version',
     ],
     hookspath=[],
     hooksconfig={},
@@ -43,9 +45,8 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
+    exclude_binaries=True,
     name='tt-calendar-backend',
     debug=False,
     bootloader_ignore_signals=False,
@@ -59,4 +60,14 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='tt-calendar-backend',
 )
