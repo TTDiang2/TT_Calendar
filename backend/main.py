@@ -180,6 +180,21 @@ def health():
     return {"ok": True}
 
 
+@app.get("/api/version")
+def version():
+    """构建版本。CI/本地出包时由 scripts/sync_version.py 生成 _build_version.py。"""
+    try:
+        from tt_calendar._build_version import __version__
+    except ImportError:
+        __version__ = "dev"
+    return {
+        "version": __version__,
+        "frozen": bool(getattr(sys, "frozen", False)),
+        "data_dir": str(cfg.DATA_DIR),
+        "plugins_dir": str(cfg.PLUGINS_DIR),
+    }
+
+
 # 生产模式：同时 serve frontend/dist（让 Pake 加载 http://127.0.0.1:8765 单端口）
 def _frontend_dist() -> Path:
     if getattr(sys, "frozen", False):
@@ -214,6 +229,17 @@ if FRONTEND_DIST.is_dir():
 
 
 if __name__ == "__main__":
+    import argparse
+    import os
+
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8765)
+    parser = argparse.ArgumentParser(description="TT Calendar backend")
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=int(os.environ.get("TT_CALENDAR_PORT", "8765")),
+        help="监听端口（Tauri 启动时会选一个空闲端口传入）",
+    )
+    args = parser.parse_args()
+    uvicorn.run(app, host="127.0.0.1", port=args.port)
