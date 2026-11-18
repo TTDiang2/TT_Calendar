@@ -6,11 +6,11 @@
 
 **[English](README.md) · 简体中文**
 
-[![Release](https://img.shields.io/badge/Release-v2.3.0-3D6BFB)](https://github.com/TTDiang2/TT_Calendar/releases)
+[![Release](https://img.shields.io/badge/Release-v2.4.0-3D6BFB)](https://github.com/TTDiang2/TT_Calendar/releases)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%2B-blue)]()
 [![License](https://img.shields.io/badge/License-MIT-green)]()
 
-> 下载、解压、双击即用 —— **不需要装 Python**，不需要注册，不需要任何配置。
+> 下载、安装、双击即用 —— **不需要装 Python**，不需要注册，不需要任何配置。
 
 </div>
 
@@ -133,18 +133,20 @@ TT Calendar 反过来做 —— **你的规则优先，而且 100% 可改**。
 
 ### 直接下载（推荐）
 
-前往 **[GitHub Releases](https://github.com/TTDiang2/TT_Calendar/releases)** 下载最新版本，共 3 个文件：
+前往 **[GitHub Releases](https://github.com/TTDiang2/TT_Calendar/releases)** 下载最新版安装包：
 
 | 文件 | 作用 |
 |---|---|
-| `TT-Calendar-Launcher-x64.exe` | 启动器 —— 双击它就行 |
-| `TT-Calendar-x64.exe` | 日历界面（Tauri 桌面端） |
-| `tt-calendar-backend-x64.exe` | 后端服务（已内置 Python 运行时） |
+| `TT-Calendar-Setup-x.y.z.exe` | 安装包 —— 双击、下一步、完成 |
+| `TT-Calendar-x.y.z.msi` | 同一应用的 MSI，适合批量部署 |
+| `TT-Calendar-Portable-x.y.z.zip` | 便携版 —— 解压即用，不写注册表 |
 
-**使用方法**：三个文件放进同一个文件夹，双击 `TT-Calendar-Launcher-x64.exe`，等 5~10 秒窗口打开即用。
+安装包按当前用户安装（不需要管理员权限），自动创建开始菜单快捷方式，可从
+Windows 设置里卸载。用户数据存放在 `%APPDATA%\TT Calendar`，升级和卸载都**不会删除**。
 
-> ✅ **不需要安装 Python** —— 后端 exe 已内置完整 Python 运行时，开箱即用。
+> ✅ **不需要安装 Python** —— 后端已内置完整 Python 运行时，开箱即用。
 > ✅ 不需要注册、不强制联网、不需要任何配置。
+> ✅ 2.4.0 带来全新的周/日视图、矩阵、看板、今日容量与排期视图。
 
 ### 从源码运行（开发模式）
 
@@ -264,7 +266,7 @@ TT Calendar.exe (Tauri + React · 界面)
 build_release.bat
 ```
 
-依次构建前端、桌面端、后端、启动器，产出 3 个 exe 到 `release/` —— 直接分发给任何 Windows 电脑，对方不需要装任何环境。
+依次构建前端、桌面端、后端，产出 NSIS 安装包、MSI 和便携版 zip 到 `release/` —— 直接分发给任何 Windows 电脑。
 
 ---
 

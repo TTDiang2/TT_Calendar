@@ -6,11 +6,11 @@
 
 **English · [简体中文](README.zh-CN.md)**
 
-[![Release](https://img.shields.io/badge/Release-v2.3.0-3D6BFB)](https://github.com/TTDiang2/TT_Calendar/releases)
+[![Release](https://img.shields.io/badge/Release-v2.4.0-3D6BFB)](https://github.com/TTDiang2/TT_Calendar/releases)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%2B-blue)]()
 [![License](https://img.shields.io/badge/License-MIT-green)]()
 
-> Download, unzip, double-click. It just works — **no Python required**, no registration, no configuration.
+> Download, install, double-click. It just works — **no Python required**, no registration, no configuration.
 
 </div>
 
@@ -135,18 +135,21 @@ Read the **[Plugin Development Guide](docs/SUBSCRIPTION_PLUGIN_GUIDE.md)** for t
 
 ### Download (recommended)
 
-Grab the latest **3 files** from [GitHub Releases](https://github.com/TTDiang2/TT_Calendar/releases):
+Grab the latest **installer** from [GitHub Releases](https://github.com/TTDiang2/TT_Calendar/releases):
 
 | File | Role |
 |---|---|
-| `TT-Calendar-Launcher-x64.exe` | Launcher — double-click this one |
-| `TT-Calendar-x64.exe` | Calendar UI (Tauri desktop) |
-| `tt-calendar-backend-x64.exe` | Backend service (embeds a Python runtime) |
+| `TT-Calendar-Setup-x.y.z.exe` | Installer — double-click, next, done |
+| `TT-Calendar-x.y.z.msi` | Same app as an MSI, for managed deployment |
+| `TT-Calendar-Portable-x.y.z.zip` | Portable build — unzip anywhere, no install |
 
-Put all three in **one folder**, double-click `TT-Calendar-Launcher-x64.exe`, and the window opens in 5–10 s.
+The installer is per-user (no admin prompt), adds a Start-menu shortcut, and can be
+uninstalled from Windows Settings. User data lives in `%APPDATA%\TT Calendar` and is
+**kept** across upgrades and uninstalls.
 
-> ✅ No Python needed — the backend exe bundles a full Python runtime.
+> ✅ No Python needed — the backend bundles a full Python runtime.
 > ✅ No registration, no mandatory internet, no configuration.
+> ✅ 2.4.0 brings the new week/day, matrix, kanban, capacity and schedule views.
 
 ### Run from source (development)
 
@@ -268,8 +271,8 @@ Module boundaries are clean on purpose — most features touch only one or two f
 build_release.bat
 ```
 
-It builds the frontend, desktop app, backend and launcher into 3 exes under `release/` —
-ready to distribute to any Windows machine, no environment needed.
+It builds the frontend, desktop app and backend, then emits the NSIS installer, MSI and
+portable zip under `release/` — ready to distribute to any Windows machine.
 
 ---
 
