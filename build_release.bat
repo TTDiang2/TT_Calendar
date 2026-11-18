@@ -17,6 +17,20 @@ set "MODE=%~1"
 if "%MODE%"=="" set "MODE=all"
 if not exist "%OUT%" mkdir "%OUT%"
 
+rem 优先 py -3.10：后端 exe 是 cp310 构建，而很多机器 PATH 上的 python
+rem 已经是 3.13/3.14，那里通常没装 PyInstaller，直接 python -m PyInstaller 会失败。
+set "PY="
+py -3.10 -c "import PyInstaller" >nul 2>&1 && set "PY=py -3.10"
+if not defined PY (
+    python -c "import PyInstaller" >nul 2>&1 && set "PY=python"
+)
+if not defined PY (
+    echo === PYTHON WITH PYINSTALLER NOT FOUND ===
+    echo install: py -3.10 -m pip install pyinstaller
+    goto :fail
+)
+echo Using Python: %PY%
+
 echo === [0/7] Killing related processes ===
 taskkill /F /IM "TT Calendar.exe" >nul 2>&1
 taskkill /F /IM app.exe >nul 2>&1
@@ -27,9 +41,9 @@ timeout /t 2 /nobreak >nul
 echo.
 echo === [1/7] Syncing version ===
 pushd "%ROOT%"
-python scripts\sync_version.py
+%PY% scripts\sync_version.py
 if errorlevel 1 goto :fail
-for /f "usebackq delims=" %%v in (`python -c "import json;print(json.load(open('version.json',encoding='utf-8'))['version'])"`) do set "VER=%%v"
+for /f "usebackq delims=" %%v in (`%PY% -c "import json;print(json.load(open('version.json',encoding='utf-8'))['version'])"`) do set "VER=%%v"
 if "%VER%"=="" (
     echo === VERSION READ FAILED ===
     goto :fail
@@ -38,7 +52,7 @@ echo Version: %VER%
 
 echo.
 echo === [2/7] Building backend (PyInstaller onedir) ===
-python -m PyInstaller --noconfirm --clean tt-calendar-backend.spec
+%PY% -m PyInstaller --noconfirm --clean tt-calendar-backend.spec
 if errorlevel 1 goto :fail
 if not exist "%ROOT%dist\tt-calendar-backend\tt-calendar-backend.exe" (
     echo === BACKEND EXE MISSING ===
