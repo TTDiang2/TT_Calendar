@@ -30,16 +30,20 @@ def clear_dedup():
 
 
 def _last_supported_year() -> int:
-    """从库里探出最后有数据的年份，而不是把 2026 硬编码进断言。"""
-    y = 2026
-    while True:
+    """从库里探出最后有数据的年份，而不是把 2026 硬编码进断言。
+
+    必须**往上**探：从一个确定有数据的年份起步，逐年加，第一个抛错的就是越界年。
+    早先的写法是从 2026 往下退，等于把「2026 就是最后一年」写死了——依赖升到
+    支持 2027 之后，三个用例会在 CI 上集体失败（本地还是旧版，反而看不出来）。
+    """
+    y = 2005  # chinese_calendar 的下界远早于此，这里取一个肯定有数据的起点
+    while y < 2200:  # 兜底，别让测试死循环
         try:
             A.cc.get_holiday_detail(date(y, 6, 1))
-            return y
-        except NotImplementedError:
-            y -= 1
-            if y < 2000:  # 兜底，别让测试死循环
-                return y
+        except Exception:  # NotImplementedError / AssertionError 都算「没这年数据」
+            return y - 1
+        y += 1
+    return y
 
 
 def test_out_of_range_year_is_logged(caplog) -> None:
