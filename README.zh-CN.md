@@ -194,33 +194,49 @@ npm run dev
 ## 🏗️ 架构一览
 
 ```
-TT-Calendar-Launcher.exe (Rust)
-        │ 拉起后端 + 健康检查 + 生命周期管理
+TT Calendar.exe (Tauri 2)
+        │ 主进程负责：选端口(8765..8785)、拉起后端、Job Object 绑定生命周期、单实例
+        │ WebView2 加载 React 界面
+        ▼ REST（127.0.0.1）
+tt-calendar-backend.exe (FastAPI · 内嵌 Python · onedir)
+        │
         ▼
-tt-calendar-backend.exe (FastAPI · 内嵌 Python · 127.0.0.1:8765)
-        │ REST API
-        ▼
-TT Calendar.exe (Tauri + React · 界面)
+%APPDATA%\TT Calendar\data\calendar.db  (SQLite)
+%APPDATA%\TT Calendar\plugins\*.py      (订阅插件，应用内安装/卸载)
 ```
 
 | 层 | 技术 |
 |---|---|
 | 界面 | React · TypeScript · Tailwind CSS · Tauri 2 |
-| 后端 | FastAPI · SQLite |
-| 启动器 | Rust（进程编排） |
-| 插件 | Python `Source` 协议，`plugins/` 目录自动发现 |
+| 后端 | FastAPI · SQLite（PyInstaller onedir，约 2 秒起） |
+| 进程编排 | Tauri 主进程（Rust），不再需要单独的 launcher |
+| 插件 | Python `Source` 协议，用户目录下的 `plugins/` 自动发现 |
 
 深入阅读：[架构](docs/ARCHITECTURE.md) · [设计哲学](docs/PHILOSOPHY.md) ·
-[插件开发指南](docs/SUBSCRIPTION_PLUGIN_GUIDE.md) · [同步协议](docs/SYNC_PROTOCOL.md)
+[插件开发指南](docs/SUBSCRIPTION_PLUGIN_GUIDE.md) · [发布手册](docs/RELEASE.md) ·
+[同步协议](docs/SYNC_PROTOCOL.md)
 
 ---
 
 ## 🔒 数据与隐私
 
-- 所有数据（日程、待办、配置）存储在应用目录下的 `data/calendar.db`（SQLite）
+- 数据存在用户目录 `%APPDATA%\TT Calendar\data\calendar.db`（SQLite），不跟安装目录走，
+  所以**升级、卸载都不会删**（便携版则放在 exe 同目录的 `data/`）
+- 每天自动热备份到 `data\backups\`，保留 14 天
 - 无账号体系、无遥测、无任何网络上报
 - 外部数据图层仅在打开时按需拉取
-- 数据目录被 `.gitignore` 排除，个人数据不会进入版本库
+- 设置页「导出诊断包」只收版本、路径、日志摘要，**不含**日历内容、配置或账号凭据
+
+### 卸载会删什么、留什么
+
+| 路径 | 卸载后 |
+|---|---|
+| `%LOCALAPPDATA%\TT Calendar\`（程序本体） | 删除 |
+| `%APPDATA%\TT Calendar\data\` | **保留** |
+| `%APPDATA%\TT Calendar\plugins\` | **保留** |
+
+重装后自动读取旧数据，不需要手动导入；从便携版迁到安装版时，首次启动会提示把旧库
+导入过来。
 
 ### 信任边界
 

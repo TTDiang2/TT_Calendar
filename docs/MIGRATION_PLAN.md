@@ -1163,3 +1163,46 @@ Graph API 集成（device code flow）方案已在 brainstorming 阶段调研完
 - PyInstaller 重打包耗时 ~120s（开发周期考虑）
 - launcher 编译需要 MSVC 工具链（参考 `build_release.bat`）
 - 旧的 `docs/MIGRATION_PLAN.md` §14（2026-08-05）曾经做过类似优化但当时只走系统 python；这次合并两条路线
+
+---
+
+## §22 从 demo 到产品：安装版 / 数据安全 / 插件市场（2026-11-18，v2.4.0）
+
+### 落地路径（与早期计划相比变了的地方）
+
+| 项 | 计划 | 实际 |
+|---|---|---|
+| 启动入口 | 保留 `TT-Calendar-Launcher.exe` 作必需入口 | **取消**：Tauri 主进程自己选端口（8765..8785）、spawn 后端、用 Job Object 的 `KILL_ON_JOB_CLOSE` 绑定生命周期。少一个进程，也少一处「launcher 崩了应用就起不来」 |
+| 后端打包 | onefile | **onedir**（`dist/tt-calendar-backend/`）：启动 5–7s → ~2s，代价是安装目录多一个文件夹 |
+| 数据目录 | `%APPDATA%\TT Calendar\data` | 一致。刻意不用 `%LOCALAPPDATA%`——NSIS 按 currentUser 装到 LocalAppData，卸载会递归删掉数据 |
+| 插件目录 | exe 旁的 `plugins/` | **`%APPDATA%\TT Calendar\plugins`**：与安装目录解耦，装到 Program Files 也能写；便携版的旧插件在首次启动时自动迁移过来 |
+| 插件获取 | 手动去 GitHub 下载 .py | **应用内插件市场**：读官方 `registry.json`，校验 sha256 + source_id，临时文件试导入成功才落盘 |
+| 版本号 | 多处手改 | `version.json` + `scripts/sync_version.py` 同步四处，CI 里 tag 与版本不一致直接失败 |
+
+### 新增能力
+
+- **每日热备份**：SQLite backup API，`data\backups\`，保留 14 天；`/api/backups` 查询、`/api/backups/now` 手动触发
+- **首次启动引导**：检测到便携版旧库时提示导入（`/api/onboarding/status|complete|import`），导入用 SQLite backup API 而不是文件复制，避免 WAL 状态下拷出半成品
+- **诊断包**：`/api/diagnostics/export`，白名单收集版本/路径/日志摘要，**不含**日历内容、配置、账号凭据
+- **自动更新**：tauri-plugin-updater + minisign 签名，端点指向 GitHub Releases 的 `latest.json`；私钥放 `.keys/`（已 gitignore），CI 用 secret
+- **CI 出包**：`.github/workflows/release.yml`，打 `v*` tag 触发 → NSIS/MSI/便携 zip/latest.json/校验和
+
+### 踩过的坑
+
+- **npm 与 Cargo 的 Tauri 版本必须同线**：`@tauri-apps/api` 用 `^` 会漂到 2.12，而 crate 还锁在 2.11.5，`tauri build` 的版本一致性检查直接 exit。现在两侧都用精确版本。
+- **`python` 未必是 3.10**：本机 PATH 上的 `python` 是 3.13，没有 PyInstaller，`build_release.bat` 会静默打出半成品。脚本改成先试 `py -3.10`，两者都没有 PyInstaller 时直接报错。
+- **卸载器不要从安装目录里跑**：`cd "$LOCALAPPDATA\TT Calendar" && ./uninstall.exe /S` 会残留 `backend/`——CWD 锁住了要删的目录。从别处调用（或走「添加/删除程序」）能删干净。
+- **插件 registry 拉取超时要短**：默认 10s 让设置页白转十秒才说「离线」，改成 4s。
+
+### 验收记录（2026-11-18）
+
+| 项 | 结果 |
+|---|---|
+| 静默安装 `Setup-2.4.0.exe /S` | exit 0，装到 `%LOCALAPPDATA%\TT Calendar` |
+| 启动 | 端口 8765，数据落 `%APPDATA%\TT Calendar\data`，`frozen=true` |
+| 建数据 → 卸载 → 重装 | 待办与列表仍在（3 条 → 重装后 1 条未完成，符合勾选结果） |
+| 卸载 | 程序目录删净；`data/backups/diagnostics/plugins` 全部保留 |
+| 导出诊断包 | zip 内含 README/version/system/backend.log，无数据库与凭据 |
+| 插件市场 | 本机到 GitHub raw 不通，4s 内给出「无法连接插件源」+ 重试（安装路径由 5 个后端测试覆盖） |
+| 检查更新 | 无 release 时提示「发布页上还没有更新信息」 |
+| Python 613 / 前端 171 / typecheck / ruff | 全绿 |
