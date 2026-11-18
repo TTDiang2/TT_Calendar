@@ -31,6 +31,8 @@ launcher/target/
 build/
 release/
 *.exe
+# 由 scripts/sync_version.py 生成
+tt_calendar/_build_version.py
 *.msi
 *.bak.*
 
