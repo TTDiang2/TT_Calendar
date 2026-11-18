@@ -56,3 +56,19 @@ def test_copies_user_config(tmp_path, monkeypatch):
 
     assert migrate.import_legacy_data(home) is True
     assert (home / "data" / "user_config.json").read_text(encoding="utf-8") == '{"lang":"en"}'
+
+
+def test_copies_legacy_plugins_once(tmp_path, monkeypatch):
+    legacy_root = tmp_path / "legacy"
+    plugins = legacy_root / "plugins"
+    plugins.mkdir(parents=True)
+    (plugins / "investing.py").write_text("# plugin", encoding="utf-8")
+    (plugins / "_README.md").write_text("x", encoding="utf-8")
+    target = tmp_path / "home" / "plugins"
+    monkeypatch.setattr(migrate, "PROJECT_ROOT", legacy_root)
+    monkeypatch.setattr(migrate, "PLUGINS_DIR", target)
+
+    assert migrate.import_legacy_plugins() == 1
+    assert (target / "investing.py").read_text(encoding="utf-8") == "# plugin"
+    assert not (target / "_README.md").exists()
+    assert migrate.import_legacy_plugins() == 0

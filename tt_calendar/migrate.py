@@ -12,7 +12,7 @@ import shutil
 import sqlite3
 from pathlib import Path
 
-from .paths import PROJECT_ROOT
+from .paths import PLUGINS_DIR, PROJECT_ROOT
 
 log = logging.getLogger(__name__)
 
@@ -75,3 +75,32 @@ def import_legacy_data(home: Path) -> bool:
         return True
 
     return False
+
+
+def import_legacy_plugins() -> int:
+    """把便携包旁的 plugins/*.py 复制到可写插件目录；已存在的不覆盖。"""
+    target = PLUGINS_DIR
+    candidates = (PROJECT_ROOT / "plugins", PROJECT_ROOT.parent / "plugins")
+    if any(candidate.resolve() == target.resolve() for candidate in candidates):
+        return 0
+
+    copied = 0
+    for base in candidates:
+        if not base.is_dir():
+            continue
+        for src in sorted(base.glob("*.py")):
+            if src.name.startswith("_"):
+                continue
+            dest = target / src.name
+            if dest.exists():
+                continue
+            try:
+                target.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src, dest)
+                copied += 1
+            except OSError as e:
+                log.warning("插件迁移失败 %s: %s", src, e)
+        if copied:
+            log.info("已从 %s 迁移 %d 个插件", base, copied)
+            break
+    return copied

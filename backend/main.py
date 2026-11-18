@@ -74,6 +74,7 @@ async def lifespan(app: FastAPI):
     if migrate.import_legacy_data(cfg.HOME):
         onboarding.mark_initialized(cfg.HOME)
         logger.info("已从便携版 data/ 导入历史数据")
+    migrate.import_legacy_plugins()
     if onboarding.apply_pending_import(cfg.HOME):
         logger.info("已导入用户选择的数据库")
     conn = deps.connect_db()
