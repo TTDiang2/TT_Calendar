@@ -1,0 +1,162 @@
+name: Release
+
+# 打 tag（v2.4.0）或手动触发时出一个完整的 Windows 发行版：
+# setup.exe（NSIS）、msi、便携 zip、updater 产物与 latest.json。
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: "本次更新说明（会写进 latest.json 的 notes）"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+env:
+  # 从 tag 或 version.json 推导，后续所有步骤共用
+  FORCE_COLOR: "1"
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: frontend/src-tauri
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      # 版本号单一来源：version.json → tauri.conf / package.json / Cargo.toml / _build_version.py
+      - name: Sync version
+        run: python scripts/sync_version.py
+
+      - name: Read version
+        id: ver
+        shell: bash
+        run: |
+          V=$(python -c "import json;print(json.load(open('version.json',encoding='utf-8'))['version'])")
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=v$V" >> "$GITHUB_OUTPUT"
+          fi
+          echo "building $V"
+
+      # tag 与 version.json 不一致时直接失败，避免「v2.4.1 的包里装着 2.4.0」
+      - name: Verify tag matches version.json
+        if: github.ref_type == 'tag'
+        shell: bash
+        run: |
+          if [ "${GITHUB_REF_NAME}" != "v${{ steps.ver.outputs.version }}" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} 与 version.json (${{ steps.ver.outputs.version }}) 不一致"
+            exit 1
+          fi
+
+      - name: Build backend (onedir)
+        run: python -m PyInstaller --noconfirm --clean tt-calendar-backend.spec
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build installer
+        id: build
+        working-directory: frontend
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+            npx tauri build
+          else
+            echo "::warning::未配置 TAURI_SIGNING_PRIVATE_KEY，本次不出自动更新产物（老版本收不到更新，只能手动下载）"
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            npx tauri build --config '{"bundle":{"createUpdaterArtifacts":false}}'
+          fi
+
+      - name: Collect installer
+        shell: bash
+        run: |
+          V="${{ steps.ver.outputs.version }}"
+          mkdir -p release
+          B=frontend/src-tauri/target/release/bundle
+          ls -l "$B/nsis" "$B/msi" || true
+          SETUP=$(ls "$B"/nsis/*-setup.exe | head -1)
+          cp "$SETUP" "release/TT-Calendar-Setup-$V.exe"
+          MSI=$(ls "$B"/msi/*.msi | head -1 || true)
+          if [ -n "$MSI" ]; then cp "$MSI" "release/TT-Calendar-$V.msi"; fi
+
+      - name: Build portable zip
+        shell: powershell
+        run: |
+          ./scripts/make_portable_zip.ps1 -Version "${{ steps.ver.outputs.version }}" -Root "${{ github.workspace }}"
+
+      # latest.json 必须指向「被签名的那份产物」，所以这一步既生成 json，
+      # 也把 nsis.zip 复制成 release 里的固定资产名，两边对得上。
+      - name: Generate latest.json
+        if: steps.build.outputs.signed == 'true'
+        shell: bash
+        env:
+          NOTES: ${{ github.event.inputs.notes }}
+        run: |
+          python scripts/gen_latest_json.py \
+            --tag "${{ steps.ver.outputs.tag }}" \
+            --stage-dir release \
+            --notes "$NOTES" \
+            --out release/latest.json
+
+      - name: Checksums
+        shell: bash
+        run: |
+          cd release
+          for f in *; do
+            case "$f" in
+              *.json) ;;
+              *) sha256sum "$f" >> SHA256SUMS.txt ;;
+            esac
+          done
+          cat SHA256SUMS.txt
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: TT Calendar ${{ steps.ver.outputs.version }}
+          draft: false
+          prerelease: false
+          body: |
+            ${{ github.event.inputs.notes }}
+
+            安装版：`TT-Calendar-Setup-${{ steps.ver.outputs.version }}.exe`
+            便携版：`TT-Calendar-Portable-${{ steps.ver.outputs.version }}.zip`（解压即用，数据在同一目录）
+          files: |
+            release/TT-Calendar-Setup-*.exe
+            release/TT-Calendar-*.msi
+            release/TT-Calendar-Portable-*.zip
+            release/TT-Calendar-*.nsis.zip
+            release/latest.json
+            release/SHA256SUMS.txt
