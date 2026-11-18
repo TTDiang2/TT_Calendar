@@ -1,16 +1,45 @@
 import type { CalEvent, CountdownItem, Day, Layer, MonthData, ScheduleItem, StatsSummary, Todo, TodoList, TodoSort, TodoStatusFilter, ViewMode, YearData } from '../types'
 
-// 开发：localhost:8000（uvicorn）；生产：127.0.0.1:8765（Tauri sidecar）
-const API_BASE = import.meta.env.PROD ? 'http://127.0.0.1:8765' : 'http://localhost:8000'
+// 开发：localhost:8000（uvicorn）；生产：由 Tauri 主进程选端口后经 invoke 注入。
+// 不能写死 8765：端口可能被占用，主进程会在 8765..8785 里挑一个能绑的。
+let API_BASE = import.meta.env.PROD ? 'http://127.0.0.1:8765' : 'http://localhost:8000'
+
+export const getApiBase = () => API_BASE
+
+/** 生产构建里向 Tauri 询问实际后端地址；浏览器/开发模式保持默认。 */
+export async function initApiBase(): Promise<void> {
+  if (!import.meta.env.PROD) return
+  try {
+    const core = await import('@tauri-apps/api/core')
+    if (!core.isTauri()) return
+    API_BASE = await core.invoke<string>('backend_base_url')
+  } catch {
+    // 保持默认地址，交给 waitForBackend 给出可读的启动失败提示
+  }
+}
+
+/** 等后端 lifespan 跑完。后端是 onedir，冷启动约 2-3s。 */
+export async function waitForBackend(timeoutMs = 45_000): Promise<boolean> {
+  const started = Date.now()
+  while (Date.now() - started < timeoutMs) {
+    try {
+      if ((await fetch(`${API_BASE}/health`)).ok) return true
+    } catch {
+      // 后端还没监听，继续重试
+    }
+    await new Promise((resolve) => setTimeout(resolve, 300))
+  }
+  return false
+}
 
 async function get<T>(path: string): Promise<T> {
-  const r = await fetch(`${API_BASE}/api${path}`)
+  const r = await fetch(`${getApiBase()}/api${path}`)
   if (!r.ok) throw new Error(`${r.status} ${path}`)
   return r.json()
 }
 
 async function post<T>(path: string, body?: unknown): Promise<T> {
-  const r = await fetch(`${API_BASE}/api${path}`, {
+  const r = await fetch(`${getApiBase()}/api${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
@@ -20,7 +49,7 @@ async function post<T>(path: string, body?: unknown): Promise<T> {
 }
 
 async function put<T>(path: string, body?: unknown): Promise<T> {
-  const r = await fetch(`${API_BASE}/api${path}`, {
+  const r = await fetch(`${getApiBase()}/api${path}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
@@ -30,13 +59,13 @@ async function put<T>(path: string, body?: unknown): Promise<T> {
 }
 
 async function del<T>(path: string): Promise<T> {
-  const r = await fetch(`${API_BASE}/api${path}`, { method: 'DELETE' })
+  const r = await fetch(`${getApiBase()}/api${path}`, { method: 'DELETE' })
   if (!r.ok) throw new Error(`${r.status} ${path}`)
   return r.json()
 }
 
 async function patch<T>(path: string, body?: unknown): Promise<T> {
-  const r = await fetch(`${API_BASE}/api${path}`, {
+  const r = await fetch(`${getApiBase()}/api${path}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
@@ -226,10 +255,9 @@ export const deleteTodo = (id: string) => del<{ ok: boolean }>(`/todo/${id}`)
 export const importTodosCsv = (file: File) => {
   const fd = new FormData()
   fd.append('file', file)
-  return fetch(`${API_BASE}/api/todo/import/csv`, { method: 'POST', body: fd }).then((r) => r.json())
+  return fetch(`${getApiBase()}/api/todo/import/csv`, { method: 'POST', body: fd }).then((r) => r.json())
 }
 
-export { API_BASE }
 export type { Day }
 
 // 多端同步
@@ -317,7 +345,7 @@ export const saveSyncConfig = (cfg: { repo: string; branch: string; token?: stri
 export const testSync = () => post<{ ok: boolean; detail: string }>('/sync/test')
 
 export async function syncNow(): Promise<SyncResult> {
-  const r = await fetch(`${API_BASE}/api/sync/now`, { method: 'POST' })
+  const r = await fetch(`${getApiBase()}/api/sync/now`, { method: 'POST' })
   if (r.status === 409) {
     const d = await r.json()
     return { result: 'needs_decision', remote_rows: d.detail?.remote_rows ?? 0 }
