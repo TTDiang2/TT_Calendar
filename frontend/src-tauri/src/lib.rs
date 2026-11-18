@@ -156,6 +156,7 @@ pub fn run() {
                 let _ = window.set_focus();
             }
         }))
+        .plugin(tauri_plugin_opener::init())
         .plugin(
             tauri_plugin_log::Builder::default()
                 .level(log::LevelFilter::Info)

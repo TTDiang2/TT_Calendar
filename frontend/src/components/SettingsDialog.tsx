@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import clsx from 'clsx'
 import { Trash2, FileArchive, Copy } from 'lucide-react'
 import { Modal, Field } from './ui/Modal'
+import { PluginManager } from './PluginManager'
 import {
   toggleLayer, importSource, getSources, getLayerSubActions, updateLayerConfig, deleteLayer,
   getTodoBusyConfig, setTodoBusyConfig, recomputeTodoBusy, type TodoBusyConfig,
@@ -134,6 +135,7 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
         <BusyConfigSection />
         <ReminderConfigSection />
         <SyncConfigSection />
+        <PluginManager />
         <DiagnosticsSection />
       </div>
       <p className="mt-5 pt-3 border-t border-[color:var(--cal-border)] text-center text-[11px] cal-muted select-none">

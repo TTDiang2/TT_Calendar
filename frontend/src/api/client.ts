@@ -378,3 +378,45 @@ export interface VersionInfo {
 }
 
 export const getVersionInfo = () => get<VersionInfo>('/version')
+
+export interface PluginMarketItem {
+  source_id: string
+  display_name: string
+  group: string
+  needs_internet: boolean
+  file: string
+  size: number | null
+  layer_count: number
+  installed: boolean
+  installed_sha: string | null
+  update_available: boolean
+  local_modified: boolean
+}
+
+export interface PluginMarket {
+  ok: boolean
+  offline: boolean
+  error?: string
+  plugins: PluginMarketItem[]
+  registry_url: string
+}
+
+async function pluginRequest<T>(path: string, method: 'POST' | 'DELETE', body?: unknown): Promise<T> {
+  const r = await fetch(`${getApiBase()}/api${path}`, {
+    method,
+    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  if (!r.ok) {
+    const detail = await r.json().catch(() => null)
+    throw new Error(detail?.detail ?? `${r.status} ${path}`)
+  }
+  return r.json()
+}
+
+export const getPlugins = () => get<PluginMarket>('/plugins')
+export const installPlugin = (source_id: string) =>
+  pluginRequest<{ ok: boolean; source_id: string; installed_sha: string }>('/plugins/install', 'POST', { source_id })
+export const uninstallPlugin = (source_id: string) =>
+  pluginRequest<{ ok: boolean; source_id: string }>(`/plugins/${encodeURIComponent(source_id)}`, 'DELETE')
+export const reloadPlugins = () => pluginRequest<{ ok: boolean; source_ids: string[] }>('/plugins/reload', 'POST')

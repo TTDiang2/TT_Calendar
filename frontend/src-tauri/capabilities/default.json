@@ -14,6 +14,7 @@
     "core:window:allow-close",
     "core:window:allow-is-maximized",
     "core:window:allow-internal-toggle-maximize",
-    "log:default"
+    "log:default",
+    "opener:allow-reveal-item-in-dir"
   ]
 }
