@@ -69,6 +69,10 @@ _configure_logging()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from tt_calendar import migrate
+
+    if migrate.import_legacy_data(cfg.HOME):
+        logger.info("已从便携版 data/ 导入历史数据")
     conn = deps.connect_db()
     app.state.db = conn
     try:
