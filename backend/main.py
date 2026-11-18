@@ -82,6 +82,14 @@ async def lifespan(app: FastAPI):
         db.backfill_layer_kind_group(conn)
         db.sync_countdown_events(conn)
         conn.commit()
+        try:
+            from tt_calendar import backup
+            saved = backup.daily_backup(conn, cfg.BACKUP_DIR)
+            if saved:
+                logger.info("每日备份完成: %s", saved)
+        except Exception:
+            # 备份是附加保障，不能因为它失败就让应用打不开。
+            logger.exception("每日备份失败，本次启动继续")
         yield
     finally:
         conn.close()

@@ -15,7 +15,8 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
-from tt_calendar import db
+from tt_calendar import backup, db
+from tt_calendar import config as app_config
 from tt_calendar.models import ColoringEntry, Event, LayerConfig, Mark, ScheduleEntry, ScheduleItem, Todo, TodoList
 from tt_calendar.sources import get_source
 from tt_calendar.sources.base import sub_filter_pattern
@@ -1369,3 +1370,18 @@ def import_todos_csv(file: UploadFile = File(...), conn=Depends(get_db)):
 
     conn.commit()
     return {"inserted": inserted, "lists_created": lists_created, "errors": errors}
+
+
+@router.get("/backups")
+def get_backups():
+    return backup.list_backups(app_config.BACKUP_DIR)
+
+
+@router.post("/backups/now")
+def create_backup(conn=Depends(get_db)):
+    dest = backup.backup_now(conn, app_config.BACKUP_DIR)
+    return {
+        "name": dest.name,
+        "size": dest.stat().st_size,
+        "path": str(dest),
+    }
