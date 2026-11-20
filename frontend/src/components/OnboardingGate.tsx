@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { getApiBase } from '../api/client'
+import { useT } from '../i18n'
 
-// 首次启动页发生在用户尚未进入应用之前，用中英并列文案而不是 i18n：
-// 此时语言选择刚完成但设置尚未落盘，双语是最稳妥的表达。
-/* eslint-disable no-restricted-syntax */
+// 首启动欢迎页。以前文案是中英并列（语言刚选完又出现英文，等于白选），
+// 现在跟随用户刚选的语言；语言选择页本身负责「选之前」的双语兜底。
 
 type Phase = 'loading' | 'first' | 'ready'
 
@@ -40,6 +40,7 @@ function Row({ label, value, mono }: { label: string; value: string; mono?: bool
 }
 
 export function OnboardingGate({ children }: { children: ReactNode }) {
+  const t = useT()
   const [phase, setPhase] = useState<Phase>('loading')
   const [status, setStatus] = useState<StatusPayload | null>(null)
   const [busy, setBusy] = useState(false)
@@ -75,7 +76,7 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       setPhase('ready')
     } catch {
-      setError('未能保存设置 / Could not save. Please retry.')
+      setError(t('onboarding.saveFailed'))
     } finally {
       setBusy(false)
     }
@@ -92,7 +93,7 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
         const detail = await r.json().catch(() => null)
         throw new Error(detail?.detail || `HTTP ${r.status}`)
       }
-      setError('导入完成，正在重启… / Imported. Restarting…')
+      setError(t('onboarding.imported'))
       if ('__TAURI_INTERNALS__' in window) {
         const { invoke } = await import('@tauri-apps/api/core')
         await invoke('restart_app')
@@ -100,7 +101,7 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
         window.location.reload()
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : '导入失败 / Import failed')
+      setError(e instanceof Error ? e.message : t('onboarding.importFailed'))
       setBusy(false)
     }
   }
@@ -119,7 +120,7 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
           fontSize: 13,
         }}
       >
-        正在准备 / Preparing…
+        {t('onboarding.preparing')}
       </div>
     )
   }
@@ -164,18 +165,16 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
           TT Calendar{status?.version ? ` · v${status.version}` : ''}
         </div>
         <h1 style={{ margin: '12px 0 10px', fontSize: 25, lineHeight: 1.35, fontWeight: 600 }}>
-          把日子安顿好
+          {t('onboarding.tagline')}
         </h1>
         <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.85, color: 'var(--cal-muted)' }}>
-          所有数据都保存在这台电脑上，不登录、不上传。
-          <br />
-          Everything stays on this computer. No account, no cloud.
+          {t('onboarding.subtitle')}
         </p>
 
         <div style={{ marginTop: 26 }}>
-          <Row label="本地优先 / Local-first" value="断网也能用；关闭程序后数据仍在。" />
-          <Row label="每日备份 / Backup" value="每次启动自动备份，最近 14 天保留在 backups 文件夹。" />
-          <Row label="数据位置 / Data" value={status?.data_dir || '—'} mono />
+          <Row label={t('onboarding.localLabel')} value={t('onboarding.localValue')} />
+          <Row label={t('onboarding.backupLabel')} value={t('onboarding.backupValue')} />
+          <Row label={t('onboarding.dataLabel')} value={status?.data_dir || '—'} mono />
         </div>
 
         <button
@@ -197,7 +196,7 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
             opacity: busy ? 0.7 : 1,
           }}
         >
-          开始使用 / Get started
+          {t('onboarding.start')}
         </button>
 
         <button
@@ -216,7 +215,7 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
             cursor: busy ? 'progress' : 'pointer',
           }}
         >
-          导入旧数据 / Import existing data
+          {t('onboarding.importOld')}
         </button>
         <input
           ref={fileRef}
@@ -230,7 +229,7 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
           }}
         />
         <div style={{ marginTop: 12, fontSize: 11.5, lineHeight: 1.7, color: 'var(--cal-muted)' }}>
-          选择旧版 <code>data/calendar.db</code>；导入前会自动备份当前数据。
+          {t('onboarding.importHint')}
         </div>
         {error && (
           <div style={{ marginTop: 12, fontSize: 12, lineHeight: 1.6, color: 'var(--cal-danger-ink, #c2543d)' }}>

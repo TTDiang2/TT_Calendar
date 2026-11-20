@@ -24,6 +24,7 @@ import {
   DayEntryDialog,
 } from './components/dialogs'
 import { SettingsDialog } from './components/SettingsDialog'
+import { GuideTour, tourSeen } from './components/GuideTour'
 import { ReminderBanner } from './components/ReminderBanner'
 import { useT, useLang, fmtDate } from './i18n'
 import { fmtDateRange } from './i18n/format'
@@ -92,6 +93,18 @@ export default function App() {
     mode === 'week' || mode === 'day' ? dayAnchor : monthKey,
   )
   const { data: countdownData } = useCountdown()
+
+  // 首次引导：等首屏数据真的画出来（侧栏图层、月网格都在）再亮聚光灯，
+  // 否则量到的是 loading 占位块，卡片会指向一片空白。
+  const [showTour, setShowTour] = useState(false)
+  const tourScheduled = useRef(false)
+  useEffect(() => {
+    if (tourScheduled.current || tourSeen()) return
+    if (isLoading || !monthData) return
+    tourScheduled.current = true
+    const timer = window.setTimeout(() => setShowTour(true), 700)
+    return () => window.clearTimeout(timer)
+  }, [isLoading, monthData])
 
   // 预取待办数据：首次进入日历页时就后台拉取，切到待办 tab 秒开
   useEffect(() => {
@@ -409,7 +422,7 @@ export default function App() {
               countdown={countdownData?.text ?? '…'}
               banner={countdownData?.banner}
             />
-            <main className="flex-1 flex flex-col p-4 min-w-0" style={{ backgroundColor: 'var(--cal-surface, #f9fafb)' }}>
+            <main data-tour="grid" className="flex-1 flex flex-col p-4 min-w-0" style={{ backgroundColor: 'var(--cal-surface, #f9fafb)' }}>
               {isLoading || !monthData ? (
                 <div className="flex-1 flex items-center justify-center text-gray-400">{t('common.loading')}</div>
               ) : mode === 'year' ? (
@@ -548,6 +561,7 @@ export default function App() {
           onClose={() => setDialog(null)}
         />
       )}
+      {showTour && <GuideTour onDone={() => setShowTour(false)} />}
     </div>
   )
 }

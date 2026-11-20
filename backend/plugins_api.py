@@ -1,10 +1,14 @@
 """插件市场：从官方 registry 拉取、校验、安装、卸载。
 
 安全边界：
-- 只接受官方仓库 raw 地址；
+- 只接受官方仓库的地址（GitHub raw 及其镜像）；
 - 文件名白名单、大小上限、sha256 必须匹配；
 - 安装前在临时文件上试导入，确认能注册出对应 source_id；
 - 卸载只删 registry 里登记过、且确实位于 plugins 目录内的文件。
+
+网络：raw.githubusercontent.com 在境内大面积不可达（20261120 用户实测老 Win10 上
+GitHub 全站打不开，但 CDN 镜像能开）。所以 registry 与插件文件都按「官方 → jsDelivr
+→ 第三方代理」的顺序多源取，先成功的胜出；内容仍走 sha256 校验，镜像被篡改也装不上。
 """
 
 from __future__ import annotations
@@ -17,6 +21,7 @@ import os
 import re
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
@@ -28,13 +33,70 @@ from tt_calendar.sources.base import collect_sources
 
 log = logging.getLogger(__name__)
 
-REGISTRY_URL = "https://raw.githubusercontent.com/TTDiang2/TT_Calendar_Plugins/main/registry.json"
-ALLOWED_URL_PREFIX = "https://raw.githubusercontent.com/TTDiang2/TT_Calendar_Plugins/"
+REPO_OWNER = "TTDiang2"
+REPO_NAME = "TT_Calendar_Plugins"
+REPO_BRANCH = "main"
+REPO_PATH = f"{REPO_OWNER}/{REPO_NAME}"
+RAW_PREFIX = f"https://raw.githubusercontent.com/{REPO_PATH}/"
+
+REGISTRY_URL = f"{RAW_PREFIX}{REPO_BRANCH}/registry.json"
+ALLOWED_URL_PREFIX = RAW_PREFIX
 CACHE_NAME = "plugin_registry.json"
 CACHE_TTL = 6 * 3600
 MAX_PLUGIN_BYTES = 2 * 1024 * 1024
 PLUGIN_FILE_RE = re.compile(r"^[a-z0-9_]+\.py$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+
+
+def _mirror_urls(url: str) -> list[str]:
+    """把 GitHub raw 地址展开成「官方 + 境内可用镜像」的候选列表。
+
+    jsDelivr 有 GitHub 仓库的完整镜像（同一份文件、带 CDN 缓存），境内通常直连；
+    ghfast.top 是一层公共反代，作为最后兜底——它不稳定，但总比彻底装不上好。
+    非官方仓库的地址原样返回，不做任何改写。
+    """
+    if not url.startswith(RAW_PREFIX):
+        return [url]
+    suffix = url[len(RAW_PREFIX) :]
+    parts = suffix.split("/", 1)
+    if len(parts) != 2:
+        return [url]
+    branch, path = parts
+    return [
+        url,
+        f"https://cdn.jsdelivr.net/gh/{REPO_PATH}@{branch}/{path}",
+        f"https://ghfast.top/{url}",
+    ]
+
+
+def _registry_urls() -> list[str]:
+    return _mirror_urls(REGISTRY_URL)
+
+
+def _get_first(urls: list[str], timeout: float) -> bytes:
+    """并发打所有候选地址，谁先回来用谁。
+
+    串行会在「GitHub 被黑洞掉」时先干等一个超时；并发把总耗时压到单个超时的量级。
+    shutdown(wait=False) 是必须的：否则 with 退出时会等所有线程跑完，等于白并发。
+    """
+    if not urls:
+        raise ValueError("没有可用的下载地址")
+    if len(urls) == 1:
+        return _http_get(urls[0], timeout)
+    pool = ThreadPoolExecutor(max_workers=len(urls))
+    futures = [pool.submit(_http_get, u, timeout) for u in urls]
+    try:
+        # as_completed 才是真的「先到先用」；按列表顺序 result() 会先干等官方地址超时。
+        for fut in as_completed(futures):
+            try:
+                data = fut.result()
+            except Exception:
+                continue
+            if data:
+                return data
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
+    raise ValueError(f"所有下载地址都失败：{', '.join(urls)}")
 
 
 def cache_path() -> Path:
@@ -83,9 +145,9 @@ def fetch_registry(force: bool = False) -> dict[str, Any] | None:
             if cached is not None:
                 return cached
     try:
-        # registry 只有几 KB，4 秒拿不到基本就是网络到不了 GitHub raw。
+        # registry 只有几 KB，4 秒拿不到基本就是网络到不了 GitHub 及其镜像。
         # 之前用默认 10 秒，设置页会白转十秒才给「离线」提示，体感像卡死。
-        raw = _http_get(REGISTRY_URL, timeout=4.0)
+        raw = _get_first(_registry_urls(), timeout=4.0)
         data = json.loads(raw)
         if not isinstance(data, dict) or not isinstance(data.get("plugins"), list):
             raise ValueError("registry 结构不合法")
@@ -117,6 +179,38 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _normalize_newlines(data: bytes) -> bytes:
+    """统一成 LF 落盘。
+
+    Python 读 .py 时本来就走 universal newlines，CRLF 没有任何好处；
+    统一成 LF 后，同一份文件在不同机器上的 sha 才稳定可比。
+    """
+    return data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+
+def _newline_variants(data: bytes) -> list[bytes]:
+    """同一份文本的三种换行形态。
+
+    registry 的 sha256/size 是在 Windows 上用 CRLF 文件算的，而 GitHub raw 取回来是 LF
+    （20261120 实测：investing.py 声明 32847B/5b66a1…，实际下载 32045B/a1007d…，
+    820 行差 802 字节——正好是行数）。只比对一种形态会让所有插件都装不上，
+    而三种形态都试并不会削弱校验强度：内容等价，只是行尾不同。
+    """
+    lf = _normalize_newlines(data)
+    return [lf, lf.replace(b"\n", b"\r\n")]
+
+
+def _matches_expected(blob: bytes, expected_sha: str | None, expected_size: int | None) -> bool:
+    if not expected_sha:
+        return True
+    for variant in _newline_variants(blob):
+        if expected_size is not None and len(variant) != expected_size:
+            continue
+        if hashlib.sha256(variant).hexdigest() == expected_sha:
+            return True
+    return False
+
+
 def _validate_entry(entry: dict[str, Any]) -> str:
     """校验 registry 条目，返回文件名；不合法抛 ValueError。"""
     url = entry.get("url")
@@ -142,8 +236,8 @@ def _plugin_path(file_name: str) -> Path:
     return target
 
 
-def _verify_import(tmp_path: Path, source_id: str) -> None:
-    """在临时文件上试导入，确认它能注册出 registry 声明的 source_id。"""
+def _load_module_source_ids(tmp_path: Path) -> list[str]:
+    """把临时文件当模块加载，返回它注册出的 source_id（不落盘、不进 sys.modules）。"""
     module_name = f"tt_plugin_verify_{int(time.time() * 1000)}"
     spec = importlib.util.spec_from_file_location(module_name, tmp_path)
     if spec is None or spec.loader is None:
@@ -152,12 +246,16 @@ def _verify_import(tmp_path: Path, source_id: str) -> None:
     sys.modules[module_name] = module
     try:
         spec.loader.exec_module(module)
-        found = {cls.source_id for cls in collect_sources(module)}
+        return sorted({cls.source_id for cls in collect_sources(module)})
     except Exception as e:
         raise ValueError(f"插件导入失败：{e}") from e
     finally:
         sys.modules.pop(module_name, None)
-    if source_id not in found:
+
+
+def _verify_import(tmp_path: Path, source_id: str) -> None:
+    """在临时文件上试导入，确认它能注册出 registry 声明的 source_id。"""
+    if source_id not in _load_module_source_ids(tmp_path):
         raise ValueError("插件没有注册 registry 中声明的 source_id")
 
 
@@ -167,24 +265,24 @@ def _install(entry: dict[str, Any]) -> dict[str, Any]:
     target = _plugin_path(file_name)
 
     try:
-        data = _http_get(str(entry["url"]), timeout=30.0)
+        data = _get_first(_mirror_urls(str(entry["url"])), timeout=15.0)
     except Exception as e:
-        raise ValueError(f"插件下载失败：{e}") from e
+        raise ValueError(f"插件下载失败（官方与镜像均不可达）：{e}") from e
     if len(data) == 0:
         raise ValueError("插件下载为空")
     if len(data) > MAX_PLUGIN_BYTES:
         raise ValueError("插件超过 2 MB 上限")
-    expected_size = entry.get("size")
-    if isinstance(expected_size, int) and expected_size != len(data):
-        raise ValueError("插件大小与 registry 不一致")
-    digest = hashlib.sha256(data).hexdigest()
-    if digest != entry.get("sha256"):
-        raise ValueError("插件 sha256 校验失败")
+    # 落盘统一 LF：既能压掉 CRLF/LF 带来的假校验失败，也让不同机器的 local_sha 可比。
+    blob = _normalize_newlines(data)
+    expected_size = entry.get("size") if isinstance(entry.get("size"), int) else None
+    if not _matches_expected(blob, entry.get("sha256"), expected_size):
+        raise ValueError("插件 sha256 校验失败（registry 声明与实际文件不一致）")
+    digest = hashlib.sha256(blob).hexdigest()
 
     target.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = target.with_name(f"_verify_{os.getpid()}_{time.time_ns()}.py")
     try:
-        tmp_path.write_bytes(data)
+        tmp_path.write_bytes(blob)
         _verify_import(tmp_path, source_id)
         os.replace(tmp_path, target)
     except Exception:
@@ -194,6 +292,44 @@ def _install(entry: dict[str, Any]) -> dict[str, Any]:
     reload_plugins()
     log.info("plugin installed: %s (%s)", source_id, file_name)
     return {"ok": True, "source_id": source_id, "installed_sha": digest}
+
+
+def install_from_upload(file_name: str, data: bytes) -> dict[str, Any]:
+    """从用户本地的 .py 文件安装插件。
+
+    存在的意义：插件源在 GitHub，网络到不了的时候市场整个不可用；而插件本身
+    就是一个几十 KB 的 Python 文件，让用户从别人那儿拷一个过来直接装，
+    比让他先解决网络问题现实得多。
+
+    安全上不比市场宽松：文件名白名单、大小上限、落盘前必须试导入成功。
+    """
+    # 上传的文件名来自客户端，不能只取 basename 了事：带目录分隔符的直接拒绝，
+    # 免得把「../x.py」这种输入当成合法请求（虽然 basename 后确实落在白名单里）。
+    if "/" in file_name or "\\" in file_name:
+        raise ValueError("插件文件名不能包含路径分隔符")
+    name = Path(file_name).name
+    if not PLUGIN_FILE_RE.match(name):
+        raise ValueError("插件文件名只能是 [a-z0-9_].py 形式")
+    if not data:
+        raise ValueError("插件文件为空")
+    if len(data) > MAX_PLUGIN_BYTES:
+        raise ValueError("插件超过 2 MB 上限")
+    target = _plugin_path(name)
+    tmp_path = target.with_name(f"_verify_{os.getpid()}_{time.time_ns()}.py")
+    blob = _normalize_newlines(data)
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        tmp_path.write_bytes(blob)
+        ids = _load_module_source_ids(tmp_path)
+        if not ids:
+            raise ValueError("插件没有注册任何数据源（缺少 Source 子类）")
+        os.replace(tmp_path, target)
+    except Exception:
+        tmp_path.unlink(missing_ok=True)
+        raise
+    reload_plugins()
+    log.info("plugin installed from file: %s (%s)", name, ", ".join(ids))
+    return {"ok": True, "source_id": ids[0], "source_ids": ids, "file": name}
 
 
 def install(source_id: str) -> dict[str, Any]:
@@ -240,6 +376,10 @@ def list_plugins() -> dict[str, Any]:
         installed = path.is_file()
         local_sha = _sha256(path) if installed else None
         expected = entry.get("sha256")
+        expected_size = entry.get("size") if isinstance(entry.get("size"), int) else None
+        # 用换行无关的比较：否则本地存的 LF 文件永远对不上 registry 里的 CRLF 哈希，
+        # 每个插件都会显示成「本地已修改 / 可更新」。
+        same = bool(installed and _matches_expected(path.read_bytes(), expected, expected_size))
         layers = entry.get("layers")
         items.append(
             {
@@ -252,8 +392,8 @@ def list_plugins() -> dict[str, Any]:
                 "layer_count": len(layers) if isinstance(layers, list) else 0,
                 "installed": installed,
                 "installed_sha": local_sha,
-                "update_available": bool(installed and expected and local_sha != expected),
-                "local_modified": bool(installed and expected and local_sha != expected),
+                "update_available": bool(installed and expected and not same),
+                "local_modified": bool(installed and expected and not same),
             }
         )
     return {

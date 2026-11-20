@@ -430,3 +430,15 @@ export const installPlugin = (source_id: string) =>
 export const uninstallPlugin = (source_id: string) =>
   pluginRequest<{ ok: boolean; source_id: string }>(`/plugins/${encodeURIComponent(source_id)}`, 'DELETE')
 export const reloadPlugins = () => pluginRequest<{ ok: boolean; source_ids: string[] }>('/plugins/reload', 'POST')
+
+/** 从本地 .py 文件安装插件（GitHub 不可达时的兜底通道）。 */
+export async function installPluginFromFile(file: File): Promise<{ ok: boolean; source_id: string }> {
+  const form = new FormData()
+  form.append('file', file)
+  const r = await fetch(`${getApiBase()}/api/plugins/install-file`, { method: 'POST', body: form })
+  if (!r.ok) {
+    const detail = await r.json().catch(() => null)
+    throw new Error(detail?.detail ?? `HTTP ${r.status}`)
+  }
+  return r.json()
+}

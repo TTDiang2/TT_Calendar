@@ -7,6 +7,7 @@ const api = vi.hoisted(() => ({
   getPlugins: vi.fn(),
   getVersionInfo: vi.fn(),
   installPlugin: vi.fn(),
+  installPluginFromFile: vi.fn(),
   uninstallPlugin: vi.fn(),
   reloadPlugins: vi.fn(),
 }))
@@ -53,7 +54,8 @@ describe('PluginManager', () => {
     api.getPlugins.mockResolvedValue({ ok: true, offline: false, plugins: [ITEM], registry_url: '' })
     mount()
 
-    fireEvent.click(await screen.findByRole('button', { name: /安装|Install/ }))
+    // 用整串匹配：「从本地文件安装」也含「安装」二字，宽松正则会点错按钮
+    fireEvent.click(await screen.findByRole('button', { name: /^(安装|Install)$/ }))
     expect(screen.getByText(/安装前确认|Before installing/)).toBeTruthy()
     expect(screen.getByText(/读取你的全部日历数据|read all of your calendar data/)).toBeTruthy()
 

@@ -25,7 +25,9 @@ use windows_sys::Win32::System::JobObjects::{
 };
 
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-const DEV_BASE_URL: &str = "http://localhost:8000";
+// 用 127.0.0.1 而不是 localhost：Windows 上 localhost 会先解析到 ::1，
+// 而 uvicorn 默认只绑 IPv4，WebView2 里会连接失败（curl 走 IPv4 所以看不出来）。
+const DEV_BASE_URL: &str = "http://127.0.0.1:8000";
 
 struct BackendState {
     base_url: String,
@@ -153,6 +155,110 @@ fn restart_app(app: tauri::AppHandle) {
     app.restart();
 }
 
+// ---------------------------------------------------------------------------
+// 窗口圆角
+// ---------------------------------------------------------------------------
+//
+// 两条完全不同的实现路径，取决于系统版本：
+//
+// - Win11（build >= 22000）：DWM 的 DWMWA_WINDOW_CORNER_PREFERENCE 直接给窗口
+//   系统级圆角——带抗锯齿、带阴影、最大化时自动变方角，不用自己管。
+// - Win10（含 1809 LTSC）：DWM 没有这个属性，只能 SetWindowRgn 按窗口区域硬裁。
+//   边缘是 1px 阶梯（没有抗锯齿），因为半径小（8px）肉眼基本看不出，但确实圆了。
+//   代价是缩放窗口时窗口区域不会自动跟着变，所以要在 Resized 事件里重设。
+//
+// 这也是用户在老 Win10 上看到「不是圆角」的根因：Win11 上无边框窗口默认有
+// 系统圆角，Win10 上同一个二进制就是个直角矩形。
+
+#[repr(C)]
+struct OsVersionInfoW {
+    dw_os_version_info_size: u32,
+    dw_major_version: u32,
+    dw_minor_version: u32,
+    dw_build_number: u32,
+    dw_platform_id: u32,
+    sz_csd_version: [u16; 128],
+}
+
+#[link(name = "ntdll")]
+extern "system" {
+    // RtlGetVersion 不读兼容性清单，拿到的才是真实 build（GetVersionEx 会被 manifest 骗）。
+    fn RtlGetVersion(version_info: *mut OsVersionInfoW) -> i32;
+}
+
+fn windows_build() -> u32 {
+    let mut info = OsVersionInfoW {
+        dw_os_version_info_size: std::mem::size_of::<OsVersionInfoW>() as u32,
+        dw_major_version: 0,
+        dw_minor_version: 0,
+        dw_build_number: 0,
+        dw_platform_id: 0,
+        sz_csd_version: [0; 128],
+    };
+    let ok = unsafe { RtlGetVersion(&mut info) };
+    if ok == 0 {
+        info.dw_build_number
+    } else {
+        0
+    }
+}
+
+/// DWMWA_WINDOW_CORNER_PREFERENCE；没有现成常量就自己写（值由 Windows SDK 22000 固定）。
+const DWMWA_WINDOW_CORNER_PREFERENCE: u32 = 33;
+const DWMWCP_ROUND: u32 = 2;
+
+fn apply_window_rounding(window: &tauri::WebviewWindow) {
+    use windows_sys::Win32::Foundation::HWND;
+    use windows_sys::Win32::Graphics::Dwm::DwmSetWindowAttribute;
+
+    let Ok(raw) = window.hwnd() else {
+        return;
+    };
+    let hwnd = raw.0 as HWND;
+
+    if windows_build() >= 22000 {
+        let pref = DWMWCP_ROUND;
+        let hr = unsafe {
+            DwmSetWindowAttribute(
+                hwnd,
+                DWMWA_WINDOW_CORNER_PREFERENCE,
+                &pref as *const u32 as *const core::ffi::c_void,
+                std::mem::size_of::<u32>() as u32,
+            )
+        };
+        if hr != 0 {
+            log::warn!("DwmSetWindowAttribute(corner) failed: 0x{hr:08x}");
+        }
+        return;
+    }
+
+    // Win10：按窗口区域裁圆角。最大化时不裁（系统会把它拉成直角，看着更正常）。
+    let Ok(size) = window.inner_size() else {
+        return;
+    };
+    let maximized = window.is_maximized().unwrap_or(false);
+    let radius = if maximized { 0 } else { 16 };
+    unsafe {
+        let rgn = windows_sys::Win32::Graphics::Gdi::CreateRoundRectRgn(
+            0,
+            0,
+            size.width as i32 + 1,
+            size.height as i32 + 1,
+            radius,
+            radius,
+        );
+        if rgn.is_null() {
+            log::warn!("CreateRoundRectRgn failed");
+            return;
+        }
+        // SetWindowRgn 成功后区域归系统所有，不能再 DeleteObject。
+        let ok = windows_sys::Win32::Graphics::Gdi::SetWindowRgn(hwnd, rgn, 1);
+        if ok == 0 {
+            log::warn!("SetWindowRgn failed");
+        }
+    }
+}
+
 pub fn run() {
     tauri::Builder::default()
         // 必须第一个注册：第二实例在 setup 之前就退出，避免重复拉起后端。
@@ -210,6 +316,17 @@ pub fn run() {
                 job,
                 child: Mutex::new(child),
             });
+
+            // 窗口圆角：Win11 走 DWM，Win10 走窗口区域；后者在缩放后必须重设。
+            if let Some(window) = app.get_webview_window("main") {
+                apply_window_rounding(&window);
+                let resized_window = window.clone();
+                window.on_window_event(move |event| {
+                    if matches!(event, tauri::WindowEvent::Resized(_)) {
+                        apply_window_rounding(&resized_window);
+                    }
+                });
+            }
             Ok(())
         })
         .build(tauri::generate_context!())

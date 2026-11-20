@@ -96,11 +96,11 @@ jobs:
         run: |
           if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
             echo "signed=true" >> "$GITHUB_OUTPUT"
-            npx tauri build
+            npx tauri build --features custom-protocol
           else
             echo "::warning::未配置 TAURI_SIGNING_PRIVATE_KEY，本次不出自动更新产物（老版本收不到更新，只能手动下载）"
             echo "signed=false" >> "$GITHUB_OUTPUT"
-            npx tauri build --config '{"bundle":{"createUpdaterArtifacts":false}}'
+            npx tauri build --features custom-protocol --config '{"bundle":{"createUpdaterArtifacts":false}}'
           fi
 
       - name: Collect installer

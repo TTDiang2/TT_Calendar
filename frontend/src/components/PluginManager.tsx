@@ -1,9 +1,9 @@
 /* eslint-disable no-restricted-syntax -- 插件市场是高级功能，文案中英并列，避免为 8 种语言各写一套 */
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, Check, Download, FolderOpen, Loader2, Puzzle, RefreshCw, Trash2 } from 'lucide-react'
+import { AlertTriangle, Check, Download, FileUp, FolderOpen, Loader2, Puzzle, RefreshCw, Trash2 } from 'lucide-react'
 import {
-  getPlugins, getVersionInfo, installPlugin, reloadPlugins, uninstallPlugin,
+  getPlugins, getVersionInfo, installPlugin, installPluginFromFile, reloadPlugins, uninstallPlugin,
   type PluginMarketItem,
 } from '../api/client'
 import { activeLang } from '../i18n'
@@ -40,6 +40,9 @@ function text() {
         empty: '暂无可安装的插件。',
         updateHint: '更新会覆盖本地修改。',
         needsInternet: '需要联网',
+        installFromFile: '从本地文件安装',
+        installFromFileHint: '选一个 .py 插件文件。网络连不上插件源时用这个。',
+        installedFromFile: '已安装',
       }
     : {
         sectionTitle: 'Plugins',
@@ -69,6 +72,9 @@ function text() {
         empty: 'No plugins available.',
         updateHint: 'Updating replaces local changes.',
         needsInternet: 'Needs internet',
+        installFromFile: 'Install from file',
+        installFromFileHint: 'Pick a .py plugin file. Use this when the registry is unreachable.',
+        installedFromFile: 'Installed',
       }
 }
 
@@ -90,6 +96,7 @@ export function PluginManager() {
   const [pending, setPending] = useState<PluginMarketItem | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const refreshSources = () => {
     qc.invalidateQueries({ queryKey: ['plugins'] })
@@ -116,6 +123,12 @@ export function PluginManager() {
     mutationFn: reloadPlugins,
     onSuccess: refreshSources,
   })
+  // 本地文件安装：插件源在 GitHub，境内经常整个市场都是「离线」，
+  // 但插件本身只是一个 .py，能拷到文件就该能装上。
+  const fileMut = useMutation({
+    mutationFn: installPluginFromFile,
+    onSuccess: refreshSources,
+  })
 
   const openFolder = async () => {
     const path = version?.plugins_dir
@@ -138,7 +151,7 @@ export function PluginManager() {
     const rank = (p: PluginMarketItem) => (p.update_available ? 0 : p.installed ? 1 : 2)
     return rank(a) - rank(b) || a.display_name.localeCompare(b.display_name)
   })
-  const error = installMut.error ?? removeMut.error ?? reloadMut.error
+  const error = installMut.error ?? removeMut.error ?? reloadMut.error ?? fileMut.error
 
   return (
     <section>
@@ -160,6 +173,26 @@ export function PluginManager() {
             <FolderOpen size={12} />
             {copied ? c.copied : c.openFolder}
           </button>
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={fileMut.isPending}
+            title={c.installFromFileHint}
+            className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-[color:var(--cal-border)] cal-hover-bg disabled:opacity-40"
+          >
+            {fileMut.isPending ? <Loader2 size={12} className="animate-spin" /> : <FileUp size={12} />}
+            {c.installFromFile}
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".py"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              e.target.value = ''
+              if (file) fileMut.mutate(file)
+            }}
+          />
         </div>
       </div>
       <p className="text-xs cal-muted mb-2">{c.desc}</p>
@@ -205,6 +238,7 @@ export function PluginManager() {
         <div className="rounded-lg border border-[color:var(--cal-border)] px-3 py-3 text-xs cal-muted">
           {c.offline}
           <button onClick={() => refetch()} className="ml-2 font-medium text-blue-600 hover:underline">{c.retry}</button>
+          <p className="mt-1.5 text-[11px] leading-relaxed">{c.installFromFileHint}</p>
         </div>
       ) : items.length === 0 ? (
         <p className="text-xs cal-muted">{c.empty}</p>

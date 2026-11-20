@@ -27,6 +27,7 @@ import { sourceFields } from './fragments/sourceFields'
 import { errors } from './fragments/errors'
 import { todoview } from './fragments/todoview'
 import { todoboards } from './fragments/todoboards'
+import { onboarding } from './fragments/onboarding'
 
 export const zhCN = {
   common: common.zh,
@@ -50,6 +51,7 @@ export const zhCN = {
   todoboards: todoboards.zh,
   language: language.zh,
   layers: layers.zh,
+  onboarding: onboarding.zh,
 } as const
 
 export type Dict = typeof zhCN

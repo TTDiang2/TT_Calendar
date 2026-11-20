@@ -1117,21 +1117,23 @@ def ensure_default_layer_configs(conn: sqlite3.Connection) -> None:
     if get_meta(conn, "default_layers_seeded") != "1":
         existing = conn.execute("SELECT COUNT(*) AS c FROM layer_config").fetchone()["c"]
         if existing == 0:
-            defaults: list[tuple[str, str, str, int, str, str | None]] = [
-                # (layer_id, display_name, color, sort_order, kind, group)
+            defaults: list[tuple[str, str, str, int, str, str | None, bool]] = [
+                # (layer_id, display_name, color, sort_order, kind, group, enabled)
                 # 顶层 'schedule'（AM/PM/EV 三段）已拆成 schedule_items，不再播种；
                 # 存量库由 _drop_legacy_schedule_layer 在 init_db 时清理。
-                (cfg.LayerID.IMPORTANT, "重要日期",   LAYER_COLORS[cfg.LayerID.IMPORTANT], 1, "color", None),
-                (cfg.LayerID.COLORING,  "充实度染色", LAYER_COLORS[cfg.LayerID.COLORING],  2, "color", None),
-                (cfg.LayerID.HOLIDAY,   "公共节假日", LAYER_COLORS[cfg.LayerID.HOLIDAY],   3, "color", None),
+                (cfg.LayerID.IMPORTANT, "重要日期",   LAYER_COLORS[cfg.LayerID.IMPORTANT], 1, "color", None, True),
+                # 充实度染色默认关闭（20261120 用户反馈：新装第一天日历就是一格一格绿块，
+                # 「什么都没有的一天」也被涂了色，看着像数据错乱）。需要的人在侧栏一键开。
+                (cfg.LayerID.COLORING,  "充实度染色", LAYER_COLORS[cfg.LayerID.COLORING],  2, "color", None, False),
+                (cfg.LayerID.HOLIDAY,   "公共节假日", LAYER_COLORS[cfg.LayerID.HOLIDAY],   3, "color", None, True),
             ]
-            for layer_id, name, color, order, kind, group in defaults:
+            for layer_id, name, color, order, kind, group, enabled in defaults:
                 upsert_layer_config(
                     conn,
                     LayerConfig(
                         layer_id=layer_id,
                         display_name=name,
-                        enabled=True,
+                        enabled=enabled,
                         color=color,
                         sort_order=order,
                         kind=kind,
@@ -1148,6 +1150,17 @@ def ensure_default_layer_configs(conn: sqlite3.Connection) -> None:
             source_cls().ensure_layers(conn)
         except Exception as e:
             log.warning("ensure layers for source %s failed: %s", source_cls.source_id, e)
+
+    # 3) 一次性迁移：充实度染色改为默认关闭（20261120）。
+    #    新库走上面的 seed，存量库在这里补一刀；只跑一次，之后用户自己开的不会再被关掉。
+    if get_meta(conn, "coloring_default_off") != "1":
+        with cursor(conn) as cur:
+            cur.execute(
+                "UPDATE layer_config SET enabled = 0 WHERE layer_id = ?",
+                (cfg.LayerID.COLORING,),
+            )
+        set_meta(conn, "coloring_default_off", "1")
+
     conn.commit()
 
 

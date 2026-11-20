@@ -25,6 +25,7 @@ import { sourceFields } from './fragments/sourceFields'
 import { errors } from './fragments/errors'
 import { todoview } from './fragments/todoview'
 import { todoboards } from './fragments/todoboards'
+import { onboarding } from './fragments/onboarding'
 
 export const en: DeepPartialDict<Dict> = {
   common: common.en,
@@ -48,4 +49,5 @@ export const en: DeepPartialDict<Dict> = {
   todoboards: todoboards.en,
   language: language.en,
   layers: layers.en,
+  onboarding: onboarding.en,
 }

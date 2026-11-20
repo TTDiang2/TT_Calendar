@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import clsx from 'clsx'
-import { ChevronDown, ChevronRight, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import type { Layer } from '../types'
 import { createLayer, getSubscriptions, getTodoBusyConfig } from '../api/client'
 import { COLOR_PRESETS, PALETTE_KEYS, type PaletteKey } from '../data'
 import { Modal, Field } from './ui/Modal'
 import { StretchSwitch } from './ui/StretchSwitch'
+import { Collapse, CollapseChevron } from './ui/Collapse'
 import { useT, type TxKey } from '../i18n'
 import { paletteLabelKey } from '../i18n/adapt/labels'
 import { layerLabel } from '../i18n/adapt/layerLabel'
@@ -20,6 +21,33 @@ interface Props {
   banner?: { kind: string; name: string | null; days: number | null } | null
 }
 
+// v2：语义从「记住哪些被收起」变成「默认全部收起 + 记住用户展开过哪些」。
+// 换 key 让升级上来的老用户也走一次新的默认值（否则他们会一直看到全展开的侧栏）。
+const COLLAPSE_KEY = 'sidebar_collapsed_v2'
+
+function readCollapsed(): Record<string, boolean> {
+  try {
+    const saved = localStorage.getItem(COLLAPSE_KEY)
+    const parsed = saved ? JSON.parse(saved) : null
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, boolean>) : {}
+  } catch {
+    return {}
+  }
+}
+
+const kindOf = (l: Layer) => (l.kind === 'dot' ? 'dot' : 'color')
+
+/** 侧栏里所有可折叠节点的 id（kind 级 + group 级 + 订阅超级组）。 */
+function collectNodeIds(layers: Layer[]): string[] {
+  const ids = new Set<string>(['subs:color', 'subs:dot'])
+  for (const l of layers) {
+    const kind = kindOf(l)
+    ids.add(`kind:${kind}`)
+    if (l.group) ids.add(`group:${kind}:${l.group}`)
+  }
+  return [...ids]
+}
+
 export function Sidebar({ layers, onToggle, countdown, banner }: Props) {
   const t = useT()
   // 侧栏倒计时横幅：后端 banner 结构化 → 前端按语言组装；旧 text 兜底
@@ -31,28 +59,47 @@ export function Sidebar({ layers, onToggle, countdown, banner }: Props) {
     : countdown
   const qc = useQueryClient()
   const [showCreate, setShowCreate] = useState(false)
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {
-    try {
-      const saved = localStorage.getItem('sidebar_collapsed')
-      return saved ? JSON.parse(saved) : {}
-    } catch {
-      return {}
-    }
-  })
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(readCollapsed)
 
-  const toggleGroup = (id: string) => {
+  // 默认全部收起（20261120 用户反馈：第一次打开侧栏就铺满十几个图层，主次全乱）。
+  // 这里只补「状态里还没有的节点」为收起：用户手动展开过的（值为 false）不动，
+  // 之后新建的分组也会自动是收起态，不需要再想默认值。
+  useEffect(() => {
+    const ids = collectNodeIds(layers)
     setCollapsed((prev) => {
-      const next = { ...prev, [id]: !prev[id] }
-      try { localStorage.setItem('sidebar_collapsed', JSON.stringify(next)) } catch {}
-      return next
+      let changed = false
+      const next = { ...prev }
+      for (const id of ids) {
+        if (!(id in next)) {
+          next[id] = true
+          changed = true
+        }
+      }
+      return changed ? next : prev
     })
+  }, [layers])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(COLLAPSE_KEY, JSON.stringify(collapsed))
+    } catch {
+      /* 隐私模式等写不了就算了，只是下次回到默认收起 */
+    }
+  }, [collapsed])
+
+  // 只有显式 false 才算「展开」：首帧状态表还是空的，若按 truthy 判断收起，
+  // 会先渲染成全部展开、再被 effect 收起来，用户能看见闪一下。
+  const isOpen = (id: string) => collapsed[id] === false
+  const toggleGroup = (id: string) => {
+    // 值语义：true=收起、false=展开。当前展开(false) → 收起(true)，其余（收起/未记录）→ 展开(false)
+    setCollapsed((prev) => ({ ...prev, [id]: prev[id] === false }))
   }
 
   // 第一级：涂色 / 点点（基于 layer.kind）；第二级：group（layer.group）；第三级：图层本身
   const tree = useMemo(() => {
     const byKind: Record<string, Record<string, Layer[]>> = { color: {}, dot: {} }
     for (const l of layers) {
-      const kind = l.kind === 'dot' ? 'dot' : 'color'
+      const kind = kindOf(l)
       const grp = l.group ?? ''
       ;(byKind[kind][grp] ??= []).push(l)
     }
@@ -81,109 +128,120 @@ export function Sidebar({ layers, onToggle, countdown, banner }: Props) {
   }
 
   return (
-    <aside className="w-60 cal-panel-bg border-r cal-line-r p-4 overflow-y-auto flex flex-col">
+    <aside data-tour="sidebar" className="w-60 cal-panel-bg border-r cal-line-r p-4 overflow-y-auto flex flex-col">
       <h2 className="text-xs font-semibold cal-muted uppercase tracking-wide mb-2">{t('shell.navHeading')}</h2>
 
-      <div className="flex flex-col gap-2 mb-4">
+      <div className="flex flex-col gap-1 mb-4">
         {(['color', 'dot'] as const).map((kind) => {
           const groups = tree[kind]
           const groupKeys = Object.keys(groups)
           if (groupKeys.length === 0) return null
           const kindId = `kind:${kind}`
+          const kindOpen = isOpen(kindId)
+          const kindCount = groupKeys.reduce((n, g) => n + groups[g].length, 0)
           return (
             <div key={kind}>
               <button
                 onClick={() => toggleGroup(kindId)}
-                className="w-full flex items-center gap-1 px-1 py-1 text-[11px] font-semibold cal-muted hover:text-[color:var(--cal-ink)]"
+                aria-expanded={kindOpen}
+                className="w-full flex items-center gap-1.5 px-1 py-1.5 rounded-md text-[11px] font-semibold cal-muted hover:text-[color:var(--cal-ink)] cal-hover-bg"
               >
-                {collapsed[kindId] ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                <CollapseChevron open={kindOpen} />
                 {t(kindMeta[kind].titleKey)}
+                <span className="text-[10px] font-normal text-gray-300">{kindCount}</span>
               </button>
-              {!collapsed[kindId] && (
-                <div className="flex flex-col gap-1 ml-1">
-          {(() => {
-            const sorted = [...groupKeys].sort()
-            const normalGroups = sorted.filter((g) => !subNames.has(g))
-            const subGroupKeys = sorted.filter((g) => subNames.has(g))
-            return (
-              <>
-          {normalGroups.map((grp) => {
-            const members = groups[grp]
-            const hasGroup = grp !== ''
-            const grpId = `group:${kind}:${grp}`
-            const grpTitle = hasGroup ? grp : t('shell.groupOther')
-            return (
-              <div key={grp}>
-                {hasGroup && (
-                  <button
-                    onClick={() => toggleGroup(grpId)}
-                    className="w-full flex items-center gap-1 px-1 py-0.5 text-[11px] cal-muted hover:text-[color:var(--cal-ink)]"
-                  >
-                    {collapsed[grpId] ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
-                    {grpTitle}
-                    <span className="text-[10px] text-gray-300">{members.length}</span>
-                  </button>
-                )}
-                {(!hasGroup || !collapsed[grpId]) && (
-                  <div className={`flex flex-col gap-0.5 ${hasGroup ? 'ml-2' : ''}`}>
-                    {members.map((l) => (
-                      <LayerRow key={l.layer_id} layer={l} onToggle={onToggle} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-          {subGroupKeys.length > 0 && (
-            <div>
-              <button
-                onClick={() => toggleGroup(`subs:${kind}`)}
-                className="w-full flex items-center gap-1 px-1 py-0.5 text-[11px] cal-muted hover:text-[color:var(--cal-ink)]"
-              >
-                {collapsed[`subs:${kind}`] ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
-                {t('terms.subscription')}
-                <span className="text-[10px] text-gray-300">{subGroupKeys.reduce((n, g) => n + groups[g].length, 0)}</span>
-              </button>
-              {!collapsed[`subs:${kind}`] && (
-                <div className="ml-1">
-                  {subGroupKeys.sort().map((grp) => {
-                    const members = groups[grp]
-                    const grpId = `group:${kind}:${grp}`
+              <Collapse open={kindOpen}>
+                <div className="flex flex-col gap-1 ml-1 pt-0.5">
+                  {(() => {
+                    const sorted = [...groupKeys].sort()
+                    const normalGroups = sorted.filter((g) => !subNames.has(g))
+                    const subGroupKeys = sorted.filter((g) => subNames.has(g))
                     return (
-                      <div key={grp} className="mb-0.5">
-                        <button
-                          onClick={() => toggleGroup(grpId)}
-                          className="w-full flex items-center gap-1 py-0.5 text-[11px] cal-muted hover:text-[color:var(--cal-ink)] ml-1"
-                        >
-                          {collapsed[grpId] ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
-                          {grp}
-                          <span className="text-[10px] text-gray-300">{members.length}</span>
-                        </button>
-                        {!collapsed[grpId] && (
-                          <div className="flex flex-col gap-0.5 ml-3">
-                            {members.map((l) => (
-                              <LayerRow key={l.layer_id} layer={l} onToggle={onToggle} />
-                            ))}
+                      <>
+                        {normalGroups.map((grp) => {
+                          const members = groups[grp]
+                          const hasGroup = grp !== ''
+                          const grpId = `group:${kind}:${grp}`
+                          const grpTitle = hasGroup ? grp : t('shell.groupOther')
+                          const grpOpen = isOpen(grpId)
+                          return (
+                            <div key={grp}>
+                              {hasGroup && (
+                                <button
+                                  onClick={() => toggleGroup(grpId)}
+                                  aria-expanded={grpOpen}
+                                  className="w-full flex items-center gap-1.5 px-1 py-1 rounded-md text-[11px] cal-muted hover:text-[color:var(--cal-ink)] cal-hover-bg"
+                                >
+                                  <CollapseChevron open={grpOpen} size={10} />
+                                  {grpTitle}
+                                  <span className="text-[10px] text-gray-300">{members.length}</span>
+                                </button>
+                              )}
+                              <Collapse open={!hasGroup || grpOpen}>
+                                <div className={clsx('flex flex-col gap-0.5', hasGroup && 'ml-2')}>
+                                  {members.map((l) => (
+                                    <LayerRow key={l.layer_id} layer={l} onToggle={onToggle} />
+                                  ))}
+                                </div>
+                              </Collapse>
+                            </div>
+                          )
+                        })}
+                        {subGroupKeys.length > 0 && (
+                          <div>
+                            <button
+                              onClick={() => toggleGroup(`subs:${kind}`)}
+                              aria-expanded={isOpen(`subs:${kind}`)}
+                              className="w-full flex items-center gap-1.5 px-1 py-1 rounded-md text-[11px] cal-muted hover:text-[color:var(--cal-ink)] cal-hover-bg"
+                            >
+                              <CollapseChevron open={isOpen(`subs:${kind}`)} size={10} />
+                              {t('terms.subscription')}
+                              <span className="text-[10px] text-gray-300">
+                                {subGroupKeys.reduce((n, g) => n + groups[g].length, 0)}
+                              </span>
+                            </button>
+                            <Collapse open={isOpen(`subs:${kind}`)}>
+                              <div className="ml-1">
+                                {subGroupKeys.sort().map((grp) => {
+                                  const members = groups[grp]
+                                  const grpId = `group:${kind}:${grp}`
+                                  const grpOpen = isOpen(grpId)
+                                  return (
+                                    <div key={grp} className="mb-0.5">
+                                      <button
+                                        onClick={() => toggleGroup(grpId)}
+                                        aria-expanded={grpOpen}
+                                        className="w-full flex items-center gap-1.5 py-1 text-[11px] cal-muted hover:text-[color:var(--cal-ink)] ml-1"
+                                      >
+                                        <CollapseChevron open={grpOpen} size={10} />
+                                        {grp}
+                                        <span className="text-[10px] text-gray-300">{members.length}</span>
+                                      </button>
+                                      <Collapse open={grpOpen}>
+                                        <div className="flex flex-col gap-0.5 ml-3">
+                                          {members.map((l) => (
+                                            <LayerRow key={l.layer_id} layer={l} onToggle={onToggle} />
+                                          ))}
+                                        </div>
+                                      </Collapse>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </Collapse>
                           </div>
                         )}
-                      </div>
+                      </>
                     )
-                  })}
-                 </div>
-               )}
-             </div>
-           )}
-              </>
-            )
-          })()}
+                  })()}
                 </div>
-              )}
+              </Collapse>
             </div>
           )
         })}
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-1 px-2 py-1.5 text-sm cal-muted hover:text-blue-600 hover:bg-blue-50 rounded-md mt-0.5"
+          className="flex items-center gap-1 px-2 py-1.5 text-sm cal-muted hover:text-blue-600 hover:bg-blue-50 rounded-md mt-1"
         >
           <Plus size={14} /> {t('shell.createLayer')}
         </button>

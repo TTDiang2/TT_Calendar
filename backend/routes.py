@@ -1447,6 +1447,16 @@ def uninstall_plugin(source_id: str):
         raise HTTPException(status_code=400, detail=str(e)) from e
 
 
+@router.post("/plugins/install-file")
+async def install_plugin_file(file: UploadFile = File(...)):
+    """从本地 .py 安装插件：网络到不了 GitHub 时的兜底通道。"""
+    data = await file.read(plugins_api.MAX_PLUGIN_BYTES + 1)
+    try:
+        return plugins_api.install_from_upload(file.filename or "", data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
 @router.post("/plugins/reload")
 def reload_plugins_endpoint():
     return plugins_api.reload_all()

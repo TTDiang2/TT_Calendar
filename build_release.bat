@@ -64,7 +64,7 @@ if /I "%MODE%"=="preview" (
     echo.
     echo === [3/7] Tauri build ^(preview, no bundle^) ===
     pushd "%ROOT%frontend"
-    call npx tauri build --no-bundle
+    call npx tauri build --no-bundle --features custom-protocol
     if errorlevel 1 (
         popd
         goto :fail
@@ -78,7 +78,7 @@ if /I "%MODE%"=="preview" (
 echo.
 echo === [3/7] Building installer (Tauri bundle) ===
 pushd "%ROOT%frontend"
-call npx tauri build
+call npx tauri build --features custom-protocol
 if errorlevel 1 (
     popd
     goto :fail

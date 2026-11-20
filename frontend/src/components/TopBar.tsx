@@ -109,12 +109,13 @@ export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeCh
             )}
             {/* 分隔线：左边是「时间轴」，右边是「看的方式」 */}
             <span className="mx-1.5 h-5 w-px shrink-0 bg-[var(--cal-border)]" aria-hidden="true" />
-            <SegmentedTabs
-              className="shrink-0"
-              value={mode}
-              onChange={onModeChange}
-              items={MODES.map((m) => ({ value: m.key, label: t(m.labelKey) }))}
-            />
+            <div data-tour="views" className="shrink-0">
+              <SegmentedTabs
+                value={mode}
+                onChange={onModeChange}
+                items={MODES.map((m) => ({ value: m.key, label: t(m.labelKey) }))}
+              />
+            </div>
           </>
         )}
 
@@ -134,29 +135,36 @@ export function TopBar({ title, topTab, mode, todoView, onTopTabChange, onModeCh
 
       <div className="ml-auto flex shrink-0 items-center gap-1.5">
         {topTab === 'calendar' && (
-          compact ? (
-            <button
-              onClick={onOpenSearch}
-              className="p-2 rounded-lg cal-muted cal-hover-bg transition"
-              title={t('topbar.searchPlaceholder')}
-              aria-label={t('topbar.searchPlaceholder')}
-            >
-              <Search size={18} />
-            </button>
-          ) : (
-            <button
-              onClick={onOpenSearch}
-              className="relative flex w-44 items-center rounded-lg border border-[color:var(--cal-border)] cal-subtle-bg py-1.5 pl-2.5 pr-3 text-sm cal-muted transition hover:text-[color:var(--cal-ink)]"
-            >
-              <Search size={14} className="mr-2" />
-              <span className="truncate">{t('topbar.searchPlaceholder')}</span>
-            </button>
-          )
+          <div data-tour="search" className="flex items-center">
+            {compact ? (
+              <button
+                onClick={onOpenSearch}
+                className="p-2 rounded-lg cal-muted cal-hover-bg transition"
+                title={t('topbar.searchPlaceholder')}
+                aria-label={t('topbar.searchPlaceholder')}
+              >
+                <Search size={18} />
+              </button>
+            ) : (
+              <button
+                onClick={onOpenSearch}
+                className="relative flex w-44 items-center rounded-lg border border-[color:var(--cal-border)] cal-subtle-bg py-1.5 pl-2.5 pr-3 text-sm cal-muted transition hover:text-[color:var(--cal-ink)]"
+              >
+                <Search size={14} className="mr-2" />
+                <span className="truncate">{t('topbar.searchPlaceholder')}</span>
+              </button>
+            )}
+          </div>
         )}
         <button onClick={onOpenSubscription} className="p-2 rounded-lg cal-muted cal-hover-bg transition" title={t('terms.subscription')}>
           <Rss size={18} />
         </button>
-        <button onClick={onOpenSettings} className="p-2 rounded-lg cal-muted cal-hover-bg transition" title={t('settings.title')}>
+        <button
+          onClick={onOpenSettings}
+          data-tour="settings"
+          className="p-2 rounded-lg cal-muted cal-hover-bg transition"
+          title={t('settings.title')}
+        >
           <Settings size={18} />
         </button>
         <WindowControls />

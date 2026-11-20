@@ -79,6 +79,7 @@ export const DayCell = memo(function DayCell({ day, layers, selected, dragOver, 
         e.preventDefault()
         onDrop(day.date)
       }}
+      data-tour={day.is_today ? 'today' : undefined}
       className={clsx(
         'relative p-1.5 rounded-lg border cursor-pointer transition-all flex flex-col gap-0.5 overflow-hidden',
         // 柔和模式左边有 4px 色条，正文让出一点呼吸位

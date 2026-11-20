@@ -152,23 +152,3 @@ def test_same_provider_keeps_token_when_omitted(client: TestClient) -> None:
     assert _put(client, provider="gitee", token="t1").status_code == 200
     assert _put(client, provider="gitee", repo="o/r2").status_code == 200
     assert client.get("/api/sync/config").json()["has_token"] is True
-
-
-def test_switching_provider_drops_the_old_token(client: TestClient) -> None:
-    """GitHub 的 PAT 拿去打 Gitee 只会 401。换通道而不填新令牌时必须作废旧令牌，
-    否则用户看到的是「令牌无效」，会以为是自己粘贴错了。"""
-    assert _put(client, provider="github", token="gh-token").status_code == 200
-    assert client.get("/api/sync/config").json()["has_token"] is True
-
-    assert _put(client, provider="gitee").status_code == 200
-    assert client.get("/api/sync/config").json()["has_token"] is False
-
-    assert _put(client, provider="gitee", token="gitee-token").status_code == 200
-    assert client.get("/api/sync/config").json()["has_token"] is True
-
-
-def test_same_provider_keeps_token_when_omitted(client: TestClient) -> None:
-    """同一通道内改仓库/分支不能让用户重填令牌。"""
-    assert _put(client, provider="gitee", token="t1").status_code == 200
-    assert _put(client, provider="gitee", repo="o/r2").status_code == 200
-    assert client.get("/api/sync/config").json()["has_token"] is True
