@@ -316,6 +316,11 @@ export const ko: DeepPartialDict<Dict> = {
       report: '가져옴 {pulled} · 내보냄 {pushed} · 충돌 {conflicts} · 삭제 {deleted}',
       reportWarning: '({warning})',
       resolvedDone: '연결 완료: {report}',
+      provider: '동기화 방식',
+      providerGitee: 'Gitee',
+      descGitee: 'Gitee 비공개 저장소로 모든 데이터(할 일, 채색, 기념일, 설정)를 여러 PC 간에 동기화합니다. 중국 본토에서 프록시 없이 접속됩니다. 저장소는 비공개로 두세요. 토큰은 Windows에서 암호화해 저장하며 업로드하지 않습니다. 설정 방법은 docs/SYNC_SETUP.md.',
+      patGitee: '개인 토큰({state})',
+      patGiteeGuide: 'gitee.com/profile/personal_access_tokens 에서 발급하고 projects(저장소) 권한을 선택하세요',
     },
     diagnostics: {
       sectionTitle: '진단 및 지원',

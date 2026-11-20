@@ -1,5 +1,5 @@
 /**
- * es 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 591 条）。
+ * es 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 604 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.es.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -318,12 +318,17 @@ export const es: DeepPartialDict<Dict> = {
       report: 'Descargados {pulled} · Subidos {pushed} · Conflictos {conflicts} · Eliminados {deleted}',
       reportWarning: '({warning})',
       resolvedDone: 'Vinculación completada: {report}',
+      provider: 'Método de sincronización',
+      providerGitee: 'Gitee',
+      descGitee: 'Sincroniza todos los datos (tareas, coloreado, aniversarios, ajustes) entre varios ordenadores mediante un repositorio privado de Gitee. Gitee es accesible desde China continental sin proxy; mantén el repositorio privado. El token se cifra con Windows y nunca se sube. Consulta docs/SYNC_SETUP.md.',
+      patGitee: 'Token personal ({state})',
+      patGiteeGuide: 'Créalo en gitee.com/profile/personal_access_tokens con el permiso projects',
     },
     diagnostics: {
       sectionTitle: 'Diagnóstico y soporte',
-      desc: 'Exporta información para resolver problemas (versión, sistema, rutas, registros). No incluye datos del calendario, configuración ni credenciales.',
-      export: 'Exportar paquete de diagnóstico',
-      exporting: 'Generando…',
+      desc: 'Exporta información de diagnóstico (versión, sistema, rutas, registros). Sin datos de calendario, ajustes ni credenciales.',
+      export: 'Exportar diagnóstico',
+      exporting: 'Empaquetando…',
       savedTo: 'Guardado en',
       copy: 'Copiar ruta',
       copied: 'Copiado',

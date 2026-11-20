@@ -230,6 +230,19 @@ settings.sync.initDone	首次初始化完成：已上傳 {n} 行
 settings.sync.report	拉取 {pulled} · 推送 {pushed} · 衝突 {conflicts} · 刪除 {deleted}
 settings.sync.reportWarning	（{warning}）
 settings.sync.resolvedDone	綁定完成：{report}
+settings.sync.provider	同步方式
+settings.sync.providerGitee	Gitee（碼雲）
+settings.sync.descGitee	透過 Gitee 私有倉庫在多台電腦間同步全部資料（待辦、塗色、紀念日、設定）。Gitee 在中國大陸可直連、不需要代理；倉庫設為私有不公開。權杖以 Windows 加密保存、永不上傳。設定步驟見 docs/SYNC_SETUP.md。
+settings.sync.patGitee	私人權杖（{state}）
+settings.sync.patGiteeGuide	在 gitee.com/profile/personal_access_tokens 產生，勾選 projects（倉庫）權限
+settings.diagnostics.sectionTitle	診斷與支援
+settings.diagnostics.desc	匯出排錯資訊（版本、系統、路徑、日誌）。不包含日曆資料、設定或帳號憑證。
+settings.diagnostics.export	匯出診斷包
+settings.diagnostics.exporting	打包中…
+settings.diagnostics.savedTo	已儲存到
+settings.diagnostics.copy	複製路徑
+settings.diagnostics.copied	已複製
+settings.diagnostics.failed	匯出失敗
 terms.calendar	日曆
 terms.todo	待辦
 terms.countdown	倒數日

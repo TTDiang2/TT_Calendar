@@ -53,9 +53,22 @@ def get_sync_config(conn: sqlite3.Connection) -> dict:
 
 def save_sync_config(conn: sqlite3.Connection, repo: str, branch: str,
                      token: str | None, auto_on_start: bool,
-                     sync_on_close: bool = True) -> None:
+                     sync_on_close: bool = True,
+                     provider: str = "github") -> None:
+    """写同步配置。provider 决定走哪条传输通道（github / gitee）。
+
+    通道可以随时切换：base 快照存在本机、与通道无关，换后端只是换一个
+    「远端」——首次在新通道上同步会按「远端为空」走初始化上传。
+    """
+
     cfg = get_sync_config(conn)
-    cfg.update({"provider": "github", "repo": repo.strip(),
+    new_provider = (provider or "github").strip().lower()
+    # 换通道时旧令牌必须作废：GitHub 的 PAT 拿去打 Gitee（或反过来）只会得到
+    # 401，而用户此时看到的是「令牌无效」，会误以为自己填错了新令牌。
+    # 只有本次显式传了新令牌才保留（下面会覆盖成新的）。
+    if new_provider != (cfg.get("provider") or "github") and not (token and token.strip()):
+        cfg["token_dpapi"] = ""
+    cfg.update({"provider": new_provider, "repo": repo.strip(),
                 "branch": (branch or "main").strip(),
                 "auto_on_start": auto_on_start,
                 "sync_on_close": sync_on_close})
@@ -68,14 +81,16 @@ def save_sync_config(conn: sqlite3.Connection, repo: str, branch: str,
             (json.dumps(cfg, ensure_ascii=False),))
 
 
-def _provider(conn: sqlite3.Connection) -> GitHubProvider:
+def _provider(conn: sqlite3.Connection) -> GitHubProvider | P.GiteeProvider:
     cfg = get_sync_config(conn)
     if not cfg["repo"] or not cfg["token_dpapi"]:
-        raise SyncError("尚未配置同步（仓库/PAT）")
+        raise SyncError("尚未配置同步（仓库/令牌）")
     try:
         token = secrets.unprotect(cfg["token_dpapi"])
     except OSError as e:
-        raise SyncError(f"PAT 解密失败：{e}")
+        raise SyncError(f"令牌解密失败：{e}")
+    if (cfg.get("provider") or "github") == "gitee":
+        return P.GiteeProvider(cfg["repo"], token, cfg["branch"])
     return GitHubProvider(cfg["repo"], token, cfg["branch"])
 
 
@@ -243,7 +258,8 @@ def _resolve_first_bind(conn: sqlite3.Connection, mode: str, on_imported) -> dic
     return {"result": "ok", **report, "commit_url": commit_url}
 
 
-def _init_upload(conn: sqlite3.Connection, prov: GitHubProvider,
+def _init_upload(conn: sqlite3.Connection,
+                 prov: GitHubProvider | P.GiteeProvider,
                  on_imported) -> int:
     local = S.export_data(conn)
     tombs = S.export_tombstones(conn)

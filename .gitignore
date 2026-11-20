@@ -70,3 +70,14 @@ plugins/*.py
 
 # ---- 自动更新签名私钥（绝不入库；丢失则无法发布可被旧版信任的更新）----
 .keys/
+
+# 本地测试临时目录（pytest --basetemp 指向工作区，避免删系统 temp 被拦）
+.pytest_tmp/
+
+# 归档的旧启动器（产品化后 Tauri 主进程自己管后端，不再需要独立 launcher）
+*.exe.disabled
+
+# 根目录便携运行用的后端产物（与 dist/ 同源，不入库）
+/tt-calendar-backend/
+/backend/_internal/
+/backend/*.exe

@@ -654,27 +654,34 @@ def sync_status(conn=Depends(get_db)):
 @router.get("/sync/config")
 def sync_get_config(conn=Depends(get_db)):
     cfg = sync_engine.get_sync_config(conn)
-    return {"repo": cfg["repo"], "branch": cfg["branch"],
+    return {"provider": cfg.get("provider", "github"),
+            "repo": cfg["repo"], "branch": cfg["branch"],
             "auto_on_start": cfg["auto_on_start"],
             "sync_on_close": cfg["sync_on_close"],
             "has_token": bool(cfg["token_dpapi"])}
+
+
+_SYNC_PROVIDERS = ("github", "gitee")
 
 
 @router.put("/sync/config")
 def sync_put_config(body: dict, conn=Depends(get_db)):
     repo = body.get("repo", "")
     branch = body.get("branch", "main") or "main"
-    # 只放行 owner/repo 形态：repo 决定数据被推到哪，而本进程持有可写 PAT 的
+    provider = str(body.get("provider") or "github").strip().lower()
+    if provider not in _SYNC_PROVIDERS:
+        raise HTTPException(400, "同步方式只能是 github 或 gitee")
+    # 只放行 owner/repo 形态：repo 决定数据被推到哪，而本进程持有可写令牌的
     # 操作能力。若放任任意字符串，攻击者（或误粘贴的 URL/带路径的仓库名）能把
     # 用户数据写进非预期仓库。GitHub 的 owner 与 repo 名本身不允许这些字符。
     if not _REPO_RE.match(repo or ""):
-        raise HTTPException(400, "仓库格式应为 owner/repo")
+        raise HTTPException(400, "仓库格式应为 owner/repo（Gitee 仓库名请用英文、数字或 -_.）")
     if not _branch_ok(branch):
         raise HTTPException(400, "分支名含非法字符")
     sync_engine.save_sync_config(
         conn, repo, branch,
         body.get("token"), bool(body.get("auto_on_start", True)),
-        bool(body.get("sync_on_close", True)))
+        bool(body.get("sync_on_close", True)), provider)
     return {"ok": True}
 
 

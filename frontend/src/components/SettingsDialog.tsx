@@ -10,7 +10,7 @@ import {
   getTodoBusyConfig, setTodoBusyConfig, recomputeTodoBusy, type TodoBusyConfig,
   getTodoReminderConfig, setTodoReminderConfig, type TodoReminderConfig,
   getSyncConfig, getSyncStatus, saveSyncConfig, testSync, syncNow, resolveSync,
-  type SyncResult,
+  type SyncResult, type SyncProvider,
   exportDiagnostics, getVersionInfo, type DiagnosticsBundle,
 } from '../api/client'
 import { useT, useTPlural, chooseLang, activeLang, SELECTABLE_LANGS, LANG_META, type I18n, type Lang, type TxKey } from '../i18n'
@@ -366,16 +366,24 @@ function SyncConfigSection() {
   const [repo, setRepo] = useState('')
   const [branch, setBranch] = useState('main')
   const [token, setToken] = useState('')
+  const [provider, setProvider] = useState<SyncProvider>('github')
+  /** 刚切换过通道：此时库里的旧令牌已不适用（保存时后端会清掉），UI 不能再声称「已存储」 */
+  const [tokenDirty, setTokenDirty] = useState(false)
   const [auto, setAuto] = useState(true)
   const [closeSync, setCloseSync] = useState(true)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const [busy, setBusy] = useState<'save' | 'test' | 'sync' | null>(null)
   const [decision, setDecision] = useState<number | null>(null)
   const loaded = useRef(false)
+  /** 两个通道各记一份仓库名：来回切换时不至于把已经敲好的 owner/repo 丢掉 */
+  const repoMemo = useRef<Record<SyncProvider, string>>({ github: '', gitee: '' })
 
   useEffect(() => {
     if (cfg && !loaded.current) {
       loaded.current = true
+      const p = cfg.provider ?? 'github'
+      setProvider(p)
+      repoMemo.current[p] = cfg.repo
       setRepo(cfg.repo)
       setBranch(cfg.branch)
       setAuto(cfg.auto_on_start)
@@ -383,8 +391,11 @@ function SyncConfigSection() {
     }
   }, [cfg])
 
+  const gitee = provider === 'gitee'
+  const hasToken = !!cfg?.has_token && !tokenDirty
+
   const persist = () => saveSyncConfig({
-    repo, branch, token: token || undefined, auto_on_start: auto, sync_on_close: closeSync,
+    provider, repo, branch, token: token || undefined, auto_on_start: auto, sync_on_close: closeSync,
   })
 
   const onSave = async () => {
@@ -392,6 +403,7 @@ function SyncConfigSection() {
     try {
       await persist()
       setToken('')
+      setTokenDirty(false)
       qc.invalidateQueries({ queryKey: ['syncConfig'] })
       setMsg({ ok: true, text: t('settings.sync.savedMsg') })
     } catch (e) { setMsg({ ok: false, text: String(e) }) } finally { setBusy(null) }
@@ -402,6 +414,7 @@ function SyncConfigSection() {
     try {
       await persist()
       setToken('')
+      setTokenDirty(false)
       const r = await testSync()
       qc.invalidateQueries({ queryKey: ['syncConfig'] })
       setMsg({ ok: r.ok, text: r.detail })
@@ -441,7 +454,7 @@ function SyncConfigSection() {
     <section>
       <h3 className="text-xs font-semibold cal-muted uppercase tracking-wide mb-2">{t('settings.sync.sectionTitle')}</h3>
       <p className="text-xs cal-muted mb-2">
-        {t('settings.sync.desc')}
+        {t(gitee ? 'settings.sync.descGitee' : 'settings.sync.desc')}
       </p>
       {decision !== null && (
         <div className="mb-3 p-3 rounded-md bg-amber-50 border border-amber-200 text-sm">
@@ -462,18 +475,48 @@ function SyncConfigSection() {
         <div className="flex items-center gap-2">
           <span className="text-xs cal-muted w-20 flex-shrink-0">{status?.configured ? lastLine : t('settings.sync.notConfigured')}</span>
         </div>
+        <Field label={t('settings.sync.provider')}>
+          <div className="grid grid-cols-2 gap-2">
+            {(['github', 'gitee'] as const).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => {
+                  if (p === provider) return
+                  // 仓库和令牌都是通道专属的：GitHub 的 PAT 拿去打 Gitee 只会 401。
+                  // 仓库名先存回旧通道的槽位，再取出新通道上次填的值（可能为空）。
+                  repoMemo.current[provider] = repo
+                  setProvider(p)
+                  setRepo(repoMemo.current[p])
+                  setToken('')
+                  setTokenDirty(true)
+                  setMsg(null)
+                }}
+                aria-pressed={provider === p}
+                className={`px-3 py-2 rounded-lg border text-sm text-left transition ${
+                  provider === p
+                    ? 'border-[color:var(--cal-accent)] cal-subtle-bg text-[color:var(--cal-accent)]'
+                    : 'border-[color:var(--cal-border)] cal-muted cal-hover-bg'
+                }`}
+              >
+                <span className="font-medium">{p === 'github' ? 'GitHub' : t('settings.sync.providerGitee')}</span>
+              </button>
+            ))}
+          </div>
+        </Field>
         <div className="flex gap-2">
           <Field label={t('settings.sync.fieldRepo')}>
-            <input className="tt-input w-full" placeholder="TTDiang2/tt-calendar-data"
+            <input className="tt-input w-full" placeholder={gitee ? 'yourname/tt-calendar-data' : 'TTDiang2/tt-calendar-data'}
               value={repo} onChange={(e) => setRepo(e.target.value)} />
           </Field>
           <Field label={t('settings.sync.fieldBranch')}>
             <input className="tt-input w-24" value={branch} onChange={(e) => setBranch(e.target.value)} />
           </Field>
         </div>
-        <Field label={t('settings.sync.patLabel', { state: cfg?.has_token ? t('settings.sync.patStored') : t('settings.sync.patMissing') })}>
-          <input type="password" className="tt-input w-full" placeholder={cfg?.has_token ? '••••••••' : 'github_pat_...'}
+        <Field label={t(gitee ? 'settings.sync.patGitee' : 'settings.sync.patLabel', { state: hasToken ? t('settings.sync.patStored') : (gitee ? t('settings.sync.notConfigured') : t('settings.sync.patMissing')) })}>
+          <input type="password" className="tt-input w-full" placeholder={hasToken ? '••••••••' : (gitee ? 'token' : 'github_pat_...')}
             value={token} onChange={(e) => setToken(e.target.value)} />
+          {gitee && <p className="text-[11px] cal-muted mt-1">{t('settings.sync.patGiteeGuide')}</p>}
         </Field>
         <label className="flex items-center gap-2 text-sm cal-ink select-none">
           <input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} />
@@ -488,11 +531,11 @@ function SyncConfigSection() {
             className="px-3 py-1.5 text-sm bg-gray-100 cal-ink rounded-lg hover:bg-gray-200 disabled:opacity-40">
             {busy === 'save' ? t('settings.saving') : t('common.save')}
           </button>
-          <button onClick={onTest} disabled={busy !== null || !repo || (!token && !cfg?.has_token)}
+          <button onClick={onTest} disabled={busy !== null || !repo || (!token && !hasToken)}
             className="px-3 py-1.5 text-sm bg-gray-100 cal-ink rounded-lg hover:bg-gray-200 disabled:opacity-40">
             {busy === 'test' ? t('settings.sync.testing') : t('settings.sync.test')}
           </button>
-          <button onClick={onSync} disabled={busy !== null || !repo || !cfg?.has_token}
+          <button onClick={onSync} disabled={busy !== null || !repo || !hasToken}
             className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40">
             {busy === 'sync' ? t('settings.sync.syncing') : t('settings.sync.syncNow')}
           </button>

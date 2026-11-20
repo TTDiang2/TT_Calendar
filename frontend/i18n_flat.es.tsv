@@ -230,6 +230,19 @@ settings.sync.initDone	Primera inicialización completada: {n} filas subidas|Pri
 settings.sync.report	Descargados {pulled} · Subidos {pushed} · Conflictos {conflicts} · Eliminados {deleted}
 settings.sync.reportWarning	({warning})
 settings.sync.resolvedDone	Vinculación completada: {report}
+settings.sync.provider	Método de sincronización
+settings.sync.providerGitee	Gitee
+settings.sync.descGitee	Sincroniza todos los datos (tareas, coloreado, aniversarios, ajustes) entre varios ordenadores mediante un repositorio privado de Gitee. Gitee es accesible desde China continental sin proxy; mantén el repositorio privado. El token se cifra con Windows y nunca se sube. Consulta docs/SYNC_SETUP.md.
+settings.sync.patGitee	Token personal ({state})
+settings.sync.patGiteeGuide	Créalo en gitee.com/profile/personal_access_tokens con el permiso projects
+settings.diagnostics.sectionTitle	Diagnóstico y soporte
+settings.diagnostics.desc	Exporta información de diagnóstico (versión, sistema, rutas, registros). Sin datos de calendario, ajustes ni credenciales.
+settings.diagnostics.export	Exportar diagnóstico
+settings.diagnostics.exporting	Empaquetando…
+settings.diagnostics.savedTo	Guardado en
+settings.diagnostics.copy	Copiar ruta
+settings.diagnostics.copied	Copiado
+settings.diagnostics.failed	Error al exportar
 terms.calendar	Calendario
 terms.todo	Tarea
 terms.countdown	Cuenta atrás

@@ -108,3 +108,67 @@ def test_invalid_repo_is_rejected_before_touching_db(client: TestClient) -> None
     cfg = client.get("/api/sync/config").json()
     assert cfg["repo"] != "../../etc/passwd", "非法 repo 不应被写入配置"
     assert not cfg["has_token"], "非法请求不应写入 token"
+
+
+# ---------------------------------------------------------------- 通道选择
+
+
+def test_gitee_provider_roundtrip(client: TestClient) -> None:
+    """选 Gitee 后必须能读回——否则重启后界面会把配置显示成 GitHub。"""
+    r = _put(client, provider="gitee", token="tok")
+    assert r.status_code == 200, r.text
+    cfg = client.get("/api/sync/config").json()
+    assert cfg["provider"] == "gitee"
+    assert cfg["repo"] == "o/r"
+
+
+def test_unknown_provider_rejected(client: TestClient) -> None:
+    r = _put(client, provider="ftp", token="tok")
+    assert r.status_code == 400
+
+
+def test_missing_provider_defaults_to_github(client: TestClient) -> None:
+    """老配置（前端还没升级时）不带 provider，必须继续按 GitHub 走。"""
+    r = _put(client, token="tok")
+    assert r.status_code == 200
+    assert client.get("/api/sync/config").json()["provider"] == "github"
+
+
+def test_switching_provider_drops_the_old_token(client: TestClient) -> None:
+    """GitHub 的 PAT 拿去打 Gitee 只会 401。换通道而不填新令牌时必须作废旧令牌，
+    否则用户看到的是「令牌无效」，会以为是自己粘贴错了。"""
+    assert _put(client, provider="github", token="gh-token").status_code == 200
+    assert client.get("/api/sync/config").json()["has_token"] is True
+
+    assert _put(client, provider="gitee").status_code == 200
+    assert client.get("/api/sync/config").json()["has_token"] is False
+
+    assert _put(client, provider="gitee", token="gitee-token").status_code == 200
+    assert client.get("/api/sync/config").json()["has_token"] is True
+
+
+def test_same_provider_keeps_token_when_omitted(client: TestClient) -> None:
+    """同一通道内改仓库/分支不能让用户重填令牌。"""
+    assert _put(client, provider="gitee", token="t1").status_code == 200
+    assert _put(client, provider="gitee", repo="o/r2").status_code == 200
+    assert client.get("/api/sync/config").json()["has_token"] is True
+
+
+def test_switching_provider_drops_the_old_token(client: TestClient) -> None:
+    """GitHub 的 PAT 拿去打 Gitee 只会 401。换通道而不填新令牌时必须作废旧令牌，
+    否则用户看到的是「令牌无效」，会以为是自己粘贴错了。"""
+    assert _put(client, provider="github", token="gh-token").status_code == 200
+    assert client.get("/api/sync/config").json()["has_token"] is True
+
+    assert _put(client, provider="gitee").status_code == 200
+    assert client.get("/api/sync/config").json()["has_token"] is False
+
+    assert _put(client, provider="gitee", token="gitee-token").status_code == 200
+    assert client.get("/api/sync/config").json()["has_token"] is True
+
+
+def test_same_provider_keeps_token_when_omitted(client: TestClient) -> None:
+    """同一通道内改仓库/分支不能让用户重填令牌。"""
+    assert _put(client, provider="gitee", token="t1").status_code == 200
+    assert _put(client, provider="gitee", repo="o/r2").status_code == 200
+    assert client.get("/api/sync/config").json()["has_token"] is True

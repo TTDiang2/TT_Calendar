@@ -261,7 +261,10 @@ export const importTodosCsv = (file: File) => {
 export type { Day }
 
 // 多端同步
+/** 同步通道：github 走 Git Data API 多文件树；gitee 走 contents API 单文件快照 */
+export type SyncProvider = 'github' | 'gitee'
 export interface SyncConfig {
+  provider: SyncProvider
   repo: string
   branch: string
   auto_on_start: boolean
@@ -340,7 +343,14 @@ export interface SourceInfo {
   field_specs: SourceFieldSpec | null
 }
 export const getSources = () => get<SourceInfo[]>('/sources')
-export const saveSyncConfig = (cfg: { repo: string; branch: string; token?: string; auto_on_start: boolean; sync_on_close?: boolean }) =>
+export const saveSyncConfig = (cfg: {
+  provider: SyncProvider
+  repo: string
+  branch: string
+  token?: string
+  auto_on_start: boolean
+  sync_on_close?: boolean
+}) =>
   put<{ ok: boolean }>('/sync/config', cfg)
 export const testSync = () => post<{ ok: boolean; detail: string }>('/sync/test')
 

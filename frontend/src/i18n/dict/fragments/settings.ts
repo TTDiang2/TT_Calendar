@@ -141,6 +141,11 @@ export const settings = {
       reportWarning: '（{warning}）',
       /** 冲突决策执行完成提示，{report} 为 sync.report 渲染结果 */
       resolvedDone: '绑定完成：{report}',
+      provider: '同步方式',
+      providerGitee: 'Gitee（码云）',
+      descGitee: '通过 Gitee 私有仓库在多台电脑间同步全部数据（待办、涂色、纪念日、配置）。Gitee 在国内可直连、不需要代理；仓库设成私有不公开。令牌用 Windows 加密保存、永不上传。配置步骤见 docs/SYNC_SETUP.md。',
+      patGitee: '私人令牌（{state}）',
+      patGiteeGuide: '在 gitee.com/profile/personal_access_tokens 生成，勾选 projects（仓库）权限',
     },
     diagnostics: {
       sectionTitle: '诊断与支持',
@@ -264,6 +269,11 @@ export const settings = {
       report: 'Pulled {pulled} · Pushed {pushed} · Conflicts {conflicts} · Deleted {deleted}',
       reportWarning: ' ({warning})',
       resolvedDone: 'Binding complete: {report}',
+      provider: 'Sync method',
+      providerGitee: 'Gitee',
+      descGitee: 'Sync all data (todos, coloring, anniversaries, settings) across computers through a Gitee private repository. Gitee is reachable from mainland China without a proxy; keep the repository private. The token is encrypted with Windows DPAPI and never uploaded. See docs/SYNC_SETUP.md.',
+      patGitee: 'Personal token ({state})',
+      patGiteeGuide: 'Create one at gitee.com/profile/personal_access_tokens with the projects scope',
     },
     diagnostics: {
       sectionTitle: 'Diagnostics & support',

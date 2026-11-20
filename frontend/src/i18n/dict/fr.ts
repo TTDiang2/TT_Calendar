@@ -1,5 +1,5 @@
 /**
- * fr 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 591 条）。
+ * fr 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 604 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.fr.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -318,16 +318,21 @@ export const fr: DeepPartialDict<Dict> = {
       report: 'Récupéré {pulled} · Envoyé {pushed} · Conflits {conflicts} · Supprimé {deleted}',
       reportWarning: '({warning})',
       resolvedDone: 'Liaison terminée : {report}',
+      provider: 'Méthode de synchronisation',
+      providerGitee: 'Gitee',
+      descGitee: 'Synchronisez toutes les données (tâches, coloriage, anniversaires, réglages) entre plusieurs ordinateurs via un dépôt privé Gitee. Gitee est accessible depuis la Chine continentale sans proxy ; gardez le dépôt privé. Le jeton est chiffré par Windows et n\'est jamais envoyé. Voir docs/SYNC_SETUP.md.',
+      patGitee: 'Jeton personnel ({state})',
+      patGiteeGuide: 'À créer sur gitee.com/profile/personal_access_tokens avec la portée projects',
     },
     diagnostics: {
       sectionTitle: 'Diagnostics et support',
-      desc: 'Exporte les informations de dépannage (version, système, chemins, journaux). Ne contient ni données de calendrier, ni configuration, ni identifiants.',
-      export: 'Exporter le paquet de diagnostic',
-      exporting: 'Création…',
+      desc: 'Exportez des informations de dépannage (version, système, chemins, journaux). Aucune donnée de calendrier, réglage ou identifiant.',
+      export: 'Exporter les diagnostics',
+      exporting: 'Empaquetage…',
       savedTo: 'Enregistré dans',
       copy: 'Copier le chemin',
       copied: 'Copié',
-      failed: 'Échec de l’export',
+      failed: 'Échec de l\'export',
     },
   },
   terms: {

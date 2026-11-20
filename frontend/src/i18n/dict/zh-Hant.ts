@@ -1,5 +1,5 @@
 /**
- * zh-Hant 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 591 条）。
+ * zh-Hant 字典（老端 A4 批次；语义基准：zh-CN 主字典全量摊平，共 604 条）。
  *
  * 本文件由 scripts/gen_dict.ts 从 i18n_flat.zh-Hant.tsv 生成 ——
  * 改译文请改对照表后重新跑生成器，不要直接改这个文件（会被覆盖）。
@@ -310,6 +310,11 @@ export const zhHant: DeepPartialDict<Dict> = {
       report: '拉取 {pulled} · 推送 {pushed} · 衝突 {conflicts} · 刪除 {deleted}',
       reportWarning: '（{warning}）',
       resolvedDone: '綁定完成：{report}',
+      provider: '同步方式',
+      providerGitee: 'Gitee（碼雲）',
+      descGitee: '透過 Gitee 私有倉庫在多台電腦間同步全部資料（待辦、塗色、紀念日、設定）。Gitee 在中國大陸可直連、不需要代理；倉庫設為私有不公開。權杖以 Windows 加密保存、永不上傳。設定步驟見 docs/SYNC_SETUP.md。',
+      patGitee: '私人權杖（{state}）',
+      patGiteeGuide: '在 gitee.com/profile/personal_access_tokens 產生，勾選 projects（倉庫）權限',
     },
     diagnostics: {
       sectionTitle: '診斷與支援',

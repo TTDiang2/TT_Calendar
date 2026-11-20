@@ -79,6 +79,13 @@ fn resolve_backend(app: &tauri::AppHandle) -> Option<PathBuf> {
     if let Ok(resource_dir) = app.path().resource_dir() {
         candidates.push(resource_dir.join("backend").join("tt-calendar-backend.exe"));
     }
+    // 便携/仓库内运行：onedir 产物放在 exe 同级的 tt-calendar-backend/ 目录
+    // （与 dist/tt-calendar-backend 的结构一致，不会和 Python 源码目录 backend/ 混在一起）
+    candidates.push(
+        exe_dir
+            .join("tt-calendar-backend")
+            .join("tt-calendar-backend.exe"),
+    );
     candidates.push(exe_dir.join("backend").join("tt-calendar-backend.exe"));
     // 兼容旧便携包：后端与界面平铺在同一目录
     candidates.push(exe_dir.join("tt-calendar-backend.exe"));

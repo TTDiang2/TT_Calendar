@@ -231,6 +231,19 @@ settings.sync.initDone	Первичная инициализация завер�
 settings.sync.report	Получено {pulled} · Отправлено {pushed} · Конфликты {conflicts} · Удалено {deleted}
 settings.sync.reportWarning	({warning})
 settings.sync.resolvedDone	Привязка завершена: {report}
+settings.sync.provider	Способ синхронизации
+settings.sync.providerGitee	Gitee
+settings.sync.descGitee	Синхронизация всех данных (задачи, раскраска, памятные даты, настройки) между компьютерами через приватный репозиторий Gitee. Gitee доступен из материкового Китая без прокси; держите репозиторий приватным. Токен шифруется Windows и никогда не отправляется. См. docs/SYNC_SETUP.md.
+settings.sync.patGitee	Личный токен ({state})
+settings.sync.patGiteeGuide	Создайте на gitee.com/profile/personal_access_tokens с областью projects
+settings.diagnostics.sectionTitle	Диагностика и поддержка
+settings.diagnostics.desc	Экспорт сведений для отладки (версия, система, пути, журналы). Без данных календаря, настроек и учётных данных.
+settings.diagnostics.export	Экспортировать диагностику
+settings.diagnostics.exporting	Упаковка…
+settings.diagnostics.savedTo	Сохранено в
+settings.diagnostics.copy	Копировать путь
+settings.diagnostics.copied	Скопировано
+settings.diagnostics.failed	Не удалось экспортировать
 terms.calendar	Календарь
 terms.todo	Задача
 terms.countdown	Обратный отсчёт

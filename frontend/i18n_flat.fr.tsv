@@ -230,6 +230,19 @@ settings.sync.initDone	Première initialisation terminée : {n} lignes envoyées
 settings.sync.report	Récupéré {pulled} · Envoyé {pushed} · Conflits {conflicts} · Supprimé {deleted}
 settings.sync.reportWarning	({warning})
 settings.sync.resolvedDone	Liaison terminée : {report}
+settings.sync.provider	Méthode de synchronisation
+settings.sync.providerGitee	Gitee
+settings.sync.descGitee	Synchronisez toutes les données (tâches, coloriage, anniversaires, réglages) entre plusieurs ordinateurs via un dépôt privé Gitee. Gitee est accessible depuis la Chine continentale sans proxy ; gardez le dépôt privé. Le jeton est chiffré par Windows et n'est jamais envoyé. Voir docs/SYNC_SETUP.md.
+settings.sync.patGitee	Jeton personnel ({state})
+settings.sync.patGiteeGuide	À créer sur gitee.com/profile/personal_access_tokens avec la portée projects
+settings.diagnostics.sectionTitle	Diagnostics et support
+settings.diagnostics.desc	Exportez des informations de dépannage (version, système, chemins, journaux). Aucune donnée de calendrier, réglage ou identifiant.
+settings.diagnostics.export	Exporter les diagnostics
+settings.diagnostics.exporting	Empaquetage…
+settings.diagnostics.savedTo	Enregistré dans
+settings.diagnostics.copy	Copier le chemin
+settings.diagnostics.copied	Copié
+settings.diagnostics.failed	Échec de l'export
 terms.calendar	Calendrier
 terms.todo	Tâche
 terms.countdown	Compte à rebours

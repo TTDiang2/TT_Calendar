@@ -323,6 +323,11 @@ export const ja: DeepPartialDict<Dict> = {
       report: '取得 {pulled} · 送信 {pushed} · 競合 {conflicts} · 削除 {deleted}',
       reportWarning: '（{warning}）',
       resolvedDone: 'バインド完了：{report}',
+      provider: '同期方法',
+      providerGitee: 'Gitee',
+      descGitee: 'Gitee のプライベートリポジトリで全データ（ToDo・色塗り・記念日・設定）を複数の PC 間で同期します。中国国内からはプロキシなしで接続できます。リポジトリは非公開にしてください。トークンは Windows で暗号化して保存し、アップロードしません。手順は docs/SYNC_SETUP.md。',
+      patGitee: '個人トークン（{state}）',
+      patGiteeGuide: 'gitee.com/profile/personal_access_tokens で発行し、projects（リポジトリ）権限を選択してください',
     },
     diagnostics: {
       sectionTitle: '診断とサポート',
