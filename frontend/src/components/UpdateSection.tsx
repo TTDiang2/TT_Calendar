@@ -10,7 +10,7 @@ function text() {
   return zh()
     ? {
         title: '版本与更新',
-        desc: '从 GitHub Releases 检查新版本，下载完成后自动重启。日历数据和插件都在用户目录，升级不会动它们。',
+        desc: '依次尝试 GitHub、镜像源与 Gitee 检查新版本，下载完成后自动重启。日历数据和插件都在用户目录，升级不会动它们。',
         check: '检查更新',
         checking: '正在检查…',
         latest: '已是最新版本',
@@ -28,10 +28,12 @@ function text() {
         unsupported: '仅桌面安装版支持自动更新。',
         retry: '重试',
         releasePage: '打开发布页',
+        mirrorPage: '国内镜像下载',
+        timeoutHint: '（每个源最多等 5 秒，会自动换下一个）',
       }
     : {
         title: 'Version & updates',
-        desc: 'Checks GitHub Releases for a newer build and restarts when done. Your calendar data and plugins live in your user folder, so upgrading never touches them.',
+        desc: 'Tries GitHub, then mirror sources, then Gitee, and restarts when done. Your calendar data and plugins live in your user folder, so upgrading never touches them.',
         check: 'Check for updates',
         checking: 'Checking…',
         latest: 'You are on the latest version',
@@ -49,6 +51,8 @@ function text() {
         unsupported: 'Automatic updates are only available in the desktop installer build.',
         retry: 'Retry',
         releasePage: 'Open releases',
+        mirrorPage: 'Download from mirror',
+        timeoutHint: '(5s per source, then it moves on)',
       }
 }
 
@@ -62,9 +66,29 @@ type Phase =
   | { kind: 'failed'; message: string }
 
 const RELEASES_URL = 'https://github.com/TTDiang2/TT_Calendar/releases'
+/** Gitee 镜像仓库：国内直连，只放安装包和更新清单，不碰用户数据 */
+const MIRROR_URL = 'https://gitee.com/TTDiang/tt-calendar-update/releases'
+/**
+ * 每个更新源的单次超时。
+ *
+ * updater 会按 endpoints 顺序逐个试，但 Rust 侧的请求默认没有超时——国内连
+ * github.com 时 TCP 会卡到系统默认的 ~21s，后面的镜像源永远轮不到。5 秒是折中：
+ * 国内基本可以认定「5 秒还没拿到 JSON = 这个源不通」，海外慢网也够用。
+ */
+const CHECK_TIMEOUT_MS = 5000
 
 function isDesktop(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+}
+
+/** 用系统浏览器打开外链：桌面走 opener 插件，Web 预览退回 window.open */
+async function openExternal(url: string): Promise<void> {
+  try {
+    const { openUrl } = await import('@tauri-apps/plugin-opener')
+    await openUrl(url)
+  } catch {
+    window.open(url, '_blank', 'noopener')
+  }
 }
 
 export function UpdateSection() {
@@ -87,7 +111,8 @@ export function UpdateSection() {
     setPhase({ kind: 'checking' })
     try {
       const { check: checkUpdate } = await import('@tauri-apps/plugin-updater')
-      const found = await checkUpdate()
+      // 5 秒一源：GitHub 不通就自动落到镜像源，不必让用户干等系统 TCP 超时
+      const found = await checkUpdate({ timeout: CHECK_TIMEOUT_MS })
       updateRef.current = found
       setPhase(found
         ? { kind: 'available', version: found.version, notes: found.body ?? null }
@@ -131,12 +156,11 @@ export function UpdateSection() {
   }
 
   const openReleases = async () => {
-    try {
-      const { openUrl } = await import('@tauri-apps/plugin-opener')
-      await openUrl(RELEASES_URL)
-    } catch {
-      window.open(RELEASES_URL, '_blank', 'noopener')
-    }
+    await openExternal(RELEASES_URL)
+  }
+
+  const openMirror = async () => {
+    await openExternal(MIRROR_URL)
   }
 
   const busy = phase.kind === 'checking' || phase.kind === 'downloading'
@@ -218,7 +242,9 @@ export function UpdateSection() {
           <div className="mt-1 flex items-center gap-2">
             <button onClick={check} className="underline">{c.retry}</button>
             <button onClick={openReleases} className="underline">{c.releasePage}</button>
+            <button onClick={openMirror} className="underline">{c.mirrorPage}</button>
           </div>
+          <div className="mt-0.5 text-[10px] text-red-400">{c.timeoutHint}</div>
         </div>
       )}
     </section>

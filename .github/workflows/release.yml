@@ -134,6 +134,36 @@ jobs:
             --notes "$NOTES" \
             --out release/latest.json
 
+      # 镜像清单要能被 raw 读到，所以必须落在默认分支上。
+      # 失败不阻断发版：GitHub 主源 + release 资产里的 latest.json 仍然可用。
+      - name: Publish mirror manifests
+        if: steps.build.outputs.signed == 'true'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add latest-ghfast.json latest-ghproxy.json
+          if git diff --cached --quiet; then
+            echo "manifest 内容未变化，跳过提交"
+            exit 0
+          fi
+          git commit -m "chore(release): updater manifests for ${{ steps.ver.outputs.version }}"
+          git fetch origin main
+          git push origin HEAD:main || echo "::warning::镜像清单未能推送到 main（分支保护或非快进），请手动提交 latest-*.json"
+
+      # Gitee 兜底源：没有配置 GITEE_TOKEN 时整步跳过，不影响其他源。
+      - name: Mirror to Gitee
+        if: steps.build.outputs.signed == 'true' && secrets.GITEE_TOKEN != ''
+        shell: bash
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+          GITEE_OWNER: ${{ vars.GITEE_OWNER }}
+        run: |
+          python scripts/sync_gitee_update.py \
+            --tag "${{ steps.ver.outputs.tag }}" \
+            --version "${{ steps.ver.outputs.version }}" \
+            --asset "release/TT-Calendar-Setup-${{ steps.ver.outputs.version }}.exe"
+
       - name: Checksums
         shell: bash
         run: |

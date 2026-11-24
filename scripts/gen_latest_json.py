@@ -24,6 +24,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 REPO = "TTDiang2/TT_Calendar"
 
+# 国内可达的 GitHub 加速前缀。每加一条就会多生成一份 latest-<name>.json：
+# 清单本身从 raw 取（体积 1KB，秒回），清单里的 url 则指向该镜像代理的安装包。
+# 顺序 = updater 的尝试顺序，前面的通了就不会继续试。
+MIRROR_PREFIXES: tuple[tuple[str, str], ...] = (
+    ("ghfast", "https://ghfast.top/"),
+    ("ghproxy", "https://gh-proxy.com/"),
+)
+
 
 def read_version(root: Path) -> str:
     data = json.loads((root / "version.json").read_text(encoding="utf-8"))
@@ -33,20 +41,20 @@ def read_version(root: Path) -> str:
     return version
 
 
-def find_updater_artifact(bundle_dir: Path) -> tuple[Path, Path]:
+def find_updater_artifact(bundle_dir: Path, version: str) -> tuple[Path, Path]:
     """返回 (被签名的安装包, 签名文件)。"""
     if not bundle_dir.is_dir():
         raise SystemExit(f"找不到 bundle 目录：{bundle_dir}")
 
     # 优先 zip：updater 下载的就是它
-    zips = sorted(bundle_dir.glob("*.nsis.zip"))
+    zips = _prefer_version(sorted(bundle_dir.glob("*.nsis.zip")), version)
     for z in zips:
         sig = z.with_name(z.name + ".sig")
         if sig.is_file():
             return z, sig
 
     # 回退：直接签名 setup.exe（某些 tauri 版本/配置只出这一份）
-    setups = sorted(bundle_dir.glob("*-setup.exe"))
+    setups = _prefer_version(sorted(bundle_dir.glob("*-setup.exe")), version)
     for exe in setups:
         sig = exe.with_name(exe.name + ".sig")
         if sig.is_file():
@@ -56,6 +64,17 @@ def find_updater_artifact(bundle_dir: Path) -> tuple[Path, Path]:
         f"{bundle_dir} 下没找到带 .sig 的 updater 产物；"
         "确认 tauri.conf.json 里 bundle.createUpdaterArtifacts=true 且构建时提供了签名私钥"
     )
+
+
+def _prefer_version(candidates: list[Path], version: str) -> list[Path]:
+    """把文件名里带本次版本号的产物排到最前。
+
+    本地 bundle 目录会堆积历史版本（2.3.0 / 2.4.0 / 2.5.1 都在），单纯按名字排序
+    会挑到 2.4.0 那份——生成的 latest.json 就会把老包连同老签名推给用户。
+    CI 每次都是干净环境不会复现，只在本地手动发版时咬人。
+    """
+    marker = f"_{version}_"
+    return sorted(candidates, key=lambda p: (marker not in p.name, p.name))
 
 
 def release_asset_name(artifact: Path, version: str) -> str:
@@ -97,12 +116,13 @@ def main() -> int:
     if args.notes_file:
         notes = Path(args.notes_file).read_text(encoding="utf-8").strip()
 
-    artifact, sig_path = find_updater_artifact(Path(args.bundle_dir))
+    artifact, sig_path = find_updater_artifact(Path(args.bundle_dir), version)
     signature = sig_path.read_text(encoding="utf-8").strip()
     if not signature:
         raise SystemExit(f"签名文件是空的：{sig_path}")
 
     asset = release_asset_name(artifact, version)
+    github_url = f"https://github.com/{args.repo}/releases/download/{tag}/{asset}"
     payload = {
         "version": version,
         "notes": notes,
@@ -110,16 +130,27 @@ def main() -> int:
         "platforms": {
             "windows-x86_64": {
                 "signature": signature,
-                "url": f"https://github.com/{args.repo}/releases/download/{tag}/{asset}",
+                "url": github_url,
             }
         },
     }
+
+    # 镜像清单：同一份内容，只是把下载 url 换成「镜像前缀 + GitHub 原始地址」。
+    # 之所以要单独的文件而不是让 updater 自己拼，是因为 latest.json 的 url 是写死的
+    # 一个地址，镜像源必须提供一份改过该字段的清单。
+    mirror_payloads: list[tuple[Path, dict]] = []
+    for name, prefix in MIRROR_PREFIXES:
+        mirror = json.loads(json.dumps(payload))
+        mirror["platforms"]["windows-x86_64"]["url"] = prefix + github_url
+        mirror_payloads.append((ROOT / f"latest-{name}.json", mirror))
 
     body = json.dumps(payload, ensure_ascii=False, indent=2)
     print(body)
     print()
     print(f"[upload] {artifact}  ->  {asset}")
     print(f"[upload] {Path(args.out)}")
+    for path, data in mirror_payloads:
+        print(f"[mirror] {path.name}  ->  {data['platforms']['windows-x86_64']['url']}")
     if args.dry_run:
         print("[dry-run] 未写盘")
         return 0
@@ -128,6 +159,9 @@ def main() -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(body + "\n", encoding="utf-8")
     print(f"[ok] 写入 {out}")
+    for path, data in mirror_payloads:
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        print(f"[ok] 写入 {path}（需提交到默认分支，供镜像源 raw 读取）")
     return 0
 
 

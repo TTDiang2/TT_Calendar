@@ -1,11 +1,12 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { springDrawer } from '../../lib/motion-tokens'
+import { detailWidthFor } from '../../lib/layout-metrics'
 
 interface Props {
   /** 抽屉是否滑出 */
   open: boolean
-  /** 完全滑出后的宽度（默认 288 = 原 w-72 面板） */
+  /** 完全滑出后的宽度；不传则按锚点比例随视口缩放（1949 宽时 288，原 w-72） */
   width?: number
   children: ReactNode
 }
@@ -23,7 +24,18 @@ interface Props {
  * 内层固定宽度、外层 overflow-hidden：动画期间文字不会跟着压缩重排，
  * 看起来是「整块面板从右边缘被推出来」，而不是「面板被压扁」。
  */
-export function RightDrawer({ open, width = 288, children }: Props) {
+export function RightDrawer({ open, width, children }: Props) {
+  // 宽度跟着视口比例走（锚点 1949 → 288），窗口缩放时同步重算；
+  // 传了 width 就按死值走，留给特殊面板。
+  const [autoWidth, setAutoWidth] = useState(() => detailWidthFor(window.innerWidth))
+  useEffect(() => {
+    if (width != null) return
+    const onResize = () => setAutoWidth(detailWidthFor(window.innerWidth))
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [width])
+  const resolvedWidth = width ?? autoWidth
+
   return (
     // 不写 initial={false}：整个视图分支被换掉时（倒数日/待办 ↔ 日历）抽屉会重新挂载，
     // 这时也该是「从右边推出来」，而不是「啪」地就在那儿。
@@ -33,13 +45,13 @@ export function RightDrawer({ open, width = 288, children }: Props) {
           key="right-drawer"
           className="relative flex-shrink-0 overflow-hidden"
           initial={{ width: 0, opacity: 0 }}
-          animate={{ width, opacity: 1 }}
+          animate={{ width: resolvedWidth, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
           transition={springDrawer}
         >
           <motion.div
             className="h-full"
-            style={{ width }}
+            style={{ width: resolvedWidth }}
             initial={{ x: 18 }}
             animate={{ x: 0 }}
             exit={{ x: 18 }}
