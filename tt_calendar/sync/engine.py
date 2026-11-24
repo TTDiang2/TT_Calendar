@@ -121,12 +121,36 @@ def _load_base() -> tuple[M.Data | None, S.Tombstones]:
     return raw.get("data"), tombs
 
 
-def _save_base(data: M.Data, tombs: S.Tombstones) -> None:
+def _save_base(data: M.Data, tombs: S.Tombstones, channel: str = "") -> None:
     BASE_DIR.mkdir(parents=True, exist_ok=True)
     BASE_FILE.write_text(json.dumps(
         {"data": data,
+         "channel": channel,
          "tombstones": {f"{t}|{k}": dt for (t, k), dt in tombs.items()}},
         ensure_ascii=False), encoding="utf-8")
+
+
+def _base_channel(conn: sqlite3.Connection) -> str:
+    """base 是由哪条通道写下的（github / gitee）。
+
+    换通道时远端本来就是空的，此时「远端为空」不是异常而是预期，必须区分开，
+    否则用户切到 Gitee 后第一次同步只会看到「远端为空但本地已有同步历史」。
+    老版本 base 文件没记 channel：退回用上次成功同步的 commit 域名反推。
+    """
+    if BASE_FILE.exists():
+        try:
+            raw = json.loads(BASE_FILE.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            raw = {}
+        ch = str(raw.get("channel") or "")
+        if ch:
+            return ch
+    commit = str((last_status(conn) or {}).get("commit") or "")
+    if "gitee.com" in commit:
+        return "gitee"
+    if "github.com" in commit:
+        return "github"
+    return ""
 
 
 def _has_base() -> bool:
@@ -151,17 +175,25 @@ def sync_now(conn: sqlite3.Connection,
 
 def _sync_now(conn: sqlite3.Connection, on_imported) -> dict:
     prov = _provider(conn)
+    channel = get_sync_config(conn)["provider"]
 
     if not _has_base():
         remote = prov.fetch()
         if remote is None:
-            n = _init_upload(conn, prov, on_imported)
+            n = _init_upload(conn, prov, on_imported, channel)
             return {"result": "initialized", "pushed": n}
         raise NeedsDecision(remote_pulled=len(sum(remote.data.values(), [])))
 
     for attempt in (1, 2):
         remote = prov.fetch()
         if remote is None:
+            prev = _base_channel(conn)
+            if prev and prev != channel:
+                # 刚换了通道（github ↔ gitee）：新通道远端必然是空的，直接init
+                # 上传本地数据，不该让用户看到「远端被清空」这种吓人的报错。
+                n = _init_upload(conn, prov, on_imported, channel)
+                return {"result": "initialized", "pushed": n,
+                        "switched_from": prev}
             raise SyncError("远端为空但本地已有同步历史；请检查数据仓库是否被误清空")
 
         base_data, base_tombs = _load_base()
@@ -202,7 +234,7 @@ def _sync_now(conn: sqlite3.Connection, on_imported) -> dict:
                           "ok": False, "report": report, "commit": None}
                 _save_status(conn, status)
                 return {"result": "partial", **report, "commit_url": None}
-        _save_base(result["data"], result["tombstones"])
+        _save_base(result["data"], result["tombstones"], channel)
         S.prune_tombstones(conn)
 
         status = {"at": datetime.now().isoformat(timespec="seconds"),
@@ -233,9 +265,10 @@ def resolve_first_bind(conn: sqlite3.Connection, mode: str, on_imported=None) ->
 
 def _resolve_first_bind(conn: sqlite3.Connection, mode: str, on_imported) -> dict:
     prov = _provider(conn)
+    channel = get_sync_config(conn)["provider"]
     remote = prov.fetch()
     if remote is None:
-        n = _init_upload(conn, prov, on_imported)
+        n = _init_upload(conn, prov, on_imported, channel)
         return {"result": "initialized", "pushed": n}
 
     local = S.export_data(conn)
@@ -249,7 +282,7 @@ def _resolve_first_bind(conn: sqlite3.Connection, mode: str, on_imported) -> dic
     device = socket.gethostname()
     files = P.encode_files(result["data"], result["tombstones"], device)
     commit_url = prov.push(files, f"sync: first bind ({mode}) by {device}")
-    _save_base(result["data"], result["tombstones"])
+    _save_base(result["data"], result["tombstones"], channel)
     S.prune_tombstones(conn)
     report = dict(result["report"])
     status = {"at": datetime.now().isoformat(timespec="seconds"),
@@ -260,13 +293,13 @@ def _resolve_first_bind(conn: sqlite3.Connection, mode: str, on_imported) -> dic
 
 def _init_upload(conn: sqlite3.Connection,
                  prov: GitHubProvider | P.GiteeProvider,
-                 on_imported) -> int:
+                 on_imported, channel: str = "") -> int:
     local = S.export_data(conn)
     tombs = S.export_tombstones(conn)
     device = socket.gethostname()
     files = P.encode_files(local, tombs, device)
     prov.push(files, f"sync: init upload by {device}")
-    _save_base(local, tombs)
+    _save_base(local, tombs, channel)
     status = {"at": datetime.now().isoformat(timespec="seconds"),
               "ok": True, "report": {"initialized": True},
               "commit": None}

@@ -6,7 +6,7 @@
 
 **[English](README.md) · 简体中文**
 
-[![Release](https://img.shields.io/badge/Release-v2.5.1-3D6BFB)](https://github.com/TTDiang2/TT_Calendar/releases)
+[![Release](https://img.shields.io/badge/Release-v2.5.2-3D6BFB)](https://github.com/TTDiang2/TT_Calendar/releases)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%2B-blue)]()
 [![License](https://img.shields.io/badge/License-MIT-green)]()
 

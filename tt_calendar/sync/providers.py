@@ -451,7 +451,14 @@ class GiteeProvider:
             if resp.status_code == 404:
                 return None
             self._ok(resp, "读取快照")
+            # Gitee 的 contents 接口对「文件不存在」**不一定**回 404：实测
+            # `/contents/<path>` 会返回 `200 []`（空数组），只有 raw 才 404。
+            # 早先只判 404，于是首次同步永远拿不到 None、直接掉进 `_raw()` 报
+            # 「下载快照失败：path」，新仓库一辈子推不上第一份快照。
+            # 现在同时兜住两种形态：非 dict、或缺 sha，都算「远端还没有快照」。
             meta = resp.json() or {}
+            if not isinstance(meta, dict) or not meta.get("sha"):
+                return None
             version = str(meta.get("sha") or "")
             content = meta.get("content") or ""
             if content:

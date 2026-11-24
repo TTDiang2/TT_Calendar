@@ -45,11 +45,28 @@ def _write_cargo(path: Path, version: str) -> None:
     path.write_text(new_text, encoding="utf-8", newline="\n")
 
 
+def _write_readme_badge(path: Path, version: str) -> None:
+    """README 的 Release 徽章同步版本号。
+
+    tests/test_docs_consistency.py 会断言「README 里出现当前版本」，
+    手改版本时很容易漏掉徽章，让发版前测试红一片——这里顺手一起改。
+    """
+    text = path.read_text(encoding="utf-8")
+    new_text, count = re.subn(
+        r"(badge/Release-v)\d+\.\d+\.\d+", rf"\g<1>{version}", text)
+    if count and new_text != text:
+        path.write_text(new_text, encoding="utf-8", newline="\n")
+
+
 def sync(root: Path) -> str:
     version = read_version(root)
     _write_json(root / "frontend" / "src-tauri" / "tauri.conf.json", version)
     _write_json(root / "frontend" / "package.json", version)
     _write_cargo(root / "frontend" / "src-tauri" / "Cargo.toml", version)
+    for name in ("README.md", "README.zh-CN.md"):
+        readme = root / name
+        if readme.exists():
+            _write_readme_badge(readme, version)
     (root / "tt_calendar" / "_build_version.py").write_text(
         '"""由 scripts/sync_version.py 生成，请勿手改。"""\n\n'
         f'__version__ = "{version}"\n',

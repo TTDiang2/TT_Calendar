@@ -59,8 +59,15 @@ def wired(monkeypatch):
     monkeypatch.setattr(E, "_provider", lambda conn: prov, raising=False)
     monkeypatch.setattr(E, "_has_base", lambda: True, raising=False)
     monkeypatch.setattr(E, "_load_base", lambda: ({"a": [{"v": 0}]}, {}), raising=False)
+    # engine 会读一次配置来判断「base 是哪条通道写的」；假连接没有 meta 表，
+    # 这里直接给出默认通道（github），保持本文件只测 base 时序的定位。
+    monkeypatch.setattr(E, "get_sync_config", lambda conn: {
+        "provider": "github", "repo": "me/cal", "branch": "main",
+        "token_dpapi": "x", "auto_on_start": True, "sync_on_close": True,
+    }, raising=False)
     monkeypatch.setattr(E, "_save_base",
-                        lambda data, tombs: saved.append((data, tombs)), raising=False)
+                        lambda data, tombs, channel="": saved.append((data, tombs)),
+                        raising=False)
     monkeypatch.setattr(E, "_save_status", lambda conn, st: status.append(st), raising=False)
     monkeypatch.setattr(E.S, "export_data", lambda conn: {"a": [{"v": 2}]}, raising=False)
     monkeypatch.setattr(E.S, "export_tombstones", lambda conn: {}, raising=False)

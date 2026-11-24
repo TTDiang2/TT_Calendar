@@ -78,6 +78,25 @@ def test_fetch_returns_none_when_snapshot_absent():
     assert _provider(handler).fetch() is None
 
 
+def test_fetch_returns_none_when_contents_replies_200_empty_array():
+    """Gitee 实测：文件不存在时 `/contents/<path>` 回 `200 []` 而不是 404。
+
+    早先只判 404，于是空仓库永远拿不到 None，一路掉进 raw 接口报
+    「下载快照失败：path」——首次同步（init upload）根本发不出去。
+    """
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.url.path)
+        if request.url.path.endswith("/repos/me/cal"):
+            return httpx.Response(200, json={"full_name": "me/cal"})
+        return httpx.Response(200, json=[])
+
+    assert _provider(handler).fetch() is None
+    assert not any("/raw/" in p for p in seen), "不该再去请求 raw"
+
+
+
 def test_fetch_decodes_snapshot():
     blob = P.encode_blob(_files())
 

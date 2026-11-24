@@ -232,6 +232,31 @@ def test_empty_remote_with_existing_base_is_an_error(wired, remote) -> None:
         E.sync_now(a.conn)
 
 
+def test_switching_channel_uploads_instead_of_erroring(wired, remote,
+                                                       monkeypatch) -> None:
+    """换通道（github → gitee）时新仓库必然是空的，应直接 init 上传。
+
+    base 快照与通道无关，不区分的话用户切到 Gitee 第一次同步只会看到
+    「远端为空但本地已有同步历史」，永远推不上去。
+    """
+    make, activate = wired
+    a = make("A", remote)
+    add_todo(a.conn, "t1", "买菜")
+    activate(a)
+    E.sync_now(a.conn)
+
+    gitee_cfg = {"provider": "gitee", "repo": "me/cal", "branch": "master",
+                 "token_dpapi": "x", "auto_on_start": True, "sync_on_close": True}
+    monkeypatch.setattr(E, "get_sync_config", lambda conn: dict(gitee_cfg))
+
+    remote.committed = None  # 新通道远端还是空的
+    out = E.sync_now(a.conn)
+    assert out["result"] == "initialized"
+    assert out["switched_from"] == "github"
+    assert remote.pushes == 2
+
+
+
 def test_delete_propagates_via_tombstone(wired, remote) -> None:
     """删除要靠墓碑传播，否则 B 上的数据会永久残留。"""
     make, activate = wired
