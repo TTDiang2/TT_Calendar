@@ -224,6 +224,8 @@ export const fr: DeepPartialDict<Dict> = {
       hint: 'Doux : saturation réduite, intensité conservée. Vif : couleurs du calque à pleine intensité.',
       themeLabel: 'Thème de couleurs',
       themeHint: 'Change toute l\'apparence : dégradés de la grille mensuelle, couleurs du châssis et palettes de calques. Les couleurs personnalisées des calques restent inchangées.',
+      zoomLabel: 'Zoom de l\'interface',
+      zoomHint: 'Agrandit toute l\'interface : texte, grille et barres latérales ensemble. Ctrl + / Ctrl − pour ajuster, Ctrl 0 pour réinitialiser. Plus la fenêtre est grande, plus la valeur doit être élevée, sinon les barres latérales paraissent trop étroites.',
       themeClassic: 'Classique',
       themeMorandi: 'Morandi',
       themeScandinavian: 'Scandinave',
@@ -892,7 +894,7 @@ export const fr: DeepPartialDict<Dict> = {
   layers: {
     scheduleLegacy: 'Créneaux (ancien)',
     important: 'Dates importantes',
-    coloring: 'Coloration d\'occupation',
+    coloring: "Coloration d'achèvement",
     holiday: 'Jours fériés',
     todo: 'Tâches',
     todoDone: 'Tâches · terminées',

@@ -368,7 +368,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
   return (
     <div className="flex-1 flex overflow-hidden">
       {/* 左列表栏 — w-60 对齐日历 Sidebar */}
-      <div className="w-60 cal-panel-bg border-r cal-line-r p-3 overflow-y-auto flex flex-col">
+      <div className="w-[var(--cal-sidebar-w)] cal-panel-bg border-r cal-line-r p-3 overflow-y-auto flex flex-col">
         <button
           onClick={() => { setSelectedList(null); setSelectedTodoId(null); setManualOrder(null) }}
           className={clsx(

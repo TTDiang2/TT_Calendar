@@ -224,6 +224,8 @@ export const es: DeepPartialDict<Dict> = {
       hint: 'Suave: saturación reducida, intensidad conservada. Vívido: colores de la capa a plena intensidad.',
       themeLabel: 'Tema de color',
       themeHint: 'Cambia todo el aspecto: escalas de la cuadrícula mensual, colores del armazón y paletas de capas. Los colores personalizados de las capas no cambian.',
+      zoomLabel: 'Zoom de la interfaz',
+      zoomHint: 'Amplía toda la interfaz: texto, cuadrícula y barras laterales a la vez. Ctrl + / Ctrl − para ajustar, Ctrl 0 para restablecer. Cuanto más grande la ventana, más alto debe ser el valor; si no, las barras laterales se ven demasiado estrechas.',
       themeClassic: 'Clásico',
       themeMorandi: 'Morandi',
       themeScandinavian: 'Escandinavo',
@@ -892,7 +894,7 @@ export const es: DeepPartialDict<Dict> = {
   layers: {
     scheduleLegacy: 'Citas (antiguo)',
     important: 'Fechas importantes',
-    coloring: 'Coloración de ocupación',
+    coloring: 'Coloración de finalización',
     holiday: 'Días festivos',
     todo: 'Tareas',
     todoDone: 'Tareas · completadas',

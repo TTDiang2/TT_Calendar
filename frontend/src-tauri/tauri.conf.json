@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "TT Calendar",
   "mainBinaryName": "TT Calendar",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "identifier": "com.tt.calendar",
   "build": {
     "frontendDist": "../dist",
@@ -14,8 +14,8 @@
     "windows": [
       {
         "title": "TT Calendar",
-        "width": 1280,
-        "height": 820,
+        "width": 1400,
+        "height": 900,
         "minWidth": 960,
         "minHeight": 600,
         "resizable": true,

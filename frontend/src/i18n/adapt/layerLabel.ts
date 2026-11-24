@@ -13,18 +13,21 @@ interface LabelLike {
   display_name: string
 }
 
-/** layer_id → { zh 种子名, 字典 key } */
-const BY_ID: Record<string, { zh: string; key: TxKey }> = {
+/** layer_id → { zh 种子名（可给多个历史别名）, 字典 key } */
+const BY_ID: Record<string, { zh: string | string[]; key: TxKey }> = {
   schedule: { zh: '日程（旧）', key: 'layers.scheduleLegacy' },
   important: { zh: '重要日期', key: 'layers.important' },
-  coloring: { zh: '充实度染色', key: 'layers.coloring' },
+  // 种子名在 2.5.1 从「充实度染色」改成「完成度染色」：老库里存的是旧名，
+  // 新库是旧名换新词，两个都要能认出来，否则老用户升上来会一直显示旧名字。
+  coloring: { zh: ['充实度染色', '完成度染色'], key: 'layers.coloring' },
   holiday: { zh: '公共节假日', key: 'layers.holiday' },
   todo: { zh: '待办', key: 'layers.todo' },
   todo_done: { zh: '待办·已完成', key: 'layers.todoDone' },
   schedule_work: { zh: '工作', key: 'layers.work' },
   schedule_course: { zh: '课程', key: 'layers.course' },
   schedule_sport: { zh: '运动', key: 'layers.sport' },
-  schedule_play: { zh: '玩耍', key: 'layers.play' },
+  // 「玩耍」太口语，产品里叫「休闲 / Leisure」；老库仍是旧名。
+  schedule_play: { zh: ['玩耍', '休闲'], key: 'layers.play' },
   schedule_other: { zh: '其他', key: 'layers.misc' },
 }
 
@@ -36,7 +39,10 @@ const BY_NAME: Record<string, TxKey> = {
 
 export function layerLabel(l: LabelLike, t: (k: TxKey) => string): string {
   const b = l.layer_id ? BY_ID[l.layer_id] : undefined
-  if (b && l.display_name === b.zh) return t(b.key)
+  if (b) {
+    const names = Array.isArray(b.zh) ? b.zh : [b.zh]
+    if (names.includes(l.display_name)) return t(b.key)
+  }
   const k = BY_NAME[l.display_name]
   return k ? t(k) : l.display_name
 }

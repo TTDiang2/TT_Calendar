@@ -230,6 +230,8 @@ export const ko: DeepPartialDict<Dict> = {
       hint: '부드럽게: 채도를 낮추고 농도를 유지합니다. 선명하게: 셀 전체를 레이어 색으로 채웁니다.',
       themeLabel: '테마 색상',
       themeHint: '보기 전체를 바꿉니다(월 그리드 색조, 패널 배경색, 레이어 팔레트). 사용자 지정 레이어 색은 그대로 유지됩니다.',
+      zoomLabel: '인터페이스 확대',
+      zoomHint: '인터페이스 전체를 확대합니다(글자, 격자, 사이드바가 함께 커집니다). Ctrl + / Ctrl − 로 조절하고 Ctrl 0 으로 초기화합니다. 창이 클수록 값을 높여야 사이드바가 좁아 보이지 않습니다.',
       themeClassic: '클래식',
       themeMorandi: '모란디',
       themeScandinavian: '북유럽',
@@ -843,7 +845,7 @@ export const ko: DeepPartialDict<Dict> = {
   layers: {
     scheduleLegacy: '기존 일정',
     important: '중요한 날',
-    coloring: '충실도 채색',
+    coloring: '완료도 채색',
     holiday: '공휴일',
     todo: '할 일',
     todoDone: '할 일 · 완료',

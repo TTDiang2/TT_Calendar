@@ -30,6 +30,7 @@ import { useT, useLang, fmtDate } from './i18n'
 import { fmtDateRange } from './i18n/format'
 import { SYNC_IN_PROGRESS_MARK } from './i18n/dict/fragments/app'
 import { readCalendarColorStyle, writeCalendarColorStyle, type CalendarColorStyle } from './lib/calendar-style'
+import { applyUiZoom, DEFAULT_ZOOM, readUiZoom, stepUiZoom, writeUiZoom, type UiZoom } from './lib/ui-zoom'
 
 type DialogState =
   | { kind: 'event'; date: string; event?: CalEvent | null }
@@ -71,6 +72,37 @@ export default function App() {
     writeCalendarColorStyle(v)
     setCalendarStyleState(v)
   }
+  const [uiZoom, setUiZoomState] = useState<UiZoom>(readUiZoom)
+  // 缩放要落盘 + 立刻应用：设置页点和 Ctrl+= 走同一条路，避免两处各写一遍。
+  const setUiZoom = (next: UiZoom) => {
+    writeUiZoom(next)
+    setUiZoomState(next)
+    void applyUiZoom(next)
+  }
+
+  // 启动恢复上次的缩放；Ctrl + / - / 0 按档位跳。
+  // 用函数式更新而不是把 uiZoom 塞进依赖——否则每缩一次就要重装一遍监听。
+  useEffect(() => {
+    void applyUiZoom(readUiZoom())
+
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey) return
+      const zoomIn = e.key === '=' || e.key === '+'
+      const zoomOut = e.key === '-' || e.key === '_'
+      const reset = e.key === '0'
+      if (!zoomIn && !zoomOut && !reset) return
+      e.preventDefault()
+      setUiZoomState((prev) => {
+        const next = reset ? DEFAULT_ZOOM : stepUiZoom(prev, zoomIn ? 1 : -1)
+        if (next === prev) return prev
+        writeUiZoom(next)
+        void applyUiZoom(next)
+        return next
+      })
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   const [dialog, setDialog] = useState<DialogState>(null)
   const [exitSync, setExitSync] = useState<{ state: 'syncing' } | { state: 'failed'; error: string } | null>(null)
   const [ctxMenu, setCtxMenu] = useState<CtxMenuState | null>(null)
@@ -558,6 +590,8 @@ export default function App() {
           defaultEnd={importEnd}
           colorStyle={calendarStyle}
           onColorStyleChange={setCalendarStyle}
+          uiZoom={uiZoom}
+          onUiZoomChange={setUiZoom}
           onClose={() => setDialog(null)}
         />
       )}

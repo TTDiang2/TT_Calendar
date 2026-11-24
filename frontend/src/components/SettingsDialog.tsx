@@ -17,6 +17,7 @@ import { useT, useTPlural, chooseLang, activeLang, SELECTABLE_LANGS, LANG_META, 
 import type { Layer } from '../types'
 import type { CalendarColorStyle } from '../lib/calendar-style'
 import { CALENDAR_THEMES, CALENDAR_THEME_IDS, resolveBusyRamps, useCalendarTheme } from '../lib/calendar-theme'
+import { ZOOM_STEPS, type UiZoom } from '../lib/ui-zoom'
 import { setNumberAtPath } from '../utils/configLogic'
 
 interface Props {
@@ -26,10 +27,12 @@ interface Props {
   defaultEnd: string
   colorStyle: CalendarColorStyle
   onColorStyleChange: (style: CalendarColorStyle) => void
+  uiZoom: UiZoom
+  onUiZoomChange: (zoom: UiZoom) => void
   onClose: () => void
 }
 
-export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd, colorStyle, onColorStyleChange, onClose }: Props) {
+export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd, colorStyle, onColorStyleChange, uiZoom, onUiZoomChange, onClose }: Props) {
   const t = useT()
   const qc = useQueryClient()
   const [start, setStart] = useState(defaultStart)
@@ -62,7 +65,12 @@ export function SettingsDialog({ layers, onToggleLayer, defaultStart, defaultEnd
     <Modal title={t('settings.title')} onClose={onClose} width={720}>
       <div className="flex flex-col gap-5">
         <LanguageSection />
-        <AppearanceSection value={colorStyle} onChange={onColorStyleChange} />
+        <AppearanceSection
+          value={colorStyle}
+          onChange={onColorStyleChange}
+          uiZoom={uiZoom}
+          onUiZoomChange={onUiZoomChange}
+        />
         <section>
           <h3 className="text-xs font-semibold cal-muted uppercase tracking-wide mb-2">{t('settings.import.sectionTitle')}</h3>
           <div className="flex gap-2 mb-2">
@@ -770,7 +778,17 @@ function LayerSubActions({ layer }: { layer: Layer }) {
 }
 
 
-function AppearanceSection({ value, onChange }: { value: CalendarColorStyle; onChange: (style: CalendarColorStyle) => void }) {
+function AppearanceSection({
+  value,
+  onChange,
+  uiZoom,
+  onUiZoomChange,
+}: {
+  value: CalendarColorStyle
+  onChange: (style: CalendarColorStyle) => void
+  uiZoom: UiZoom
+  onUiZoomChange: (zoom: UiZoom) => void
+}) {
   const t = useT()
   const { themeId, setThemeId } = useCalendarTheme()
   const options: { v: CalendarColorStyle; labelKey: TxKey }[] = [
@@ -839,6 +857,29 @@ function AppearanceSection({ value, onChange }: { value: CalendarColorStyle; onC
           })}
         </div>
         <p className="text-xs cal-muted mt-1.5">{t('settings.appearance.themeHint')}</p>
+      </div>
+
+      <div className="mt-3">
+        <div className="flex items-center gap-3">
+          <span className="flex-1 text-sm cal-ink">{t('settings.appearance.zoomLabel')}</span>
+          <div className="inline-flex rounded-lg bg-gray-100 p-0.5">
+            {ZOOM_STEPS.map((z) => (
+              <button
+                key={z}
+                type="button"
+                onClick={() => onUiZoomChange(z)}
+                aria-pressed={uiZoom === z}
+                className={clsx(
+                  'px-2.5 py-1 text-xs rounded-md tabular-nums transition-colors',
+                  uiZoom === z ? 'bg-white cal-ink shadow-sm' : 'cal-muted hover:cal-ink',
+                )}
+              >
+                {Math.round(z * 100)}%
+              </button>
+            ))}
+          </div>
+        </div>
+        <p className="text-xs cal-muted mt-1.5">{t('settings.appearance.zoomHint')}</p>
       </div>
     </section>
   )

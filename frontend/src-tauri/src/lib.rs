@@ -155,6 +155,23 @@ fn restart_app(app: tauri::AppHandle) {
     app.restart();
 }
 
+/// 界面缩放。
+///
+/// 用 WebView 整体缩放而不是只改根字号：字号里有 200 处是绝对 px
+/// （text-[11px] / text-[10px] 之类），只调根字号它们完全不跟；整体缩放
+/// 连侧栏宽度、格子最小宽度一起按比例走，窗口 1949 宽时调 125% 就等价于
+/// 回到 1560 的 CSS 视口，比例立刻恢复。
+///
+/// 快捷键由前端按档位绑定（不用 WebView2 自带的 20% 大步进），所以这里
+/// 只暴露一个带范围校验的设值入口。
+#[tauri::command]
+fn set_ui_zoom(window: tauri::WebviewWindow, scale: f64) -> Result<(), String> {
+    if !(0.5..=3.0).contains(&scale) {
+        return Err(format!("缩放比例超出范围: {scale}"));
+    }
+    window.set_zoom(scale).map_err(|e| e.to_string())
+}
+
 // ---------------------------------------------------------------------------
 // 窗口圆角
 // ---------------------------------------------------------------------------
@@ -279,7 +296,11 @@ pub fn run() {
                 .level(log::LevelFilter::Info)
                 .build(),
         )
-        .invoke_handler(tauri::generate_handler![backend_base_url, restart_app])
+        .invoke_handler(tauri::generate_handler![
+            backend_base_url,
+            restart_app,
+            set_ui_zoom
+        ])
         .setup(|app| {
             let home = app_home();
             let plugins = plugins_home();
@@ -319,6 +340,20 @@ pub fn run() {
 
             // 窗口圆角：Win11 走 DWM，Win10 走窗口区域；后者在缩放后必须重设。
             if let Some(window) = app.get_webview_window("main") {
+                // 默认 1400×900 是按常见笔记本的逻辑分辨率定的；1366×768 这类小屏
+                // 直接开会被屏幕裁掉一截，所以按可用工作区收一次再居中。
+                if let Ok(Some(monitor)) = window.current_monitor() {
+                    let size = monitor.size().to_logical::<f64>(monitor.scale_factor());
+                    let target_w = 1400.0f64.min(size.width * 0.92);
+                    let target_h = 900.0f64.min(size.height * 0.88);
+                    if target_w < 1400.0 || target_h < 900.0 {
+                        let _ = window.set_size(tauri::LogicalSize::new(
+                            target_w.max(960.0),
+                            target_h.max(600.0),
+                        ));
+                        let _ = window.center();
+                    }
+                }
                 apply_window_rounding(&window);
                 let resized_window = window.clone();
                 window.on_window_event(move |event| {

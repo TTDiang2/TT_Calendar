@@ -128,7 +128,7 @@ export function Sidebar({ layers, onToggle, countdown, banner }: Props) {
   }
 
   return (
-    <aside data-tour="sidebar" className="w-60 cal-panel-bg border-r cal-line-r p-4 overflow-y-auto flex flex-col">
+    <aside data-tour="sidebar" className="w-[var(--cal-sidebar-w)] cal-panel-bg border-r cal-line-r p-4 overflow-y-auto flex flex-col">
       <h2 className="text-xs font-semibold cal-muted uppercase tracking-wide mb-2">{t('shell.navHeading')}</h2>
 
       <div className="flex flex-col gap-1 mb-4">

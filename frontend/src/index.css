@@ -33,6 +33,11 @@ html, body, #root {
   --cal-warning-ink: #b4791f;
   --cal-success-ink: #3f7d5c;
   --cal-info-ink: #2563eb;
+
+  /* 左侧栏宽度：原来是写死的 240px（w-60），窗口一拉宽占比就掉下去，1949 宽时
+     只剩 12%，全屏更窄，看着像被挤扁。改成按视口比例走，上下留夹逼——
+     下限保图层名不被截断，上限避免大屏上一条空白长条。 */
+  --cal-sidebar-w: clamp(200px, 12.5vw, 288px);
 }
 
 body {

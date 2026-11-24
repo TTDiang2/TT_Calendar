@@ -1124,7 +1124,7 @@ def ensure_default_layer_configs(conn: sqlite3.Connection) -> None:
                 (cfg.LayerID.IMPORTANT, "重要日期",   LAYER_COLORS[cfg.LayerID.IMPORTANT], 1, "color", None, True),
                 # 充实度染色默认关闭（20261120 用户反馈：新装第一天日历就是一格一格绿块，
                 # 「什么都没有的一天」也被涂了色，看着像数据错乱）。需要的人在侧栏一键开。
-                (cfg.LayerID.COLORING,  "充实度染色", LAYER_COLORS[cfg.LayerID.COLORING],  2, "color", None, False),
+                (cfg.LayerID.COLORING,  "完成度染色", LAYER_COLORS[cfg.LayerID.COLORING],  2, "color", None, False),
                 (cfg.LayerID.HOLIDAY,   "公共节假日", LAYER_COLORS[cfg.LayerID.HOLIDAY],   3, "color", None, True),
             ]
             for layer_id, name, color, order, kind, group, enabled in defaults:
@@ -1207,7 +1207,7 @@ SCHEDULE_CATEGORIES: list[tuple[str, str, str, int]] = [
     ("work", "工作", "#3D6BFB", 0),
     ("course", "课程", "#8E24AA", 1),
     ("sport", "运动", "#10B981", 2),
-    ("play", "玩耍", "#F59E0B", 3),
+    ("play", "休闲", "#F59E0B", 3),
     ("other", "其他", "#64748B", 4),
 ]
 
