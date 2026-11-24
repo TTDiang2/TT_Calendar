@@ -27,6 +27,11 @@ env:
 jobs:
   windows:
     runs-on: windows-latest
+    # 提到 job 级只为让 step 的 if 能判断「有没有配令牌」——
+    # GitHub 不允许在 if 里直接写 secrets.XXX（workflow 会校验失败、0 秒退出），
+    # 但允许引用 env。令牌本身不会出现在日志里。
+    env:
+      GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -153,10 +158,9 @@ jobs:
 
       # Gitee 兜底源：没有配置 GITEE_TOKEN 时整步跳过，不影响其他源。
       - name: Mirror to Gitee
-        if: steps.build.outputs.signed == 'true' && secrets.GITEE_TOKEN != ''
+        if: steps.build.outputs.signed == 'true' && env.GITEE_TOKEN != ''
         shell: bash
         env:
-          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
           GITEE_OWNER: ${{ vars.GITEE_OWNER }}
         run: |
           python scripts/sync_gitee_update.py \
