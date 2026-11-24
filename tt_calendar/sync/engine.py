@@ -130,6 +130,18 @@ def _save_base(data: M.Data, tombs: S.Tombstones, channel: str = "") -> None:
         ensure_ascii=False), encoding="utf-8")
 
 
+def _fingerprint(data: M.Data) -> dict:
+    """行内容指纹（与行顺序无关），用于判断「远端是否真的变了」。
+
+    Gitee 通道是整份快照 gzip 落盘再回读，行的物理顺序会变；直接比 list 会
+    把纯顺序差异当成内容变化，每同步一次就多一个空 commit。
+    """
+    return {table: frozenset(
+        json.dumps(row, sort_keys=True, ensure_ascii=False, default=str)
+        for row in rows)
+        for table, rows in data.items()}
+
+
 def _base_channel(conn: sqlite3.Connection) -> str:
     """base 是由哪条通道写下的（github / gitee）。
 
@@ -206,7 +218,11 @@ def _sync_now(conn: sqlite3.Connection, on_imported) -> dict:
         if on_imported:
             on_imported(conn)
 
-        remote_changed = (result["data"] != remote.data
+        # 只比内容、不比顺序：Gitee 通道是「整份快照 gzip → 落盘 → 回读」，
+        # 行的物理顺序会变（导出按各表自己的排序取，回读后重新导出就是另一种
+        # 顺序）。早先直接 != 比较 list，于是哪怕一行没改也会判定「远端有变化」，
+        # 每点一次同步就多一个空 commit。指纹按行内容做集合比较，顺序无关。
+        remote_changed = (_fingerprint(result["data"]) != _fingerprint(remote.data)
                           or result["tombstones"] != remote.tombstones)
         report = dict(result["report"])
         commit_url = None

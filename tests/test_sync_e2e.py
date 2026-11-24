@@ -257,6 +257,27 @@ def test_switching_channel_uploads_instead_of_erroring(wired, remote,
 
 
 
+def test_row_order_change_alone_does_not_trigger_push(wired, remote) -> None:
+    """远端只是行顺序变了（Gitee 落盘回读就会这样），不该被判成内容变化。
+
+    之前用 `list != list` 比较，于是每点一次同步都会推一个空 commit。
+    """
+    make, activate = wired
+    a = make("A", remote)
+    add_todo(a.conn, "t1", "买菜")
+    add_todo(a.conn, "t2", "做饭")
+    activate(a)
+    E.sync_now(a.conn)
+    assert remote.pushes == 1
+
+    data, tombs = remote.committed
+    remote.committed = ({t: list(reversed(rows)) for t, rows in data.items()}, tombs)
+
+    out = E.sync_now(a.conn)
+    assert out["result"] == "ok"
+    assert remote.pushes == 1, "顺序变化不该再推一次"
+
+
 def test_delete_propagates_via_tombstone(wired, remote) -> None:
     """删除要靠墓碑传播，否则 B 上的数据会永久残留。"""
     make, activate = wired
