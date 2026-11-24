@@ -78,7 +78,10 @@ if /I "%MODE%"=="preview" (
 echo.
 echo === [3/7] Building installer (Tauri bundle) ===
 pushd "%ROOT%frontend"
-call npx tauri build --features custom-protocol
+rem 只出 NSIS：本机 WiX light.exe 常因临时目录被锁而失败（LGHT0103），
+rem 而用户实际分发用的是 Setup.exe。CI 上 release.yml 仍是全量 bundle，
+rem 需要 MSI 时从 release 页面取。
+call npx tauri build --features custom-protocol --bundles nsis
 if errorlevel 1 (
     popd
     goto :fail
