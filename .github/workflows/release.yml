@@ -163,6 +163,8 @@ jobs:
         env:
           GITEE_OWNER: ${{ vars.GITEE_OWNER }}
         run: |
+          # runner 的 requirements.txt 里没有 requests（同步脚本用到）
+          python -m pip install --quiet requests
           python scripts/sync_gitee_update.py \
             --tag "${{ steps.ver.outputs.tag }}" \
             --version "${{ steps.ver.outputs.version }}" \
