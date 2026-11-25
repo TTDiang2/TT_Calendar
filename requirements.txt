@@ -13,4 +13,10 @@ beautifulsoup4>=4.12.0,<5.0
 python-dateutil>=2.9.0,<3.0
 httpx>=0.27.0,<1.0
 curl-cffi>=0.13.0,<1.0
+# Windows 没有系统时区库，zoneinfo 要靠这个包才能 ZoneInfo("Asia/Shanghai")。
+# 插件 investing.py 在模块级就建了这个时区：缺包时插件加载直接抛
+# 「No time zone found with key Asia/Shanghai」，源不注册、订阅刷新报
+# pending_adaptation。开发机通常已装（被别的包带进来），CI 干净环境没有，
+# 于是「本地打包好好的、CI 打出来的 exe 插件坏了」。
+tzdata>=2024.1
 pyinstaller>=6.0.0,<7.0

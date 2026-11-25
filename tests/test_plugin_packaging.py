@@ -59,6 +59,16 @@ def test_plugin_core_imports_resolve_in_source(mod: str) -> None:
     importlib.import_module(mod)
 
 
+def test_requirements_include_tzdata() -> None:
+    """Windows 没有系统时区库：缺 tzdata 时插件 investing 建 ZoneInfo 会抛。
+
+    开发机常被别的包顺带装了 tzdata（本地打包一切正常），CI 干净环境没有，
+    于是「本地没问题、装机版插件加载失败」。这条断言就是防止有人顺手删掉它。
+    """
+    req = (ROOT / "requirements.txt").read_text(encoding="utf-8").lower()
+    assert "tzdata" in req
+
+
 def test_load_errors_reports_broken_plugin(monkeypatch, tmp_path) -> None:
     """坏插件要被 load_errors() 报出来，而不是只写一行日志。"""
     bad = tmp_path / "broken_plugin.py"

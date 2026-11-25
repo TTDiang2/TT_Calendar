@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "TT Calendar",
   "mainBinaryName": "TT Calendar",
-  "version": "2.5.3",
+  "version": "2.5.4",
   "identifier": "com.tt.calendar",
   "build": {
     "frontendDist": "../dist",
