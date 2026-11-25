@@ -224,7 +224,74 @@ fn windows_build() -> u32 {
 const DWMWA_WINDOW_CORNER_PREFERENCE: u32 = 33;
 const DWMWCP_ROUND: u32 = 2;
 
+/// 主窗口是动态创建的：Win10 和 Win11 需要不同的窗口属性，而 `transparent` / `shadow`
+/// 只在创建那一刻生效，写在 `tauri.conf.json` 里就只能二选一。
+///
+/// - Win11：不透明 + 保留 DWM 阴影，圆角由 DWM 负责（见 apply_window_rounding）。
+/// - Win10：`transparent` 打开、原生阴影关掉，圆角改由前端 CSS 画。
+///   阴影必须跟着关：不关的话圆角外面会露出一个方形阴影轮廓，比直角还难看。
+fn create_main_window(app: &tauri::App, css_round: bool) -> tauri::Result<tauri::WebviewWindow> {
+    let mut builder = tauri::WebviewWindowBuilder::new(
+        app,
+        "main",
+        tauri::WebviewUrl::App("index.html".into()),
+    )
+    .title("TT Calendar")
+    .inner_size(1400.0, 900.0)
+    .min_inner_size(960.0, 600.0)
+    .resizable(true)
+    .decorations(false)
+    .transparent(css_round)
+    .shadow(!css_round)
+    .drag_and_drop(false);
+
+    if css_round {
+        // 注入到文档最前面，React 挂载前就打好标记，避免首帧画成直角、
+        // 下一帧才变圆角那种「跳一下」。CSS 侧见 index.css 的 html[data-shell="rounded"]。
+        //
+        // 必须多路兜底：这个脚本在「文档创建」那一刻执行，此时 <html> 可能还没解析
+        // 出来，直接写 documentElement.dataset 会抛 TypeError，标记就丢了。dev 模式
+        // 因为走 Vite 中转、文档创建到解构之间有空隙，碰巧能成功；release 从
+        // tauri.localhost 直接读，快得多，反而容易赶上 documentElement 还是 null。
+        builder = builder.initialization_script(
+            r#"(function () {
+  function mark() {
+    try {
+      if (document.documentElement && !document.documentElement.dataset.shell) {
+        document.documentElement.dataset.shell = "rounded";
+      }
+    } catch (e) {}
+  }
+  mark();
+  if (!document.documentElement || !document.documentElement.dataset.shell) {
+    document.addEventListener("readystatechange", mark, { once: true });
+    document.addEventListener("DOMContentLoaded", mark, { once: true });
+    setTimeout(mark, 0);
+    setTimeout(mark, 50);
+  }
+})();"#,
+        );
+    }
+
+    builder.build()
+}
+
+/// Win11 的 DWM 圆角。
+///
+/// Win10 分支现在是空的，这是有意的：`DWMWA_WINDOW_CORNER_PREFERENCE` 是 Win11
+/// build 22000 引入的专有 API，Win10 调了会直接失败，所以圆角交给前端 CSS。
+///
+/// 这里原先用 `CreateRoundRectRgn` + `SetWindowRgn` 硬裁，两个代价都很实在：
+///   1) 带非空 region 的窗口会被系统当成「不使用视觉样式的特殊窗口」，DWM 会沿
+///      区域补画一条 1px 边框。region 画到 (0,0)-(w+1,h+1)，左边和上边正好压在
+///      客户区边界上，于是那条边框只在左边露出来 —— 就是 Win10 上看到的「贴着
+///      左边缘的一条灰竖条」。
+///   2) 每次 Resized 都得重建一次 region 并强制重绘，拖动窗口/最大化时明显掉帧。
 fn apply_window_rounding(window: &tauri::WebviewWindow) {
+    if windows_build() < 22000 {
+        return;
+    }
+
     use windows_sys::Win32::Foundation::HWND;
     use windows_sys::Win32::Graphics::Dwm::DwmSetWindowAttribute;
 
@@ -233,46 +300,17 @@ fn apply_window_rounding(window: &tauri::WebviewWindow) {
     };
     let hwnd = raw.0 as HWND;
 
-    if windows_build() >= 22000 {
-        let pref = DWMWCP_ROUND;
-        let hr = unsafe {
-            DwmSetWindowAttribute(
-                hwnd,
-                DWMWA_WINDOW_CORNER_PREFERENCE,
-                &pref as *const u32 as *const core::ffi::c_void,
-                std::mem::size_of::<u32>() as u32,
-            )
-        };
-        if hr != 0 {
-            log::warn!("DwmSetWindowAttribute(corner) failed: 0x{hr:08x}");
-        }
-        return;
-    }
-
-    // Win10：按窗口区域裁圆角。最大化时不裁（系统会把它拉成直角，看着更正常）。
-    let Ok(size) = window.inner_size() else {
-        return;
+    let pref = DWMWCP_ROUND;
+    let hr = unsafe {
+        DwmSetWindowAttribute(
+            hwnd,
+            DWMWA_WINDOW_CORNER_PREFERENCE,
+            &pref as *const u32 as *const core::ffi::c_void,
+            std::mem::size_of::<u32>() as u32,
+        )
     };
-    let maximized = window.is_maximized().unwrap_or(false);
-    let radius = if maximized { 0 } else { 16 };
-    unsafe {
-        let rgn = windows_sys::Win32::Graphics::Gdi::CreateRoundRectRgn(
-            0,
-            0,
-            size.width as i32 + 1,
-            size.height as i32 + 1,
-            radius,
-            radius,
-        );
-        if rgn.is_null() {
-            log::warn!("CreateRoundRectRgn failed");
-            return;
-        }
-        // SetWindowRgn 成功后区域归系统所有，不能再 DeleteObject。
-        let ok = windows_sys::Win32::Graphics::Gdi::SetWindowRgn(hwnd, rgn, 1);
-        if ok == 0 {
-            log::warn!("SetWindowRgn failed");
-        }
+    if hr != 0 {
+        log::warn!("DwmSetWindowAttribute(corner) failed: 0x{hr:08x}");
     }
 }
 
@@ -338,29 +376,29 @@ pub fn run() {
                 child: Mutex::new(child),
             });
 
-            // 窗口圆角：Win11 走 DWM，Win10 走窗口区域；后者在缩放后必须重设。
-            if let Some(window) = app.get_webview_window("main") {
-                // 默认 1400×900 是按常见笔记本的逻辑分辨率定的；1366×768 这类小屏
-                // 直接开会被屏幕裁掉一截，所以按可用工作区收一次再居中。
-                if let Ok(Some(monitor)) = window.current_monitor() {
-                    let size = monitor.size().to_logical::<f64>(monitor.scale_factor());
-                    let target_w = 1400.0f64.min(size.width * 0.92);
-                    let target_h = 900.0f64.min(size.height * 0.88);
-                    if target_w < 1400.0 || target_h < 900.0 {
-                        let _ = window.set_size(tauri::LogicalSize::new(
-                            target_w.max(960.0),
-                            target_h.max(600.0),
-                        ));
-                        let _ = window.center();
-                    }
+            // 窗口不再由 tauri.conf.json 的 windows 数组创建：Win10 要
+            // transparent + 关原生阴影，Win11 不要，而这些属性只在创建时生效。
+            //
+            // TT_FORCE_CSS_ROUND=1 可以在 Win11 上强制走 CSS 圆角那条路，用来验证
+            // 透明窗口的实际表现（四角是否露底色、有没有黑边），不用真去找台 Win10。
+            let css_round =
+                windows_build() < 22000 || std::env::var_os("TT_FORCE_CSS_ROUND").is_some();
+            let window = create_main_window(app, css_round)?;
+            apply_window_rounding(&window);
+
+            // 默认 1400×900 是按常见笔记本的逻辑分辨率定的；1366×768 这类小屏
+            // 直接开会被屏幕裁掉一截，所以按可用工作区收一次再居中。
+            if let Ok(Some(monitor)) = window.current_monitor() {
+                let size = monitor.size().to_logical::<f64>(monitor.scale_factor());
+                let target_w = 1400.0f64.min(size.width * 0.92);
+                let target_h = 900.0f64.min(size.height * 0.88);
+                if target_w < 1400.0 || target_h < 900.0 {
+                    let _ = window.set_size(tauri::LogicalSize::new(
+                        target_w.max(960.0),
+                        target_h.max(600.0),
+                    ));
+                    let _ = window.center();
                 }
-                apply_window_rounding(&window);
-                let resized_window = window.clone();
-                window.on_window_event(move |event| {
-                    if matches!(event, tauri::WindowEvent::Resized(_)) {
-                        apply_window_rounding(&resized_window);
-                    }
-                });
             }
             Ok(())
         })

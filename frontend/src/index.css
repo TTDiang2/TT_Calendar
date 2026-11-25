@@ -50,6 +50,20 @@ body {
   color: var(--cal-ink);
 }
 
+/* Win10 专用：DWM 圆角 API 是 Win11 22000+ 的专有接口，Win10 上窗口由 Rust 侧
+   以 transparent 创建，圆角改在这里画。html/body 必须一起透明，否则圆角外面会
+   露出底色，四个角变成黑角/白角。Win11 的窗口不会带 data-shell 标记，整段不生效，
+   圆角仍由 DWM 原生合成（抗锯齿和阴影都比 CSS 好，不该被这段顶掉）。 */
+html[data-shell='rounded'],
+html[data-shell='rounded'] body {
+  background: transparent;
+}
+html[data-shell='rounded'] #root {
+  background: var(--cal-shell);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
 /* 外壳语义色：顶栏 / 侧栏 / 右栏跟着主题走，
    整个窗口不再是「暖色日历 + 纯白面板」的割裂感。 */
 @layer utilities {
