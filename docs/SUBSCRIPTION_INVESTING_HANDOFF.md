@@ -120,8 +120,9 @@ PyInstaller sidecar 需重建（curl_cffi 已在 spec hiddenimports；v2 无新�
 - 订阅 events 是派生数据（source='investing' 不参与数据同步，可删了重拉）
 - **CF 限流观察**：开发机每次连续成功请求（1~10 个不等）后会进入冷却（403 边缘拒），冷却分钟~小时级。验证时控制请求量；生产每工作日一次 refresh 没问题。cf_clearance cookie 有寿命（半天~1 天），过期后用户需重新导出 cookie。
 - **cookie 放哪儿 / 怎么用（20261125 踩坑）**：
-  - 安装版数据目录是 `%APPDATA%\TT Calendar\data`；源码态是仓库 `data/`。两处都会被读取，
-    同名时取修改时间较新的那份（用户习惯把文件丢到 exe 旁边）。
+  - 安装版数据目录是 `%APPDATA%\TT Calendar\data`；源码态是仓库 `data/`。候选还包括
+    sidecar 同级的 `data/` 与它上一层的 `data/`（打包后后端在 `<应用根>\tt-calendar-backend\`），
+    同名时取修改时间较新的那份。
   - cf_clearance **必须 host-scope 到 `cn.investing.com`**。旧实现设成 `.investing.com` 全域，
     cookie 会跟着发往 `endpoints.investing.com`，CF 判定伪造凭据 → 人机验证 403，
     表现就是「换了新 cookie 也没用」。改完立刻「立即更新」即可生效，不必重启。
