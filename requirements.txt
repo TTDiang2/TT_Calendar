@@ -18,5 +18,5 @@ curl-cffi>=0.13.0,<1.0
 # 「No time zone found with key Asia/Shanghai」，源不注册、订阅刷新报
 # pending_adaptation。开发机通常已装（被别的包带进来），CI 干净环境没有，
 # 于是「本地打包好好的、CI 打出来的 exe 插件坏了」。
-tzdata>=2024.1
+tzdata>=2024.1,<2027
 pyinstaller>=6.0.0,<7.0
