@@ -24,6 +24,10 @@ log = logging.getLogger(__name__)
 # 插件缓存：{source_id: type[Source]}；发现失败只记日志
 _PLUGINS: dict[str, type[Source]] | None = None
 
+# 加载失败明细：{文件名: 异常文本}。只写日志的话，用户在订阅面板看到的
+# 永远是「pending_adaptation」，会误以为需要重新适配，而不是「插件坏了」。
+_LOAD_ERRORS: dict[str, str] | None = None
+
 
 def _plugins_dir():
     """插件目录：源码模式在仓库 plugins/，打包模式在 %APPDATA%\\TT Calendar\\plugins。"""
@@ -34,8 +38,15 @@ def _plugins_dir():
 
 def reload_plugins() -> None:
     """清空发现缓存，下次 list_sources() 重新扫描目录（安装/卸载插件后调用）。"""
-    global _PLUGINS
+    global _PLUGINS, _LOAD_ERRORS
     _PLUGINS = None
+    _LOAD_ERRORS = None
+
+
+def load_errors() -> dict[str, str]:
+    """当前插件目录里加载失败的文件 → 原因（会触发一次发现）。"""
+    _discover_plugins()
+    return dict(_LOAD_ERRORS or {})
 
 
 def _discover_plugins() -> dict[str, type[Source]]:
@@ -43,10 +54,11 @@ def _discover_plugins() -> dict[str, type[Source]]:
 
     用文件加载而非包导入：插件目录无需 __init__.py，模块名带 stem 前缀避免冲突。
     """
-    global _PLUGINS
+    global _PLUGINS, _LOAD_ERRORS
     if _PLUGINS is not None:
         return _PLUGINS
     found: dict[str, type[Source]] = {}
+    errors: dict[str, str] = {}
     pdir = _plugins_dir()
     if pdir.is_dir():
         for path in sorted(pdir.glob("*.py")):
@@ -75,7 +87,9 @@ def _discover_plugins() -> dict[str, type[Source]]:
                     log.info("plugin source discovered: %s (%s)", cls.source_id, path.name)
             except Exception as e:  # 插件坏掉不能拖垮应用
                 log.error("plugin load failed %s: %s", path.name, e)
+                errors[path.name] = f"{type(e).__name__}: {e}"
     _PLUGINS = found
+    _LOAD_ERRORS = errors
     return found
 
 

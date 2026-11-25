@@ -84,6 +84,7 @@ plugins/*.py
 
 # 构建过程留下的旧产物备份（递归拷贝，绝不入库）
 /tt-calendar-backend.old-*/
+/tt-calendar-backend.old/
 /tt-calendar-backend.onefile-bak
 /build.bak*/
 /dist.bak*/

@@ -505,7 +505,10 @@ export function SubscriptionDialog({ onClose }: { onClose: () => void }) {
     setRefreshing(s.id); setMsg(null)
     try {
       const r = await refreshSubscription(s.id)
-      setMsg(r.ok ? t('dialogs.subscription.updatedMsg', { name: s.display_name, n: r.inserted ?? 0 }) : t('dialogs.subscription.updateFailed', { name: s.display_name, error: r.error ?? '' }))
+      // detail 是后端给的「为什么没有这个源」的补充（插件文件加载失败的具体异常）。
+      // 之前只有 pending_adaptation 一个裸码，用户会误以为要重新适配一次。
+      const err = [r.error ?? '', r.detail ?? ''].filter(Boolean).join(' — ')
+      setMsg(r.ok ? t('dialogs.subscription.updatedMsg', { name: s.display_name, n: r.inserted ?? 0 }) : t('dialogs.subscription.updateFailed', { name: s.display_name, error: err }))
       invalidate()
     } catch (e) {
       setMsg(t('dialogs.subscription.updateFailed', { name: s.display_name, error: e instanceof Error ? e.message : t('dialogs.unknownError') }))

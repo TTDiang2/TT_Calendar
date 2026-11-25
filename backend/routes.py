@@ -18,7 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 from tt_calendar import backup, db, onboarding
 from tt_calendar import config as app_config
 from tt_calendar.models import ColoringEntry, Event, LayerConfig, Mark, ScheduleEntry, ScheduleItem, Todo, TodoList
-from tt_calendar.sources import get_source
+from tt_calendar.sources import get_source, load_errors
 from tt_calendar.sources.base import sub_filter_pattern
 from tt_calendar.utils.date_utils import parse_date
 
@@ -850,7 +850,15 @@ def _refresh_one_subscription(conn, sub) -> dict:
     """按注册表刷新订阅。未知 source_key = 待适配（需 agent 适配插件）。"""
     source = get_source(sub.source_key)
     if source is None:
-        return {"id": sub.id, "ok": False, "error": "pending_adaptation"}
+        # 插件没加载成功时只回 pending_adaptation，用户会以为「需要重新适配」，
+        # 实际往往只是插件文件报错（例如打包版缺了它依赖的核心模块）。
+        # 有加载失败明细就一起带上，前端会拼在错误后面。
+        detail = "；".join(f"{name} 加载失败：{err}"
+                          for name, err in load_errors().items())
+        out = {"id": sub.id, "ok": False, "error": "pending_adaptation"}
+        if detail:
+            out["detail"] = detail
+        return out
 
     # 刷新窗口由源声明（refresh_past_days / refresh_future_days）；
     # 上次成功同步之后的不重复拉（增量）。last_synced 为空则全量回填。

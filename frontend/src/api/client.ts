@@ -323,7 +323,7 @@ export const patchSubscription = (id: string, data: { display_name?: string; ena
   patch<Subscription>(`/subscriptions/${id}`, data)
 export const deleteSubscription = (id: string) => del<{ ok: boolean }>(`/subscriptions/${id}`)
 export const refreshSubscription = (id: string) =>
-  post<{ id: string; ok: boolean; inserted?: number; error?: string }>(`/subscriptions/${id}/refresh`)
+  post<{ id: string; ok: boolean; inserted?: number; error?: string; detail?: string }>(`/subscriptions/${id}/refresh`)
 export const refreshDueSubscriptions = () =>
   post<{ refreshed: { id: string; ok: boolean; inserted?: number; error?: string }[] }>('/subscriptions/refresh-due')
 

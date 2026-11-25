@@ -1,5 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+from PyInstaller.utils.hooks import collect_submodules
+
 
 a = Analysis(
     ['backend\\main.py'],
@@ -17,6 +19,12 @@ a = Analysis(
         'curl_cffi', 'curl_cffi.requests', 'curl_cffi.requests.session',
         # 版本号由 scripts/sync_version.py 在构建前生成
         'tt_calendar._build_version',
+        # 插件（plugins/*.py）在**运行时**才 import tt_calendar.* 的辅助模块，
+        # 静态分析看不到它们 → 打包版里会缺模块。踩过的坑：jisilu 用
+        # `tt_calendar.utils.text_utils`，只被插件引用，于是 2.5.x 的 sidecar
+        # 里没有它，插件加载失败 → 订阅刷新只报一个看不懂的 pending_adaptation。
+        # 整包收集（纯 Python，体积可忽略），今后任何插件 import 核心模块都不会再缺。
+        *collect_submodules('tt_calendar'),
     ],
     hookspath=[],
     hooksconfig={},
