@@ -1,11 +1,11 @@
 {
-  "version": "2.5.5",
+  "version": "2.5.7",
   "notes": "",
-  "pub_date": "2026-11-25T05:57:23Z",
+  "pub_date": "2026-11-25T09:56:07Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcGd0Q2lZeUtyTGxYS0Fhbm1Bb2VXWS90SWlpQ1ZzZU56N3lNMlpYR1RudkIxa0JnUEtHZTJwcmtpRk10RW5NN0U0Vkk1alNJNTlBQ1BpbEhIU01KWVVQWkdHOXlSTUFrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NTg2MjI1CWZpbGU6VFQgQ2FsZW5kYXJfMi41LjVfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjIuNS41Ck9ZMHBzVGg0ZFZBREJlWndDUWdQZUVZd1laM2hGQlI1SndIR0xaNVo5TUEzbE9ydXlWQkxQdUQwN0lTTHd0OHl1WS9zdXJFcjlvMEl0cVBpNUxKQUR3PT0K",
-      "url": "https://gh-proxy.com/https://github.com/TTDiang2/TT_Calendar/releases/download/v2.5.5/TT-Calendar-Setup-2.5.5.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcGd0Q2lZeUtyTG5qOVRPcHBTekRaYnYyZFBYWVpGMGk1Z0dmcXNjT092dldwYy84TnBuWGxDSlVNRFdJcHVyWHlOUzljdG0wNnVwSDB6Ymo3VUFXZXFXVjVoMTBIRHcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NjAwNTU1CWZpbGU6VFQgQ2FsZW5kYXJfMi41LjdfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjIuNS43CllqSWY0cnhJUDZERk4rVVp5RUphM1BaRGtPVGFzVk1YWTlDWGozS2VzNUxkWEVaek52SXNxaUhDREpUdFduUEFVSjdQaDNNemk4QlBZUTJBbzNMRURBPT0K",
+      "url": "https://gh-proxy.com/https://github.com/TTDiang2/TT_Calendar/releases/download/v2.5.7/TT-Calendar-Setup-2.5.7.exe"
     }
   }
 }
