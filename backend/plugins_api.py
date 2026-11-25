@@ -171,6 +171,24 @@ def _entry_for(source_id: str) -> dict[str, Any] | None:
     return None
 
 
+def _fresh_entry(source_id: str, stale: dict[str, Any]) -> dict[str, Any] | None:
+    """强制刷新 registry，拿同一插件的新条目；指纹没变则返回 None。
+
+    为什么要这一步：registry 缓存 6 小时，而插件源随时会更新。用户上午点过
+    「检查」留下旧缓存，下午维护者推了新插件，此时拿旧 sha256 去校验下载回来的
+    新文件必然失败，报「sha256 校验失败（registry 声明与实际文件不一致）」——
+    看着像被篡改，实际只是缓存过期。这里刷新一次再重试，自愈。
+    """
+    old_sha = stale.get("sha256")
+    for entry in _entries(fetch_registry(force=True)):
+        if entry.get("source_id") != source_id:
+            continue
+        new_sha = entry.get("sha256")
+        if new_sha and new_sha != old_sha:
+            return entry
+    return None
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -259,7 +277,7 @@ def _verify_import(tmp_path: Path, source_id: str) -> None:
         raise ValueError("插件没有注册 registry 中声明的 source_id")
 
 
-def _install(entry: dict[str, Any]) -> dict[str, Any]:
+def _install(entry: dict[str, Any], _retry: bool = True) -> dict[str, Any]:
     source_id = str(entry.get("source_id") or "")
     file_name = _validate_entry(entry)
     target = _plugin_path(file_name)
@@ -276,6 +294,11 @@ def _install(entry: dict[str, Any]) -> dict[str, Any]:
     blob = _normalize_newlines(data)
     expected_size = entry.get("size") if isinstance(entry.get("size"), int) else None
     if not _matches_expected(blob, entry.get("sha256"), expected_size):
+        # 指纹不符先怀疑缓存过期（插件源已更新），刷新一次再试；仍不符才判失败。
+        fresh = _fresh_entry(source_id, entry) if _retry else None
+        if fresh is not None:
+            log.info("plugin registry stale for %s, retrying with fresh entry", source_id)
+            return _install(fresh, _retry=False)
         raise ValueError("插件 sha256 校验失败（registry 声明与实际文件不一致）")
     digest = hashlib.sha256(blob).hexdigest()
 

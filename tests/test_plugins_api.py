@@ -88,6 +88,27 @@ def test_install_rejects_sha_mismatch(tmp_path, monkeypatch):
     assert not (tmp_path / "plugins" / "demo_source.py").exists()
 
 
+def test_install_recovers_from_stale_registry_cache(tmp_path, monkeypatch):
+    """缓存里的指纹过期（插件源已更新）时应自动刷新重试，而不是报 sha256 不符。"""
+    new_code = PLUGIN_CODE.replace(b'"Demo source"', b'"Demo source v2"')
+    entry = _setup(tmp_path, monkeypatch)  # 旧指纹已进缓存
+    assert plugins_api.fetch_registry() is not None
+
+    new_entry = dict(entry, sha256=hashlib.sha256(new_code).hexdigest(), size=len(new_code))
+    registry_new = json.dumps(
+        {"schema_version": 1, "protocol_version": 2, "plugins": [new_entry]}
+    ).encode("utf-8")
+
+    def fake_get(url, timeout=10.0):
+        return registry_new if url.endswith("/registry.json") else new_code
+
+    monkeypatch.setattr(plugins_api, "_http_get", fake_get)
+
+    assert plugins_api.install("demo_source")["ok"] is True
+    installed = (tmp_path / "plugins" / "demo_source.py").read_bytes()
+    assert hashlib.sha256(installed).hexdigest() == new_entry["sha256"]
+
+
 def test_install_rejects_path_traversal(tmp_path, monkeypatch):
     _setup(tmp_path, monkeypatch, file="../evil.py")
     with pytest.raises(ValueError, match="文件名"):
