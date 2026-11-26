@@ -175,9 +175,21 @@ def _dib(im: Image.Image) -> bytes:
             r, g, b, a = px.getpixel((x, y))
             row += bytes((b, g, r, a))
         rows.append(bytes(row))
-    mask_row = ((w + 31) // 32) * 4
-    mask = b"\x00" * (mask_row * h)
-    return header + b"".join(rows) + mask
+    # AND 掩码：1 = 透明（保留背景），0 = 不透明。必须按 alpha 逐像素生成。
+    #
+    # 之前这里图省事写成全 0，等于声明「整张图都不透明」。PIL 读 ICO 时优先用
+    # alpha 通道，所以文件看起来完全正常；但 Windows 在小尺寸（任务栏 16/24px）
+    # 会退回掩码路径，于是圆角外那圈 (0,0,0,0) 被当成不透明的黑色画出来——白底板
+    # 直接变成黑块。这个只有贴到真任务栏上才看得见。
+    stride = ((w + 31) // 32) * 4
+    mask_rows = []
+    for y in range(h - 1, -1, -1):  # 掩码同样是自下而上
+        bits = bytearray(stride)
+        for x in range(w):
+            if px.getpixel((x, y))[3] < 128:
+                bits[x // 8] |= 0x80 >> (x % 8)
+        mask_rows.append(bytes(bits))
+    return header + b"".join(rows) + b"".join(mask_rows)
 
 
 def write_ico(path: Path, images: list[tuple[int, Image.Image]]) -> None:
