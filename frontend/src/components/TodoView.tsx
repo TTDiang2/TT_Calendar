@@ -293,8 +293,16 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
     exitTimers.current.set(id, timers)
   }
 
+  // 再点一次已选中的项就收起右栏。四个视图共用这一个约定：
+  // 之前各处直接传 setSelectedTodoId，点第二下没有任何效果，用户只能去找关闭按钮。
+  const handleSelect = (id: string) => setSelectedTodoId((prev) => (prev === id ? null : id))
+
   const handleToggle = (todo: Todo, done: boolean) => {
     if (exits.has(todo.id) || exitTimers.current.has(todo.id)) return
+    // 勾掉的正是当前选中项时主动关掉抽屉。
+    // 不能指望下面那个 effect：今日视图里勾完的任务会落进 todayDone，
+    // findTodoById 依然找得到，`open={!!selectedTodo}` 就一直为真。
+    if (done && selectedTodoId === todo.id) setSelectedTodoId(null)
     const vars = {
       id: todo.id,
       data: { ...todo, id: todo.id, status: done ? 'completed' : 'notStarted' },
@@ -532,7 +540,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
 
         <div className={viewMode === 'list' ? 'flex-1 overflow-y-auto' : 'flex-1 min-h-0'}>
           {viewMode === 'matrix' ? (
-            <TodoMatrixView todos={filteredIncomplete} lists={lists} selectedTodoId={selectedTodoId} onSelect={setSelectedTodoId} onToggle={handleToggle} />
+            <TodoMatrixView todos={filteredIncomplete} lists={lists} selectedTodoId={selectedTodoId} onSelect={handleSelect} onToggle={handleToggle} />
           ) : viewMode === 'kanban' ? (
             <TodoKanbanView
               openTodos={filteredIncomplete}
@@ -540,24 +548,24 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
               completedCount={stats?.completed ?? completed.length}
               lists={lists}
               selectedTodoId={selectedTodoId}
-              onSelect={setSelectedTodoId}
+              onSelect={handleSelect}
               onToggle={handleToggle}
               onUpdate={(id, data) => updateMut.mutate({ id, data })}
             />
           ) : viewMode === 'gantt' ? (
-            <TodoGanttView todos={filteredIncomplete} lists={lists} selectedTodoId={selectedTodoId} onSelect={setSelectedTodoId} />
+            <TodoGanttView todos={filteredIncomplete} lists={lists} selectedTodoId={selectedTodoId} onSelect={handleSelect} />
           ) : viewMode === 'stickies' ? (
             <TodoStickiesView
               todos={filteredIncomplete}
               selectedTodoId={selectedTodoId}
-              onSelect={setSelectedTodoId}
+              onSelect={handleSelect}
               onOpenNotes={(id) => { setSelectedTodoId(id); detailRef.current?.openNotes() }}
             />
           ) : viewMode === 'today' ? (
             <TodoTodayView
               todos={todayTodos}
               selectedTodoId={selectedTodoId}
-              onSelect={setSelectedTodoId}
+              onSelect={handleSelect}
               onOpenNotes={(id) => { setSelectedTodoId(id); detailRef.current?.openNotes() }}
               onToggle={handleToggle}
             />
@@ -614,7 +622,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
                       selected={selectedTodoId === t.id}
                       finishing={exits.get(t.id)?.done === true}
                       leaving={exits.get(t.id)?.phase === 'collapse'}
-                      onSelect={() => setSelectedTodoId(t.id)}
+                      onSelect={() => handleSelect(t.id)}
                       onToggle={() => handleToggle(t, true)}
                       onOpenNotes={() => { setSelectedTodoId(t.id); detailRef.current?.openNotes() }}
                     />
@@ -646,7 +654,7 @@ export function TodoView({ viewMode }: { viewMode: TodoViewMode }) {
                             selected={selectedTodoId === t.id}
                             finishing={exits.get(t.id)?.done === true}
                             leaving={exits.get(t.id)?.phase === 'collapse'}
-                            onSelect={() => setSelectedTodoId(t.id)}
+                            onSelect={() => handleSelect(t.id)}
                             onToggle={() => handleToggle(t, false)}
                             onOpenNotes={() => { setSelectedTodoId(t.id); detailRef.current?.openNotes() }}
                           />
